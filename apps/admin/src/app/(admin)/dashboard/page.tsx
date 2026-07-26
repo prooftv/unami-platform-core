@@ -1,13 +1,14 @@
-import { createClient } from '@/lib/supabase/server';
+import { PageHeader } from '@moments/ui';
+import { EmptyDashboard } from '@moments/ui';
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
+export default function DashboardPage() {
   return (
-    <div className="p-8 space-y-2">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
-      <p className="text-sm text-muted-foreground">Signed in as {user?.email}</p>
+    <div className="p-6 space-y-6">
+      <PageHeader
+        title="Dashboard"
+        description="Moments v2 admin overview"
+      />
+      <EmptyDashboard />
     </div>
   );
 }

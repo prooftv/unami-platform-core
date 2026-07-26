@@ -1,14 +1,14 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getAdminSession } from '@/lib/session';
+import { AdminShell } from './components/AdminShell';
 import type { ReactNode } from 'react';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getAdminSession();
 
-  if (!user) {
+  if (!session) {
     redirect('/login');
   }
 
-  return <>{children}</>;
+  return <AdminShell session={session}>{children}</AdminShell>;
 }
