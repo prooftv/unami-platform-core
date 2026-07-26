@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
+import React from "react";
+
 
 type HeaderProps = {
-  title?: ReactNode;
-  actions?: ReactNode;
-  userArea?: ReactNode;
+  title?: React.ReactNode;
+  actions?: React.ReactNode;
+  userArea?: React.ReactNode;
   className?: string;
 };
 

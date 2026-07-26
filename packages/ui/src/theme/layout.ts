@@ -18,7 +18,7 @@ export const CONTENT_LAYOUT_OPTIONS = [
   { label: "Full Width", value: "full-width" },
 ] as const;
 export const CONTENT_LAYOUT_VALUES = CONTENT_LAYOUT_OPTIONS.map((v) => v.value);
-export type ContentLayout = (typeof CONTENT_LAYOUT_VALUES)[number];
+export type ContentLayoutValue = (typeof CONTENT_LAYOUT_VALUES)[number];
 
 export const NAVBAR_STYLE_OPTIONS = [
   { label: "Sticky", value: "sticky" },

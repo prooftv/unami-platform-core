@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
+import React from "react";
+
 
 type PageHeaderProps = {
   title: string;
   description?: string;
-  actions?: ReactNode;
+  actions?: React.ReactNode;
   className?: string;
 };
 

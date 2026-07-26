@@ -1,7 +1,7 @@
 import { createStore } from "zustand/vanilla";
 
 import type { FontKey } from "../../fonts/registry";
-import type { ContentLayout, NavbarStyle, SidebarCollapsible, SidebarVariant } from "../../theme/layout";
+import type { ContentLayoutValue, NavbarStyle, SidebarCollapsible, SidebarVariant } from "../../theme/layout";
 import { PREFERENCE_DEFAULTS } from "../../theme/preferences-config";
 import type { ResolvedThemeMode, ThemeMode, ThemePreset } from "../../theme/theme";
 
@@ -10,7 +10,7 @@ export type PreferencesState = {
   resolvedThemeMode: ResolvedThemeMode;
   themePreset: ThemePreset;
   font: FontKey;
-  contentLayout: ContentLayout;
+  contentLayout: ContentLayoutValue;
   navbarStyle: NavbarStyle;
   sidebarVariant: SidebarVariant;
   sidebarCollapsible: SidebarCollapsible;
@@ -18,7 +18,7 @@ export type PreferencesState = {
   setResolvedThemeMode: (mode: ResolvedThemeMode) => void;
   setThemePreset: (preset: ThemePreset) => void;
   setFont: (font: FontKey) => void;
-  setContentLayout: (layout: ContentLayout) => void;
+  setContentLayoutValue: (layout: ContentLayoutValue) => void;
   setNavbarStyle: (style: NavbarStyle) => void;
   setSidebarVariant: (variant: SidebarVariant) => void;
   setSidebarCollapsible: (mode: SidebarCollapsible) => void;
@@ -40,7 +40,7 @@ export const createPreferencesStore = (init?: Partial<PreferencesState>) =>
     setResolvedThemeMode: (mode) => set({ resolvedThemeMode: mode }),
     setThemePreset: (preset) => set({ themePreset: preset }),
     setFont: (font) => set({ font }),
-    setContentLayout: (layout) => set({ contentLayout: layout }),
+    setContentLayoutValue: (layout) => set({ contentLayout: layout }),
     setNavbarStyle: (style) => set({ navbarStyle: style }),
     setSidebarVariant: (variant) => set({ sidebarVariant: variant }),
     setSidebarCollapsible: (mode) => set({ sidebarCollapsible: mode }),

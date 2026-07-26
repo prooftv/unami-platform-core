@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import React from "react";
+
 
 type ContentLayoutProps = {
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
 };
 

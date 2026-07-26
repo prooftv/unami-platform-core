@@ -1,10 +1,9 @@
-import type { ReactNode } from "react";
 import { clsx } from "clsx";
 
 type AppShellProps = {
-  sidebar?: ReactNode;
-  header?: ReactNode;
-  children: ReactNode;
+  sidebar?: React.ReactNode;
+  header?: React.ReactNode;
+  children: React.ReactNode;
   className?: string;
 };
 

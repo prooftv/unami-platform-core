@@ -1,5 +1,5 @@
 import type { FontKey } from "../fonts/registry";
-import type { ContentLayout, NavbarStyle, SidebarCollapsible, SidebarVariant } from "./layout";
+import type { ContentLayoutValue, NavbarStyle, SidebarCollapsible, SidebarVariant } from "./layout";
 import type { ThemeMode, ThemePreset } from "./theme";
 
 export type PreferencePersistence = "none" | "client-cookie" | "server-cookie" | "localStorage";
@@ -8,7 +8,7 @@ export type PreferenceValueMap = {
   theme_mode: ThemeMode;
   theme_preset: ThemePreset;
   font: FontKey;
-  content_layout: ContentLayout;
+  content_layout: ContentLayoutValue;
   navbar_style: NavbarStyle;
   sidebar_variant: SidebarVariant;
   sidebar_collapsible: SidebarCollapsible;
