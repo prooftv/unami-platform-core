@@ -40,19 +40,20 @@ export interface BroadcastResult {
   status: 'completed' | 'failed';
 }
 
-// Auth session — returned by Edge Function /auth/me
+// Auth session — returned by Edge Function GET /auth/me
 export interface AuthSession {
-  userId: string;
+  id: string;
   email: string;
   role: 'superadmin' | 'content_admin' | 'moderator' | 'viewer';
-  accessToken: string;
+  authority_id: string | null;
 }
 
 // Admin session — serialisable contract passed from server layout to client shell
-// Does not carry accessToken (stays server-side only)
+// Does not carry access token (stays server-side only)
 export interface AdminSession {
-  userId: string;
+  id: string;
   email: string;
   name: string | null;
   role: 'superadmin' | 'content_admin' | 'moderator' | 'viewer';
+  authority_id: string | null;
 }

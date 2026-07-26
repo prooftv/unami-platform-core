@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
-import { getAdminSession } from '@/lib/session';
+import { getOperatorSession } from '@/lib/auth/operator';
 import { AdminShell } from './components/AdminShell';
 import type { ReactNode } from 'react';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const session = await getAdminSession();
+  const session = await getOperatorSession();
 
   if (!session) {
     redirect('/login');

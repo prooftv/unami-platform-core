@@ -1,18 +1,14 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  AppShell,
-  Sidebar,
-  Header,
-} from '@moments/ui';
+import { AppShell, Sidebar, Header } from '@moments/ui';
 import type { NavigationSection } from '@moments/ui';
 import type { AdminSession } from '@moments/api';
 import {
   LayoutDashboard,
   Radio,
-  Users,
-  MessageSquare,
+  Megaphone,
+  BarChart2,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -21,10 +17,10 @@ const NAV: NavigationSection[] = [
   {
     title: 'Content',
     items: [
-      { label: 'Dashboard',    href: '/dashboard',  icon: LayoutDashboard },
-      { label: 'Moments',      href: '/moments',    icon: Radio },
-      { label: 'Subscribers',  href: '/subscribers', icon: Users },
-      { label: 'Messages',     href: '/messages',   icon: MessageSquare },
+      { label: 'Dashboard',   href: '/dashboard',   icon: LayoutDashboard },
+      { label: 'Moments',     href: '/moments',     icon: Radio },
+      { label: 'Broadcasts',  href: '/broadcasts',  icon: Megaphone },
+      { label: 'Analytics',   href: '/analytics',   icon: BarChart2 },
     ],
   },
   {

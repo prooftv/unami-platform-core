@@ -2,7 +2,7 @@ import { apiFetch, type ApiConfig } from '../http.js';
 import type { AuthSession } from '../types/index.js';
 import type { LoginInput } from '@moments/shared';
 
-export function createAuthClient(config: Omit<ApiConfig, 'token'>) {
+export function createAuthClient(config: ApiConfig) {
   return {
     login(input: LoginInput): Promise<AuthSession> {
       return apiFetch(
@@ -12,12 +12,12 @@ export function createAuthClient(config: Omit<ApiConfig, 'token'>) {
       );
     },
 
-    logout(token: string): Promise<void> {
-      return apiFetch({ ...config, token }, '/auth/logout', { method: 'POST' });
+    logout(): Promise<void> {
+      return apiFetch(config, '/auth/logout', { method: 'POST' });
     },
 
-    me(token: string): Promise<AuthSession> {
-      return apiFetch({ ...config, token }, '/auth/me');
+    me(): Promise<AuthSession> {
+      return apiFetch(config, '/auth/me');
     },
   };
 }
