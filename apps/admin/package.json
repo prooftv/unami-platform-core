@@ -12,6 +12,8 @@
     "@moments/api": "workspace:*",
     "@moments/shared": "workspace:*",
     "@moments/ui": "workspace:*",
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.8",
     "lucide-react": "^0.400.0",
     "next": "16.2.12",
     "react": "19.2.4",

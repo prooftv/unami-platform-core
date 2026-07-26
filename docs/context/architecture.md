@@ -7,10 +7,10 @@ Moments v2 is a WhatsApp-first community information platform built on Unami Pla
 https://github.com/prooftv/unami-platform-core
 
 ## Stack
-- Frontend: Next.js 15, React 19, TypeScript, Tailwind CSS
+- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS
 - Backend: Supabase Edge Functions (Deno), Hono where needed
 - Database: PostgreSQL via Supabase
-- Auth: Supabase Auth (JWT, RS256)
+- Auth: Supabase Auth (JWT, RS256) + `@supabase/ssr` for Next.js
 - Messaging: Meta WhatsApp Cloud API
 - Validation: Zod (shared between frontend and Edge Functions)
 - State: Zustand (vanilla store, SSR-safe)
@@ -19,10 +19,10 @@ https://github.com/prooftv/unami-platform-core
 ## Layer Boundaries
 - `packages/ui` — presentation only. No Supabase, no auth, no business logic.
 - `packages/shared` — enums, types, validators, constants. No React, no Next.js, no Supabase.
-- `packages/api` — typed API clients. Frontend never calls Supabase directly.
-- `supabase/functions/` — only layer that touches the database.
-- `apps/admin` — Moments admin dashboard, consumes packages/ui and packages/api.
-- `apps/web` — Moments public PWA.
+- `packages/api` — typed API clients. Frontend never calls Supabase directly. **Complete.**
+- `supabase/functions/` — only layer that touches the database. **Complete.**
+- `apps/admin` — Moments admin dashboard. Consumes `packages/ui` and `packages/api`. **Authentication is the current implementation phase.**
+- `apps/web` — Moments public PWA. Not yet built.
 
 ## Data Flow
 ```
@@ -32,5 +32,21 @@ apps/admin or apps/web
       → Supabase DB (via service role, RLS enforced)
 ```
 
-## Current Phase
-Phase 4 — Backend. Edge Functions written. Next: packages/api, then admin authentication.
+## API Boundary (Complete)
+`packages/api` exposes a single `createApiClient()` factory:
+```typescript
+const api = createApiClient({ baseUrl, getToken });
+api.moments.list(...)
+api.broadcasts.trigger(...)
+api.auth.me()
+```
+No application code calls Supabase directly. All data access flows through this boundary.
+
+## Current Phase — Admin Authentication
+Implementing Supabase Auth SSR in `apps/admin`:
+- `@supabase/ssr` for cookie-based session management
+- Middleware for session refresh and route protection
+- `/login` page — email + password
+- `/auth/callback` — PKCE exchange
+- Server components read session via `createServerClient()`
+- Role loaded from `admin_roles` table after session established
