@@ -9,7 +9,7 @@ Read this first when resuming work or starting a new session.
 
 | Field | Value |
 |---|---|
-| Version | `v0.1.0-platform-foundation` |
+| Version | `v0.2.0-backend-live` |
 | Phase | Phase 5 — Admin Application |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
@@ -32,28 +32,31 @@ Read this first when resuming work or starting a new session.
 | Phase 4c | `docs/SCHEMA_MAPPING.md` — type → table → function → module map | ✅ Done |
 | Phase 4d | Edge Functions — `moments`, `broadcast`, `webhook` | ✅ Done |
 | Phase 4e | `packages/api` — typed API clients (`moments`, `broadcasts`, `auth`) | ✅ Done (commit d5bfaac) |
+| Phase 4f | Supabase project linked, schema applied, Edge Functions deployed | ✅ Done |
 
 ---
 
 ## Current Phase — Phase 5: Admin Application
 
-**Next milestone: Authentication**
+**Auth complete. Backend live. Next: Moments modules.**
 
-Implement Supabase Auth SSR in `apps/admin`:
+### Completed
+- ✅ Supabase Auth SSR (`@supabase/ssr`) in `apps/admin`
+- ✅ Login page, auth callback, session middleware
+- ✅ Protected route group `(admin)` — redirects unauthenticated users
+- ✅ Operator session layer with role-aware context
+- ✅ Admin shell with navigation (Dashboard / Moments / Broadcasts / Analytics / Settings)
+- ✅ Deployed to Vercel: `https://moments-admin-delta.vercel.app`
+- ✅ Supabase project linked (`dpydmpydyfrrdhuezvgi`)
+- ✅ Schema applied (`000_initial_schema.sql` — 26 tables)
+- ✅ Edge Functions deployed: `auth`, `moments`, `broadcast`, `webhook`
+- ✅ Edge Function secrets set (`ADMIN_URL`, `WEB_URL`)
 
-1. Install `@supabase/ssr` and `@supabase/supabase-js`
-2. Create Supabase browser and server client utilities
-3. Implement `/login` page (email + password via Supabase Auth)
-4. Implement auth callback route (`/auth/callback`)
-5. Add middleware for session refresh and route protection
-6. Protect all routes except `/login` — redirect unauthenticated users
-7. Expose session and role via server component context
-8. Replace root redirect (`/` → `/ui`) with redirect to `/dashboard` (authenticated) or `/login` (unauthenticated)
-
-After authentication:
-- Replace UI showcase root with real Moments admin shell
-- Implement Moments list module (`/moments`)
-- Implement Moments create module (`/moments/new`)
+### Next: Create admin user, then build Moments modules
+1. Create user in Supabase Auth dashboard → `https://supabase.com/dashboard/project/dpydmpydyfrrdhuezvgi/auth/users`
+2. Insert row into `admin_roles`: `{ user_id: '<uuid>', role: 'superadmin' }`
+3. Implement Moments list module (`/moments`)
+4. Implement Moments create module (`/moments/new`)
 
 ---
 
@@ -111,10 +114,11 @@ Deferred — do not interrupt active development for this.
 
 ## Definition of Done — Phase 5 (Admin Application)
 
-- [ ] Authentication working in `apps/admin` (login, session, middleware)
-- [ ] Protected routes — unauthenticated users redirected to `/login`
-- [ ] Role-aware session context (superadmin / content_admin / moderator / viewer)
-- [ ] Real admin shell replacing UI showcase root
+- [x] Authentication working in `apps/admin` (login, session, middleware)
+- [x] Protected routes — unauthenticated users redirected to `/login`
+- [x] Role-aware session context (superadmin / content_admin / moderator / viewer)
+- [x] Real admin shell replacing UI showcase root
+- [ ] Admin user created and can log in end-to-end
 - [ ] Moments list module (`/moments`)
 - [ ] Moments create module (`/moments/new`)
 
