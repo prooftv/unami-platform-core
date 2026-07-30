@@ -42,11 +42,10 @@ api.auth.me()
 ```
 No application code calls Supabase directly. All data access flows through this boundary.
 
-## Current Phase — Admin Authentication
-Implementing Supabase Auth SSR in `apps/admin`:
-- `@supabase/ssr` for cookie-based session management
-- Middleware for session refresh and route protection
-- `/login` page — email + password
-- `/auth/callback` — PKCE exchange
-- Server components read session via `createServerClient()`
-- Role loaded from `admin_roles` table after session established
+## Current Phase — Phase 6: Dashboard Architecture
+
+Architecture document complete. See `docs/ADMIN_DASHBOARD_ARCHITECTURE.md`.
+
+Next implementation phase: 6B — Dashboard Composition.
+
+Key principle: The dashboard is the primary product. Modules are secondary workspaces that feed information back to the dashboard.

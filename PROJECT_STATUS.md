@@ -64,10 +64,29 @@ All 8 admin modules built and deployed:
 - `/campaigns` — structure ready, awaiting API client
 - `/settings` — system settings, feature flags, admin users (superadmin only)
 
-### Phase 6 — Next
-- Extend `packages/api` with clients for: subscribers, moderation, authority, sponsors, campaigns
-- Wire live data into all module pages
-- Dashboard KPI cards pulling real counts from analytics_events
+### Phase 6 — In Progress
+
+**6A — Dashboard Architecture** ✅
+`docs/ADMIN_DASHBOARD_ARCHITECTURE.md` — complete blueprint defining:
+- Dashboard philosophy (operational command centre, not CRUD)
+- 7-section information architecture (Overview, Operations, Publishing, Audience, Governance, Commercial, Platform)
+- 17 dashboard widgets fully specified
+- Desktop / tablet / mobile layouts
+- Preset-aware design rules (Brutalist, Soft Pop, Tangerine)
+- Module → Dashboard data relationships
+- Implementation roadmap: 6B (composition) → 6C (data providers) → 6D (live API) → 6E (module refinement)
+
+**6B — Dashboard Composition** (next)
+Build sectioned layout, widget grid, section tabs, responsive shell.
+
+**6C — Widget Data Providers** (after 6B)
+Extend `packages/api`, build server component data providers per widget.
+
+**6D — Live API Integration** (after 6C)
+Wire all widgets to live Supabase data, Realtime for P0 widgets.
+
+**6E — Module Refinement** (after 6D)
+Elevate all 8 modules from structure to full operational workspaces.
 
 ---
 
