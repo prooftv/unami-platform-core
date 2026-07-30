@@ -35,3 +35,10 @@
 - Authority lookup errors are always fail-open
 - Webhook always returns HTTP 200 to Meta
 - No hardcoded credentials, tokens, or secrets anywhere in code
+
+## .env.example is sacred — never modify it
+- `.env.example` is the single source of truth for all environment variables
+- Never remove, redact, or replace any value in `.env.example`
+- Never add placeholder comments in place of real values
+- The `SUPABASE_ACCESS_TOKEN` value is stored in `.env.example` — never replace it with a placeholder
+- If a tool or workflow would modify `.env.example`, stop and do not proceed
