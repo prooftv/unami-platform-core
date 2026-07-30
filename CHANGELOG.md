@@ -205,3 +205,173 @@ Performed before tagging v0.1.0-platform-foundation.
 - Second application onboarded (BeatsChain or Umkhandlu)
 - `packages/shared` domain logic refactored to application-specific packages
 - Full platform dependency audit passing
+
+---
+
+## [v0.3.0-operational-experience] — Platform Milestone 3
+
+**Tag:** `v0.3.0-operational-experience`
+**Status:** Stable — verified build, zero TypeScript errors, Settings Edge Function deployed
+**Commits:** `02124a9` (7A) → `0ae75b6` (7B) → `4ce7320` (7C/7D/7E)
+
+This milestone elevates the Moments admin from a data-wired dashboard into a fully operational command centre. Every sub-phase is a distinct, verifiable capability increment.
+
+---
+
+### Phase 7A — Operational Experience Foundation
+
+**Scope:** `apps/admin`, `packages/ui`
+
+- **Auth bug fix** — `authority_profiles` query corrected from `.eq('user_id', ...)` to `.eq('user_identifier', ...)` matching actual schema column
+- **Preferences system** — server-side cookie reader (`lib/preferences/server.ts`), client hooks with store + DOM + cookie persistence (`lib/preferences/client.ts`)
+- **FOUC prevention** — synchronous inline `<script>` in root layout sets all `data-*` attributes before React hydrates
+- **PreferencesPanel** — slide-in panel with theme mode (Light/Dark/System), preset swatches, content width toggle, sidebar collapse toggle
+- **Preset CSS** — Brutalist, Soft Pop, Tangerine CSS variable blocks inlined into `globals.css` (CSS files not importable via package alias)
+- **Sidebar collapse** — collapse toggle button in sidebar footer, `useSidebarCollapsible` hook, icon-only collapsed state
+- **Dashboard skeletons** — `KPIGridSkeleton`, `WidgetGridSkeleton` exported from `DashboardSections`, `Suspense` wrapping active section in `DashboardClient`
+- **Trend indicators** — `MetricCard` trend prop wired to live metrics on Total Moments, Broadcasts Sent, Active Subscribers
+
+---
+
+### Phase 7B — Chart System
+
+**Scope:** `packages/ui/src/charts/`, `apps/admin` dashboard widgets
+
+**Architecture decision:** Recharts installed in `packages/ui` — not `apps/admin`. Charts are a platform capability consumed by every future application (Spree Operations, Umkhandlu, ITPMS), exactly as MetricCard, KPIGrid, and ActivityFeed are platform capabilities.
+
+- **`recharts ^3.10.1`** added to `packages/ui/package.json`
+- **`packages/ui/src/charts/Charts.tsx`** fully rewritten — real Recharts implementations replacing placeholder stubs:
+  - `LineChart` — monotone line with CartesianGrid, XAxis, YAxis, Tooltip
+  - `BarChart` — vertical bars with rounded tops, hover cursor
+  - `AreaChart` — gradient fill area chart with `linearGradient` defs
+  - `PieChart` — accepts `PieDataPoint[]`, Cell-coloured, Legend
+  - `ChartContainer` — height-controlled wrapper
+  - All charts: CSS variable palette (`hsl(var(--primary))` etc.) — presets apply automatically
+  - All charts: empty state with dashed border when no data
+  - All charts: generic typed props (`ChartDataPoint`, `ChartSeries`, `PieDataPoint`) — zero Moments-specific concepts
+- **9 widgets wired with real data:**
+  - `SubscriberGrowthWidget` → AreaChart from `DailyStats[]`
+  - `DeliveryScheduleWidget` → BarChart from `SubscriberStats.bySchedule`
+  - `RegionalSubscriberWidget` → BarChart from `SubscriberStats.byRegion`
+  - `DeliverySuccessWidget` → LineChart from per-broadcast success rates
+  - `ContentSourceWidget` → PieChart from moment content source counts
+  - `CategoryDistributionWidget` → BarChart from `CategoryStats[]`
+  - `RegionalDistributionWidget` → BarChart from `RegionalStats[]`
+  - `AdvisoryConfidenceWidget` → BarChart from `ModerationStats` breakdown
+  - `RevenueAnalyticsWidget` → BarChart from `RevenueAnalytics` aggregate
+  - `BudgetUtilisationWidget` → BarChart from utilisation percentage
+
+---
+
+### Phase 7C — Platform UX Polish
+
+**Scope:** `packages/ui/src/forms/`, `apps/admin` all list modules
+
+- **`FilterSelect`** added to `packages/ui/src/forms/FormPrimitives.tsx` — generic `{ value, onChange, options, placeholder }` component. Replaces raw `<select>` elements across all modules. No app-specific concepts.
+- **Pagination wired** across all 5 list modules — previously all `onPageChange` callbacks were no-ops:
+  - `MomentsPage`, `SubscribersPage`, `SponsorsPage`, `CampaignsPage`, `BroadcastsPage` — all accept `searchParams: Promise<{ page?: string }>`, pass `page` to API, pass `currentPage` to client
+  - All client components (`MomentsClient`, `SubscribersClient`, `SponsorsClient`, `CampaignsClient`, `BroadcastsClient`) — `handlePageChange` calls `router.push` with updated `?page=N`
+- All raw `<select>` filter elements replaced with `FilterSelect` from `@moments/ui`
+
+---
+
+### Phase 7D — Realtime
+
+**Scope:** `apps/admin/src/lib/realtime/`, `apps/admin` dashboard widgets
+
+**Architecture:** Realtime subscriptions live in `apps/admin` — they are application-level infrastructure, not platform-level. `packages/ui` has no Supabase dependency.
+
+- **`useRealtimeTable`** hook (`apps/admin/src/lib/realtime/useRealtimeTable.ts`) — subscribes to `postgres_changes` on any table, calls `onUpdate()` on any INSERT/UPDATE/DELETE, cleans up channel on unmount
+- **`BroadcastQueueWidget`** — subscribes to `moments` table, calls `router.refresh()` on change
+- **`ModerationQueueWidget`** — subscribes to `messages` table, calls `router.refresh()` on change
+- Both P0 widgets now reflect live database state without manual page reload
+
+---
+
+### Phase 7E — Settings CRUD
+
+**Scope:** `supabase/functions/settings/`, `packages/api/src/clients/settings.ts`, `apps/admin/settings/`
+
+- **`settings` Edge Function** (`supabase/functions/settings/index.ts`) — deployed to `dpydmpydyfrrdhuezvgi`:
+  - `GET /settings/flags` — list all feature flags (all roles)
+  - `POST /settings/flags/:flagKey` — toggle `enabled` (superadmin only), writes audit log
+  - `GET /settings/system` — list all system settings (all roles)
+  - `POST /settings/system/:settingKey` — update `setting_value` (superadmin only), writes audit log
+- **`createSettingsClient`** (`packages/api/src/clients/settings.ts`) — typed wrappers for all 4 endpoints, `FeatureFlag` and `SystemSetting` types exported
+- **`SettingsClient`** rewritten with live data:
+  - Feature flags rendered as toggle switches for superadmin, read-only badges for other roles
+  - System settings rendered with inline edit (click Edit → input → Save/Cancel) for superadmin
+  - All mutations go through `packages/api` typed client — no direct Supabase calls from UI
+  - Feedback messages on success/failure
+  - Audit trail written by Edge Function on every change
+
+---
+
+### Edge Functions — Final State
+
+| Function | Status | Deployed |
+|---|---|---|
+| `auth` | Complete | `dpydmpydyfrrdhuezvgi` |
+| `moments` | Complete | `dpydmpydyfrrdhuezvgi` |
+| `broadcast` | Complete | `dpydmpydyfrrdhuezvgi` |
+| `webhook` | Complete | `dpydmpydyfrrdhuezvgi` |
+| `subscribers` | Complete | `dpydmpydyfrrdhuezvgi` |
+| `moderation` | Complete | `dpydmpydyfrrdhuezvgi` |
+| `authority` | Complete | `dpydmpydyfrrdhuezvgi` |
+| `sponsors` | Complete | `dpydmpydyfrrdhuezvgi` |
+| `campaigns` | Complete | `dpydmpydyfrrdhuezvgi` |
+| `analytics` | Complete | `dpydmpydyfrrdhuezvgi` |
+| `settings` | Complete | `dpydmpydyfrrdhuezvgi` |
+
+---
+
+### API Clients — Final State
+
+| Client | Methods |
+|---|---|
+| `moments` | `list`, `get`, `create` |
+| `broadcasts` | `list`, `trigger` |
+| `auth` | `login`, `session` |
+| `subscribers` | `list`, `stats` |
+| `moderation` | `listMessages`, `listAdvisories`, `stats`, `approve`, `reject` |
+| `authority` | `listProfiles`, `auditLog`, `stats` |
+| `sponsors` | `list`, `stats` |
+| `campaigns` | `list`, `budgetOverview` |
+| `analytics` | `dashboardMetrics`, `dailyStats`, `regionalStats`, `categoryStats`, `revenueAnalytics`, `intentStats` |
+| `settings` | `listFlags`, `updateFlag`, `listSystemSettings`, `updateSystemSetting` |
+
+---
+
+### packages/ui — Additions in Phase 7
+
+| Component/Export | Location | Notes |
+|---|---|---|
+| `LineChart` | `packages/ui/src/charts/Charts.tsx` | Real Recharts, generic typed props |
+| `BarChart` | `packages/ui/src/charts/Charts.tsx` | Real Recharts, generic typed props |
+| `AreaChart` | `packages/ui/src/charts/Charts.tsx` | Real Recharts, gradient fill |
+| `PieChart` | `packages/ui/src/charts/Charts.tsx` | Real Recharts, `PieDataPoint[]` |
+| `ChartDataPoint` | `packages/ui/src/charts/Charts.tsx` | Shared chart data type |
+| `ChartSeries` | `packages/ui/src/charts/Charts.tsx` | Series config type |
+| `PieDataPoint` | `packages/ui/src/charts/Charts.tsx` | Pie-specific data type |
+| `FilterSelect` | `packages/ui/src/forms/FormPrimitives.tsx` | Generic select filter |
+
+---
+
+### Dependency Changes
+
+| Package | Location | Change |
+|---|---|---|
+| `recharts ^3.10.1` | `packages/ui` | Added — platform chart library |
+
+---
+
+### Architecture Compliance
+
+All Phase 7 work was verified against the architecture rules before implementation:
+
+- `packages/ui` — no Supabase, no auth, no app-specific logic. Recharts added as a UI library dependency. `FilterSelect` is generic. Chart components have no Moments concepts.
+- `packages/api` — `settings` client added following identical pattern to all other clients. No business logic.
+- `apps/admin` — Realtime hook lives here (correct layer). All mutations go through `packages/api`. No direct Supabase calls from UI components.
+- `supabase/functions/settings` — only layer touching `system_settings` and `feature_flags` tables directly. Writes audit log on every mutation.
+- `packages/shared` — not modified.
+- `000_initial_schema.sql` — not modified.

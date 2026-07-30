@@ -9,8 +9,8 @@ Read this first when resuming work or starting a new session.
 
 | Field | Value |
 |---|---|
-| Version | `v0.2.0-backend-live` |
-| Phase | Phase 5 — Admin Application |
+| Version | `v0.3.0-operational-experience` |
+| Phase | Phase 7 — Operational Experience (Complete) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
@@ -33,10 +33,27 @@ Read this first when resuming work or starting a new session.
 | Phase 4d | Edge Functions — `moments`, `broadcast`, `webhook` | ✅ Done |
 | Phase 4e | `packages/api` — typed API clients (`moments`, `broadcasts`, `auth`) | ✅ Done (commit d5bfaac) |
 | Phase 4f | Supabase project linked, schema applied, Edge Functions deployed | ✅ Done |
+| Phase 5 | Admin application — auth, 8 modules, all wired to live API | ✅ Done |
+| Phase 6A | Dashboard architecture blueprint | ✅ Done |
+| Phase 6B | Dashboard composition — 7 sections, 17 widgets, responsive grid | ✅ Done |
+| Phase 6C | Widget data providers — 6 new API clients, server-side providers | ✅ Done |
+| Phase 6D | Live API integration — 6 Edge Functions deployed, all widgets wired | ✅ Done |
+| Phase 6E | Module refinement — all 8 modules operational workspaces | ✅ Done |
+| Phase 7A | Operational experience — preferences, themes, presets, sidebar, skeletons | ✅ Done (commit `02124a9`) |
+| Phase 7B | Chart system in `packages/ui` — Recharts, 9 widgets with real data | ✅ Done (commit `0ae75b6`) |
+| Phase 7C | Platform UX — `FilterSelect` in `packages/ui`, pagination wired across all modules | ✅ Done |
+| Phase 7D | Realtime — P0 widgets (Broadcast Queue, Moderation Queue) live subscriptions | ✅ Done |
+| Phase 7E | Settings CRUD — feature flag toggles, system settings editor, `settings` Edge Function | ✅ Done (commit `4ce7320`) |
 
 ---
 
-## Current Phase — Phase 5: Admin Application
+## Current Phase — Phase 7: Operational Experience (Complete)
+
+**All Phase 7 sub-phases complete. Platform is operationally live.**
+
+---
+
+## Previous Phase — Phase 5: Admin Application
 
 **Auth complete. Backend live. Next: Moments modules.**
 
@@ -131,6 +148,8 @@ Deferred — do not interrupt active development for this.
 | n8n workflows | After Edge Functions are stable in production |
 | WhatsApp integration (live) | After webhook Edge Function is deployed |
 | Spree Operations Dashboard | After Moments is working end-to-end |
+| Phase 7F — Production integrations | Deferred: WhatsApp live, n8n, Vercel env sync |
+| Phase 8 — Public PWA (`apps/web`) | Next major phase after admin is stable in production |
 
 ---
 
