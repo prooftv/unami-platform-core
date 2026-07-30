@@ -1,6 +1,6 @@
-import type { Moment, AuthorityProfile, Subscription } from '../types/index.js';
-import { MomentStatus, UrgencyLevel, AuthorityLevel } from '../enums/index.js';
-import { BLAST_RADIUS_BY_LEVEL, MCP, LIMITS, PROHIBITED_TERMS } from '../constants/index.js';
+import type { Moment, AuthorityProfile, Subscription } from '../types/index';
+import { MomentStatus, UrgencyLevel, AuthorityLevel } from '../enums/index';
+import { BLAST_RADIUS_BY_LEVEL, MCP, LIMITS, PROHIBITED_TERMS } from '../constants/index';
 
 // ---------------------------------------------------------------------------
 // Phone

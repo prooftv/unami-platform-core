@@ -13,8 +13,8 @@ import {
   AuthorityScope,
   ApprovalMode,
   AdminRole,
-} from '../enums/index.js';
-import { LIMITS } from '../constants/index.js';
+} from '../enums/index';
+import { LIMITS } from '../constants/index';
 
 // ---------------------------------------------------------------------------
 // Primitives

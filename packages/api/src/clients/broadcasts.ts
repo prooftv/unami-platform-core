@@ -1,5 +1,5 @@
-import { apiFetch, type ApiConfig } from '../http.js';
-import type { Broadcast, BroadcastWithMoment, PaginatedResponse, BroadcastResult } from '../types/index.js';
+import { apiFetch, type ApiConfig } from '../http';
+import type { Broadcast, BroadcastWithMoment, PaginatedResponse, BroadcastResult } from '../types/index';
 
 export function createBroadcastsClient(config: ApiConfig) {
   return {

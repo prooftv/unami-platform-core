@@ -20,7 +20,7 @@ import type {
   AuthorityProfileStatus,
   AdminRole,
   AdvisoryType,
-} from '../enums/index.js';
+} from '../enums/index';
 
 // ---------------------------------------------------------------------------
 // Pagination

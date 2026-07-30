@@ -1,5 +1,5 @@
-import { apiFetch, type ApiConfig } from '../http.js';
-import type { Moment, MomentWithSponsor, PaginatedResponse } from '../types/index.js';
+import { apiFetch, type ApiConfig } from '../http';
+import type { Moment, MomentWithSponsor, PaginatedResponse } from '../types/index';
 import type {
   CreateMomentInput,
   UpdateMomentInput,

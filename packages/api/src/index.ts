@@ -1,10 +1,10 @@
-export { ApiError } from './http.js';
-export type { ApiConfig } from './http.js';
-export type * from './types/index.js';
+export { ApiError } from './http';
+export type { ApiConfig } from './http';
+export type * from './types/index';
 
-import { createMomentsClient } from './clients/moments.js';
-import { createBroadcastsClient } from './clients/broadcasts.js';
-import { createAuthClient } from './clients/auth.js';
+import { createMomentsClient } from './clients/moments';
+import { createBroadcastsClient } from './clients/broadcasts';
+import { createAuthClient } from './clients/auth';
 
 export interface ApiClientConfig {
   baseUrl: string;

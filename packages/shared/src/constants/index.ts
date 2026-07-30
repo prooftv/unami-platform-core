@@ -1,4 +1,4 @@
-import { Category, Region, DeliverySchedule, AuthorityLevel } from '../enums/index.js';
+import { Category, Region, DeliverySchedule, AuthorityLevel } from '../enums/index';
 
 export const SA_REGIONS = Object.values(Region);
 
