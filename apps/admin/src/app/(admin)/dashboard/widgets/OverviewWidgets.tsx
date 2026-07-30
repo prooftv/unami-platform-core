@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useRealtimeTable } from '@/lib/realtime/useRealtimeTable';
 import {
   KPIGrid,
   MetricCard,
@@ -83,6 +84,7 @@ export function TodayKPIs({ metrics }: { metrics: DashboardMetrics | null }) {
 
 export function BroadcastQueueWidget({ moments }: { moments: MomentWithSponsor[] }) {
   const router = useRouter();
+  useRealtimeTable('moments', () => router.refresh());
   return (
     <Card>
       <CardHeader>
@@ -121,6 +123,7 @@ export function BroadcastQueueWidget({ moments }: { moments: MomentWithSponsor[]
 
 export function ModerationQueueWidget({ stats }: { stats: ModerationStats | null }) {
   const router = useRouter();
+  useRealtimeTable('messages', () => router.refresh());
   const hasPending = stats && stats.pendingMessages > 0;
   const hasEscalated = stats && stats.escalatedAdvisories > 0;
 

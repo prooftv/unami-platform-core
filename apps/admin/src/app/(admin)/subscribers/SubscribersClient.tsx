@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   PageHeader, DataTable, TableToolbar, TablePagination,
-  Badge, KPIGrid, MetricCard,
+  Badge, KPIGrid, MetricCard, FilterSelect,
 } from '@moments/ui';
 import type { ColumnDef } from '@moments/ui';
 import type { Subscription, PaginatedResponse } from '@moments/api';
@@ -15,25 +16,31 @@ const SCHEDULE_VARIANT: Record<string, 'outline' | 'info' | 'warning' | 'seconda
   instant: 'info', morning: 'outline', evening: 'warning', weekly: 'secondary',
 };
 
-const REGIONS = Object.values(Region);
-const SCHEDULES = Object.values(DeliverySchedule);
+const REGION_OPTIONS = Object.values(Region).map((r) => ({ value: r, label: r }));
+const SCHEDULE_OPTIONS = Object.values(DeliverySchedule).map((s) => ({ value: s, label: s }));
 
 interface Props {
   initialData: PaginatedResponse<Subscription> | null;
   stats: SubscriberStats | null;
+  currentPage: number;
 }
 
-export function SubscribersClient({ initialData, stats }: Props) {
+export function SubscribersClient({ initialData, stats, currentPage }: Props) {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
   const [scheduleFilter, setScheduleFilter] = useState('');
 
   const rows = (initialData?.data ?? []).filter((s) => {
     const matchSearch = !search || s.phoneNumber.includes(search);
-    const matchRegion = !regionFilter || s.regions.includes(regionFilter as typeof REGIONS[number]);
+    const matchRegion = !regionFilter || s.regions.includes(regionFilter as typeof REGION_OPTIONS[number]['value']);
     const matchSchedule = !scheduleFilter || s.deliverySchedule === scheduleFilter;
     return matchSearch && matchRegion && matchSchedule;
   });
+
+  function handlePageChange(page: number) {
+    router.push(`/subscribers?page=${page}`);
+  }
 
   const columns: ColumnDef<Subscription>[] = [
     {
@@ -97,22 +104,8 @@ export function SubscribersClient({ initialData, stats }: Props) {
         searchPlaceholder="Search by masked number..."
         filters={
           <div className="flex gap-2">
-            <select
-              value={regionFilter}
-              onChange={(e) => setRegionFilter(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="">All regions</option>
-              {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-            <select
-              value={scheduleFilter}
-              onChange={(e) => setScheduleFilter(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="">All schedules</option>
-              {SCHEDULES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <FilterSelect value={regionFilter} onChange={setRegionFilter} options={REGION_OPTIONS} placeholder="All regions" />
+            <FilterSelect value={scheduleFilter} onChange={setScheduleFilter} options={SCHEDULE_OPTIONS} placeholder="All schedules" />
           </div>
         }
       />
@@ -126,10 +119,10 @@ export function SubscribersClient({ initialData, stats }: Props) {
 
       {initialData && (
         <TablePagination
-          page={initialData.pagination.page}
+          page={currentPage}
           pageSize={initialData.pagination.limit}
           total={initialData.pagination.total}
-          onPageChange={() => {}}
+          onPageChange={handlePageChange}
         />
       )}
     </div>

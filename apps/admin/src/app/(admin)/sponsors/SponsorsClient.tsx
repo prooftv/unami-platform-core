@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   PageHeader, DataTable, TableToolbar, TablePagination,
-  Badge, KPIGrid, MetricCard,
+  Badge, KPIGrid, MetricCard, FilterSelect,
 } from '@moments/ui';
 import type { ColumnDef } from '@moments/ui';
 import type { Sponsor, PaginatedResponse } from '@moments/api';
@@ -15,14 +16,16 @@ const TIER_VARIANT: Record<string, 'secondary' | 'info' | 'warning' | 'success'>
   bronze: 'secondary', silver: 'info', gold: 'warning', platinum: 'success',
 };
 
-const TIERS = Object.values(SponsorTier);
+const TIER_OPTIONS = Object.values(SponsorTier).map((t) => ({ value: t, label: t }));
 
 interface Props {
   initialData: PaginatedResponse<Sponsor> | null;
   stats: SponsorStats | null;
+  currentPage: number;
 }
 
-export function SponsorsClient({ initialData, stats }: Props) {
+export function SponsorsClient({ initialData, stats, currentPage }: Props) {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState('');
 
@@ -31,6 +34,10 @@ export function SponsorsClient({ initialData, stats }: Props) {
     const matchTier = !tierFilter || s.tier === tierFilter;
     return matchSearch && matchTier;
   });
+
+  function handlePageChange(page: number) {
+    router.push(`/sponsors?page=${page}`);
+  }
 
   const columns: ColumnDef<Sponsor>[] = [
     {
@@ -92,14 +99,7 @@ export function SponsorsClient({ initialData, stats }: Props) {
         onSearchChange={setSearch}
         searchPlaceholder="Search sponsors..."
         filters={
-          <select
-            value={tierFilter}
-            onChange={(e) => setTierFilter(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <option value="">All tiers</option>
-            {TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
+          <FilterSelect value={tierFilter} onChange={setTierFilter} options={TIER_OPTIONS} placeholder="All tiers" />
         }
       />
 
@@ -112,10 +112,10 @@ export function SponsorsClient({ initialData, stats }: Props) {
 
       {initialData && (
         <TablePagination
-          page={initialData.pagination.page}
+          page={currentPage}
           pageSize={initialData.pagination.limit}
           total={initialData.pagination.total}
-          onPageChange={() => {}}
+          onPageChange={handlePageChange}
         />
       )}
     </div>

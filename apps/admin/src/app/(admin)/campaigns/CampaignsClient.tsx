@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   PageHeader, DataTable, TableToolbar, TablePagination,
-  Badge, KPIGrid, MetricCard, Card, CardContent, CardHeader, CardTitle,
+  Badge, KPIGrid, MetricCard, Card, CardContent, CardHeader, CardTitle, FilterSelect,
 } from '@moments/ui';
 import type { ColumnDef } from '@moments/ui';
 import type { CampaignWithSponsor, PaginatedResponse } from '@moments/api';
@@ -16,14 +17,16 @@ const STATUS_VARIANT: Record<string, 'outline' | 'warning' | 'success' | 'destru
   paused: 'secondary', completed: 'outline', cancelled: 'destructive', published: 'success',
 };
 
-const STATUSES = Object.values(CampaignStatus);
+const STATUS_OPTIONS = Object.values(CampaignStatus).map((s) => ({ value: s, label: s.replace('_', ' ') }));
 
 interface Props {
   initialData: PaginatedResponse<CampaignWithSponsor> | null;
   budgetOverview: CampaignBudgetEntry[];
+  currentPage: number;
 }
 
-export function CampaignsClient({ initialData, budgetOverview }: Props) {
+export function CampaignsClient({ initialData, budgetOverview, currentPage }: Props) {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -36,6 +39,10 @@ export function CampaignsClient({ initialData, budgetOverview }: Props) {
   const active = budgetOverview.filter((c) => c.status === 'active');
   const totalBudget = budgetOverview.reduce((s, c) => s + c.budget, 0);
   const totalSpent = budgetOverview.reduce((s, c) => s + c.spent, 0);
+
+  function handlePageChange(page: number) {
+    router.push(`/campaigns?page=${page}`);
+  }
 
   const columns: ColumnDef<CampaignWithSponsor>[] = [
     {
@@ -125,14 +132,7 @@ export function CampaignsClient({ initialData, budgetOverview }: Props) {
         onSearchChange={setSearch}
         searchPlaceholder="Search campaigns..."
         filters={
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <option value="">All statuses</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
-          </select>
+          <FilterSelect value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} placeholder="All statuses" />
         }
       />
 
@@ -145,10 +145,10 @@ export function CampaignsClient({ initialData, budgetOverview }: Props) {
 
       {initialData && (
         <TablePagination
-          page={initialData.pagination.page}
+          page={currentPage}
           pageSize={initialData.pagination.limit}
           total={initialData.pagination.total}
-          onPageChange={() => {}}
+          onPageChange={handlePageChange}
         />
       )}
     </div>

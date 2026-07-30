@@ -8,6 +8,7 @@ export type { AuthorityAuditEntry, AuthorityStats } from './clients/authority';
 export type { SponsorStats } from './clients/sponsors';
 export type { CampaignBudgetEntry } from './clients/campaigns';
 export type { IntentStats } from './clients/analytics';
+export type { FeatureFlag, SystemSetting } from './clients/settings';
 
 import { createMomentsClient } from './clients/moments';
 import { createBroadcastsClient } from './clients/broadcasts';
@@ -18,6 +19,7 @@ import { createAuthorityClient } from './clients/authority';
 import { createSponsorsClient } from './clients/sponsors';
 import { createCampaignsClient } from './clients/campaigns';
 import { createAnalyticsClient } from './clients/analytics';
+import { createSettingsClient } from './clients/settings';
 
 export interface ApiClientConfig {
   baseUrl: string;
@@ -35,6 +37,7 @@ export function createApiClient(config: ApiClientConfig) {
     sponsors:    createSponsorsClient(config),
     campaigns:   createCampaignsClient(config),
     analytics:   createAnalyticsClient(config),
+    settings:    createSettingsClient(config),
   };
 }
 

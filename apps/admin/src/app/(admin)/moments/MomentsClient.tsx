@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   PageHeader, DataTable, TableToolbar, TablePagination,
-  Badge, Button,
+  Badge, Button, FilterSelect,
 } from '@moments/ui';
 import type { ColumnDef } from '@moments/ui';
 import type { MomentWithSponsor, PaginatedResponse, AdminSession } from '@moments/api';
@@ -25,14 +25,15 @@ const URGENCY_VARIANT: Record<string, 'secondary' | 'info' | 'warning' | 'destru
   urgent: 'destructive',
 };
 
-const STATUSES = Object.values(MomentStatus);
+const STATUS_OPTIONS = Object.values(MomentStatus).map((s) => ({ value: s, label: s }));
 
 interface Props {
   initialData: PaginatedResponse<MomentWithSponsor> | null;
   session: AdminSession;
+  currentPage: number;
 }
 
-export function MomentsClient({ initialData, session }: Props) {
+export function MomentsClient({ initialData, session, currentPage }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -44,6 +45,10 @@ export function MomentsClient({ initialData, session }: Props) {
     const matchStatus = !statusFilter || m.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  function handlePageChange(page: number) {
+    router.push(`/moments?page=${page}`);
+  }
 
   const columns: ColumnDef<MomentWithSponsor>[] = [
     {
@@ -106,16 +111,12 @@ export function MomentsClient({ initialData, session }: Props) {
         onSearchChange={setSearch}
         searchPlaceholder="Search moments..."
         filters={
-          <select
+          <FilterSelect
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <option value="">All statuses</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+            onChange={setStatusFilter}
+            options={STATUS_OPTIONS}
+            placeholder="All statuses"
+          />
         }
       />
 
@@ -129,10 +130,10 @@ export function MomentsClient({ initialData, session }: Props) {
 
       {initialData && (
         <TablePagination
-          page={initialData.pagination.page}
+          page={currentPage}
           pageSize={initialData.pagination.limit}
           total={initialData.pagination.total}
-          onPageChange={() => {}}
+          onPageChange={handlePageChange}
         />
       )}
     </div>

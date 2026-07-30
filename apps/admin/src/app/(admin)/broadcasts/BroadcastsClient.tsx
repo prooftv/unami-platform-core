@@ -3,6 +3,7 @@
 import { PageHeader, DataTable, Badge, TablePagination } from '@moments/ui';
 import type { ColumnDef } from '@moments/ui';
 import type { BroadcastWithMoment, PaginatedResponse } from '@moments/api';
+import { useRouter } from 'next/navigation';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'warning' | 'success' | 'destructive'> = {
   pending: 'outline', processing: 'warning', completed: 'success', failed: 'destructive',
@@ -10,9 +11,15 @@ const STATUS_VARIANT: Record<string, 'outline' | 'warning' | 'success' | 'destru
 
 interface Props {
   initialData: PaginatedResponse<BroadcastWithMoment> | null;
+  currentPage: number;
 }
 
-export function BroadcastsClient({ initialData }: Props) {
+export function BroadcastsClient({ initialData, currentPage }: Props) {
+  const router = useRouter();
+
+  function handlePageChange(page: number) {
+    router.push(`/broadcasts?page=${page}`);
+  }
   const columns: ColumnDef<BroadcastWithMoment>[] = [
     {
       key: 'moment',
@@ -76,10 +83,10 @@ export function BroadcastsClient({ initialData }: Props) {
 
       {initialData && (
         <TablePagination
-          page={initialData.pagination.page}
+          page={currentPage}
           pageSize={initialData.pagination.limit}
           total={initialData.pagination.total}
-          onPageChange={() => {}}
+          onPageChange={handlePageChange}
         />
       )}
     </div>

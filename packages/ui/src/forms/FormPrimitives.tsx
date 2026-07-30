@@ -58,6 +58,29 @@ export function SubmitBar({ children, className }: SubmitBarProps) {
   );
 }
 
+type FilterSelectProps = {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  className?: string;
+};
+
+export function FilterSelect({ value, onChange, options, placeholder = 'All', className }: FilterSelectProps) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className ?? ''}`}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  );
+}
+
 type FormActionsProps = {
   children: React.ReactNode;
   align?: "left" | "right" | "between";
