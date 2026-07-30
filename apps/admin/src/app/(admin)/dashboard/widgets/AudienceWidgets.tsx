@@ -20,9 +20,19 @@ export function SubscriberGrowthWidget({ dailyStats }: { dailyStats: DailyStats[
     ? `${totalNew} new over last ${dailyStats.length} days`
     : 'No data yet';
 
+  const data = dailyStats.map((d) => ({
+    label: new Date(d.statDate).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' }),
+    value: d.newSubscribers,
+  }));
+
   return (
     <AnalyticsCard title="Subscriber Growth" description={description}>
-      <AreaChart height={200} />
+      <AreaChart
+        data={data}
+        series={[{ key: 'value', label: 'New subscribers' }]}
+        height={200}
+        emptyMessage="No subscriber data yet"
+      />
     </AnalyticsCard>
   );
 }
@@ -67,9 +77,18 @@ export function DeliveryScheduleWidget({ stats }: { stats: SubscriberStats | nul
     ? Object.entries(stats.bySchedule).map(([k, v]) => `${k}: ${v}`).join(' · ')
     : 'No data yet';
 
+  const data = stats
+    ? Object.entries(stats.bySchedule).map(([label, value]) => ({ label, value }))
+    : [];
+
   return (
     <AnalyticsCard title="Delivery Schedule Breakdown" description={description}>
-      <BarChart height={180} />
+      <BarChart
+        data={data}
+        series={[{ key: 'value', label: 'Subscribers' }]}
+        height={180}
+        emptyMessage="No schedule data yet"
+      />
     </AnalyticsCard>
   );
 }
@@ -79,9 +98,21 @@ export function RegionalSubscriberWidget({ stats }: { stats: SubscriberStats | n
     ? `${Object.keys(stats.byRegion).length} regions`
     : 'No data yet';
 
+  const data = stats
+    ? Object.entries(stats.byRegion)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([label, value]) => ({ label, value }))
+    : [];
+
   return (
     <AnalyticsCard title="Regional Subscriber Distribution" description={description}>
-      <BarChart height={180} />
+      <BarChart
+        data={data}
+        series={[{ key: 'value', label: 'Subscribers' }]}
+        height={180}
+        emptyMessage="No regional data yet"
+      />
     </AnalyticsCard>
   );
 }

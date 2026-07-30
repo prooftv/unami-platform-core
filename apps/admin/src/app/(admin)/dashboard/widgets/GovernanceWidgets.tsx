@@ -58,9 +58,21 @@ export function AdvisoryConfidenceWidget({ stats }: { stats: ModerationStats | n
     ? `${stats.pendingMessages} pending · ${stats.escalatedAdvisories} escalated`
     : 'No data yet';
 
+  const data = stats ? [
+    { label: 'Pending', value: stats.pendingMessages },
+    { label: 'Approved today', value: stats.approvedToday },
+    { label: 'Rejected today', value: stats.rejectedToday },
+    { label: 'Escalated', value: stats.escalatedAdvisories },
+  ] : [];
+
   return (
     <AnalyticsCard title="Advisory Confidence Distribution" description={description}>
-      <BarChart height={180} />
+      <BarChart
+        data={data}
+        series={[{ key: 'value', label: 'Count' }]}
+        height={180}
+        emptyMessage="No moderation data yet"
+      />
     </AnalyticsCard>
   );
 }

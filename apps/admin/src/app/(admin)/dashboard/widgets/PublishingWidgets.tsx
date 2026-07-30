@@ -18,13 +18,12 @@ export function ContentSourceWidget({ moments }: { moments: MomentWithSponsor[] 
   for (const m of moments) {
     counts[m.contentSource] = (counts[m.contentSource] ?? 0) + 1;
   }
-  const description = Object.entries(counts)
-    .map(([k, v]) => `${k}: ${v}`)
-    .join(' · ') || 'No data yet';
+  const data = Object.entries(counts).map(([label, value]) => ({ label, value }));
+  const description = data.map(({ label, value }) => `${label}: ${value}`).join(' · ') || 'No data yet';
 
   return (
     <AnalyticsCard title="Content Source Breakdown" description={description}>
-      <PieChart height={180} />
+      <PieChart data={data} height={180} emptyMessage="No content data yet" />
     </AnalyticsCard>
   );
 }
@@ -34,9 +33,16 @@ export function CategoryDistributionWidget({ stats }: { stats: CategoryStats[] }
     ? `${stats.length} categories · ${stats.reduce((s, c) => s + c.momentCount, 0)} total`
     : 'No data yet';
 
+  const data = stats.map((c) => ({ label: c.category, value: c.momentCount }));
+
   return (
     <AnalyticsCard title="Category Distribution" description={description}>
-      <BarChart height={180} />
+      <BarChart
+        data={data}
+        series={[{ key: 'value', label: 'Moments' }]}
+        height={180}
+        emptyMessage="No category data yet"
+      />
     </AnalyticsCard>
   );
 }
@@ -46,9 +52,16 @@ export function RegionalDistributionWidget({ stats }: { stats: RegionalStats[] }
     ? `${stats.length} regions · ${stats.reduce((s, r) => s + r.momentCount, 0)} total`
     : 'No data yet';
 
+  const data = stats.map((r) => ({ label: r.region, value: r.momentCount }));
+
   return (
     <AnalyticsCard title="Regional Distribution" description={description}>
-      <BarChart height={180} />
+      <BarChart
+        data={data}
+        series={[{ key: 'value', label: 'Moments' }]}
+        height={180}
+        emptyMessage="No regional data yet"
+      />
     </AnalyticsCard>
   );
 }

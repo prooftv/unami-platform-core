@@ -118,9 +118,20 @@ export function RevenueAnalyticsWidget({ revenue }: { revenue: RevenueAnalytics 
     ? `R${revenue.totalRevenue30Days.toLocaleString()} allocated · R${revenue.totalSpent.toLocaleString()} spent`
     : 'No data yet';
 
+  const data = revenue ? [
+    { label: 'Allocated', value: revenue.totalBudgetAllocated },
+    { label: 'Spent', value: revenue.totalSpent },
+    { label: '30-day Revenue', value: revenue.totalRevenue30Days },
+  ] : [];
+
   return (
     <AnalyticsCard title="Revenue Analytics" description={description}>
-      <LineChart height={180} />
+      <BarChart
+        data={data}
+        series={[{ key: 'value', label: 'ZAR (R)' }]}
+        height={180}
+        emptyMessage="No revenue data yet"
+      />
     </AnalyticsCard>
   );
 }
@@ -130,9 +141,24 @@ export function BudgetUtilisationWidget({ revenue }: { revenue: RevenueAnalytics
     ? `${revenue.budgetUtilization} utilised · ${revenue.roi} ROI`
     : 'No data yet';
 
+  const utilPct = revenue
+    ? parseFloat(revenue.budgetUtilization.replace('%', '')) || 0
+    : 0;
+  const remaining = Math.max(0, 100 - utilPct);
+
+  const data = revenue ? [
+    { label: 'Utilised', value: utilPct },
+    { label: 'Remaining', value: remaining },
+  ] : [];
+
   return (
     <AnalyticsCard title="Budget Utilisation" description={description}>
-      <BarChart height={180} />
+      <BarChart
+        data={data}
+        series={[{ key: 'value', label: '%' }]}
+        height={180}
+        emptyMessage="No budget data yet"
+      />
     </AnalyticsCard>
   );
 }

@@ -22,12 +22,22 @@ export function DeliverySuccessWidget({ broadcasts }: { broadcasts: BroadcastWit
       )
     : null;
 
+  const data = completed.map((b) => ({
+    label: new Date(b.broadcastStartedAt ?? b.createdAt).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' }),
+    rate: b.recipientCount > 0 ? Math.round((b.successCount / b.recipientCount) * 100) : 0,
+  }));
+
   return (
     <AnalyticsCard
       title="Delivery Success Rate"
       description={avgRate !== null ? `${avgRate}% avg over last ${broadcasts.length} broadcasts` : 'No broadcast data yet'}
     >
-      <LineChart height={180} />
+      <LineChart
+        data={data}
+        series={[{ key: 'rate', label: 'Success %' }]}
+        height={180}
+        emptyMessage="No broadcast data yet"
+      />
     </AnalyticsCard>
   );
 }
