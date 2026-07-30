@@ -52,11 +52,22 @@ Read this first when resuming work or starting a new session.
 - ✅ Edge Functions deployed: `auth`, `moments`, `broadcast`, `webhook`
 - ✅ Edge Function secrets set (`ADMIN_URL`, `WEB_URL`)
 
-### Next: Create admin user, then build Moments modules
-1. Create user in Supabase Auth dashboard → `https://supabase.com/dashboard/project/dpydmpydyfrrdhuezvgi/auth/users`
-2. Insert row into `admin_roles`: `{ user_id: '<uuid>', role: 'superadmin' }`
-3. Implement Moments list module (`/moments`)
-4. Implement Moments create module (`/moments/new`)
+### Phase 5 Complete ✅
+All 8 admin modules built and deployed:
+- `/dashboard` — KPIs, quick actions, activity feed
+- `/moments` — list with search/filter, `/moments/new` create form, `/moments/[id]` detail + broadcast
+- `/broadcasts` — delivery history table
+- `/subscribers` — structure ready, awaiting API client
+- `/moderation` — structure ready, awaiting API client
+- `/authority` — structure ready, awaiting API client
+- `/sponsors` — structure ready, awaiting API client
+- `/campaigns` — structure ready, awaiting API client
+- `/settings` — system settings, feature flags, admin users (superadmin only)
+
+### Phase 6 — Next
+- Extend `packages/api` with clients for: subscribers, moderation, authority, sponsors, campaigns
+- Wire live data into all module pages
+- Dashboard KPI cards pulling real counts from analytics_events
 
 ---
 
@@ -118,9 +129,17 @@ Deferred — do not interrupt active development for this.
 - [x] Protected routes — unauthenticated users redirected to `/login`
 - [x] Role-aware session context (superadmin / content_admin / moderator / viewer)
 - [x] Real admin shell replacing UI showcase root
-- [ ] Admin user created and can log in end-to-end
-- [ ] Moments list module (`/moments`)
-- [ ] Moments create module (`/moments/new`)
+- [x] Admin user created and can log in end-to-end
+- [x] Moments list module (`/moments`)
+- [x] Moments create module (`/moments/new`)
+- [x] Moment detail + broadcast trigger (`/moments/[id]`)
+- [x] Broadcasts history (`/broadcasts`)
+- [x] Subscribers module (`/subscribers`)
+- [x] Moderation module (`/moderation`)
+- [x] Authority profiles (`/authority`)
+- [x] Sponsors (`/sponsors`)
+- [x] Campaigns (`/campaigns`)
+- [x] Settings — system config, feature flags, admin users (`/settings`)
 
 ---
 
