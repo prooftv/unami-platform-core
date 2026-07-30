@@ -82,10 +82,11 @@ Operational command centre composed. 7 sections, 17 widgets, responsive grid, se
 **6C — Widget Data Providers** ✅
 6 new typed API clients (subscribers, moderation, authority, sponsors, campaigns, analytics). Server-side providers fetch all dashboard data in parallel. All widgets accept real typed props — zero hardcoded data. Commit `611bea3`.
 
-**6D — Live API Integration** (next)
+**6D — Live API Integration** ✅
+6 Edge Functions deployed to `dpydmpydyfrrdhuezvgi`: `subscribers`, `moderation`, `authority`, `sponsors`, `campaigns`, `analytics`. All dashboard widgets now wired to live Supabase data. Commit `26d7ff7`.
 Wire all widgets to live Supabase data, Realtime for P0 widgets.
 
-**6E — Module Refinement** (after 6D)
+**6E — Module Refinement** (next)
 Elevate all 8 modules from structure to full operational workspaces.
 
 ---
