@@ -86,7 +86,8 @@ Operational command centre composed. 7 sections, 17 widgets, responsive grid, se
 6 Edge Functions deployed to `dpydmpydyfrrdhuezvgi`: `subscribers`, `moderation`, `authority`, `sponsors`, `campaigns`, `analytics`. All dashboard widgets now wired to live Supabase data. Commit `26d7ff7`.
 Wire all widgets to live Supabase data, Realtime for P0 widgets.
 
-**6E — Module Refinement** (next)
+**6E — Module Refinement** ✅
+All 8 modules wired to live API. Subscribers (POPIA-masked, region/schedule filter, KPIs), Moderation (approve/reject actions, escalated advisories panel), Authority (profiles table, audit log feed, KPIs), Sponsors (tier filter, budget display), Campaigns (status filter, budget utilisation bars), Settings (live system health, session info). Commit `5bde003`.
 Elevate all 8 modules from structure to full operational workspaces.
 
 ---
