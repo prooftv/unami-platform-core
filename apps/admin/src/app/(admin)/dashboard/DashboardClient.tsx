@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { ContentLayout, PageHeader } from '@moments/ui';
 import type { AdminSession } from '@moments/api';
 import { DashboardTabs, type DashboardSection } from './DashboardTabs';
@@ -12,6 +12,8 @@ import {
   GovernanceSection,
   CommercialSection,
   PlatformSection,
+  KPIGridSkeleton,
+  WidgetGridSkeleton,
   type OverviewProps,
   type OperationsProps,
   type PublishingProps,
@@ -38,6 +40,16 @@ type DashboardClientProps = {
   commercial: CommercialProps;
   platform: PlatformProps;
 };
+
+function SectionSkeleton() {
+  return (
+    <div className="space-y-4">
+      <KPIGridSkeleton columns={4} />
+      <WidgetGridSkeleton cols={2} />
+      <WidgetGridSkeleton cols={2} />
+    </div>
+  );
+}
 
 export function DashboardClient({
   session,
@@ -74,7 +86,9 @@ export function DashboardClient({
         <DashboardTabs active={activeSection} onChange={setActiveSection} />
       </div>
       <ContentLayout>
-        {sections[activeSection]}
+        <Suspense fallback={<SectionSkeleton />}>
+          {sections[activeSection]}
+        </Suspense>
       </ContentLayout>
     </div>
   );

@@ -27,10 +27,11 @@ Deno.serve(async (req: Request) => {
     .single();
 
   // Load authority_id if this user is also an authority
+  // user_identifier is TEXT (phone or user ID) — matches user.id for admin users
   const { data: authorityData } = await supabase
     .from('authority_profiles')
     .select('id')
-    .eq('user_id', user.id)
+    .eq('user_identifier', user.id)
     .eq('status', 'active')
     .maybeSingle();
 

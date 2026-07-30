@@ -1,5 +1,6 @@
 'use client';
 
+import { Skeleton } from '@moments/ui';
 import {
   TodayKPIs,
   BroadcastQueueWidget,
@@ -71,6 +72,40 @@ import type {
 function WidgetGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">{children}</div>;
 }
+
+// ── Skeleton states ───────────────────────────────────────────────────────────
+
+export function KPIGridSkeleton({ columns = 4 }: { columns?: number }) {
+  return (
+    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${columns} gap-4`}>
+      {Array.from({ length: columns }).map((_, i) => (
+        <div key={i} className="rounded-lg border bg-card p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-4 rounded" />
+          </div>
+          <Skeleton className="h-8 w-16" />
+          <Skeleton className="h-3 w-32" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function WidgetGridSkeleton({ cols = 2 }: { cols?: number }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
+      {Array.from({ length: cols }).map((_, i) => (
+        <div key={i} className="col-span-1 md:col-span-1 lg:col-span-6 rounded-lg border bg-card p-6 space-y-3">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-5/6" />
+        </div>
+      ))}
+    </div>
+  );
+}
 function Col12({ children }: { children: React.ReactNode }) {
   return <div className="col-span-1 md:col-span-2 lg:col-span-12">{children}</div>;
 }
@@ -131,7 +166,7 @@ export type PlatformProps = {
 
 export function OverviewSection({ metrics, queueMoments, moderationStats, recentMoments, scheduledMoments, recentBroadcasts }: OverviewProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in duration-300">
       <TodayKPIs metrics={metrics} />
 
       <WidgetGrid>
@@ -159,7 +194,7 @@ export function OverviewSection({ metrics, queueMoments, moderationStats, recent
 
 export function OperationsSection({ broadcasts, intentStats }: OperationsProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in duration-300">
       <WidgetGrid>
         <Col6><OperationsBroadcastQueueWidget broadcasts={broadcasts} /></Col6>
         <Col6><FailedBroadcastsWidget broadcasts={broadcasts} /></Col6>
@@ -174,7 +209,7 @@ export function OperationsSection({ broadcasts, intentStats }: OperationsProps) 
 
 export function PublishingSection({ moments, categoryStats, regionalStats }: PublishingProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in duration-300">
       <WidgetGrid>
         <Col12><PublishingRecentMomentsWidget moments={moments} /></Col12>
       </WidgetGrid>
@@ -189,7 +224,7 @@ export function PublishingSection({ moments, categoryStats, regionalStats }: Pub
 
 export function AudienceSection({ subscriberStats, dailyStats }: AudienceProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in duration-300">
       <AudienceKPIs stats={subscriberStats} />
       <WidgetGrid>
         <Col12><SubscriberGrowthWidget dailyStats={dailyStats} /></Col12>
@@ -204,7 +239,7 @@ export function AudienceSection({ subscriberStats, dailyStats }: AudienceProps) 
 
 export function GovernanceSection({ modStats, authorityEntries, authorityStats }: GovernanceProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in duration-300">
       <GovernanceKPIs modStats={modStats} authStats={authorityStats} />
       <WidgetGrid>
         <Col6><GovernanceModerationWidget stats={modStats} /></Col6>
@@ -219,7 +254,7 @@ export function GovernanceSection({ modStats, authorityEntries, authorityStats }
 
 export function CommercialSection({ campaigns, sponsorStats, revenue }: CommercialProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in duration-300">
       <CommercialKPIs revenue={revenue} sponsorStats={sponsorStats} campaigns={campaigns} />
       <WidgetGrid>
         <Col6><CampaignPerformanceWidget campaigns={campaigns} /></Col6>
@@ -235,7 +270,7 @@ export function CommercialSection({ campaigns, sponsorStats, revenue }: Commerci
 
 export function PlatformSection({ metrics }: PlatformProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-in fade-in duration-300">
       <WidgetGrid>
         <Col6><SystemHealthWidget metrics={metrics} /></Col6>
         <Col6><ApiHealthWidget metrics={metrics} /></Col6>

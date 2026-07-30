@@ -39,6 +39,13 @@ import {
 // ── Today's KPIs ──────────────────────────────────────────────────────────────
 
 export function TodayKPIs({ metrics }: { metrics: DashboardMetrics | null }) {
+  const broadcastRate = metrics && metrics.totalBroadcasts > 0
+    ? Math.round((metrics.successfulBroadcasts / metrics.totalBroadcasts) * 100) - 100
+    : undefined;
+  const subscriberRate = metrics && metrics.totalSubscribers > 0
+    ? Math.round(((metrics.activeSubscribers - metrics.totalSubscribers) / metrics.totalSubscribers) * 100)
+    : undefined;
+
   return (
     <KPIGrid columns={4}>
       <MetricCard
@@ -46,18 +53,21 @@ export function TodayKPIs({ metrics }: { metrics: DashboardMetrics | null }) {
         value={metrics ? metrics.totalMoments : '—'}
         description={metrics ? `${metrics.broadcastedMoments} broadcasted` : 'No data'}
         icon={Radio}
+        trend={metrics ? { value: metrics.broadcastedMoments > 0 ? Math.round((metrics.broadcastedMoments / metrics.totalMoments) * 100) - 100 : 0 } : undefined}
       />
       <MetricCard
         title="Broadcasts Sent"
         value={metrics ? metrics.totalBroadcasts : '—'}
         description={metrics ? `${metrics.failedBroadcasts} failed` : 'No data'}
         icon={Megaphone}
+        trend={broadcastRate !== undefined ? { value: broadcastRate } : undefined}
       />
       <MetricCard
         title="Active Subscribers"
         value={metrics ? metrics.activeSubscribers : '—'}
         description={metrics ? `${metrics.totalSubscribers} total` : 'No data'}
         icon={Users}
+        trend={subscriberRate !== undefined ? { value: subscriberRate } : undefined}
       />
       <MetricCard
         title="Delivery Rate"
