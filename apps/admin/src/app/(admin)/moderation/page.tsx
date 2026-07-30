@@ -1,24 +1,19 @@
 import { redirect } from 'next/navigation';
 import { getOperatorSession } from '@/lib/auth/operator';
-import { PageHeader, EmptyState } from '@moments/ui';
-import { ShieldAlert } from 'lucide-react';
+import { getApiClient } from '@/lib/api/client';
+import { ModerationClient } from './ModerationClient';
 
 export default async function ModerationPage() {
   const session = await getOperatorSession();
   if (!session) redirect('/login');
   if (session.role === 'viewer') redirect('/dashboard');
 
-  return (
-    <div className="p-6 space-y-6">
-      <PageHeader
-        title="Moderation"
-        description="Review inbound messages and AI advisory flags"
-      />
-      <EmptyState
-        icon={ShieldAlert}
-        title="Moderation queue"
-        description="Inbound WhatsApp messages and advisory flags will appear here once the moderation API client is connected."
-      />
-    </div>
-  );
+  const api = await getApiClient();
+  const [messages, advisories, stats] = await Promise.all([
+    api ? api.moderation.listMessages({ limit: 20, page: 1, status: 'pending' }).catch(() => null) : null,
+    api ? api.moderation.listAdvisories({ limit: 10, escalated: true }).catch(() => null) : null,
+    api ? api.moderation.stats().catch(() => null) : null,
+  ]);
+
+  return <ModerationClient messages={messages} advisories={advisories} stats={stats} session={session} />;
 }

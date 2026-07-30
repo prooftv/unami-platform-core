@@ -1,24 +1,18 @@
 import { redirect } from 'next/navigation';
 import { getOperatorSession } from '@/lib/auth/operator';
-import { PageHeader, EmptyState } from '@moments/ui';
-import { Tag } from 'lucide-react';
+import { getApiClient } from '@/lib/api/client';
+import { SponsorsClient } from './SponsorsClient';
 
 export default async function SponsorsPage() {
   const session = await getOperatorSession();
   if (!session) redirect('/login');
   if (session.role === 'moderator' || session.role === 'viewer') redirect('/dashboard');
 
-  return (
-    <div className="p-6 space-y-6">
-      <PageHeader
-        title="Sponsors"
-        description="Manage sponsor profiles and tier assignments"
-      />
-      <EmptyState
-        icon={Tag}
-        title="Sponsors"
-        description="Bronze, Silver, Gold and Platinum sponsors will appear here once the sponsors API client is connected."
-      />
-    </div>
-  );
+  const api = await getApiClient();
+  const [listResult, stats] = await Promise.all([
+    api ? api.sponsors.list({ limit: 20, page: 1 }).catch(() => null) : null,
+    api ? api.sponsors.stats().catch(() => null) : null,
+  ]);
+
+  return <SponsorsClient initialData={listResult} stats={stats} />;
 }
