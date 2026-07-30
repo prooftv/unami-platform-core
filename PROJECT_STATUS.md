@@ -79,10 +79,10 @@ All 8 admin modules built and deployed:
 **6B — Dashboard Composition** ✅
 Operational command centre composed. 7 sections, 17 widgets, responsive grid, section tabs, all placeholder states. Commit `83452ce`.
 
-**6C — Widget Data Providers** (next)
-Extend `packages/api`, build server component data providers per widget.
+**6C — Widget Data Providers** ✅
+6 new typed API clients (subscribers, moderation, authority, sponsors, campaigns, analytics). Server-side providers fetch all dashboard data in parallel. All widgets accept real typed props — zero hardcoded data. Commit `611bea3`.
 
-**6D — Live API Integration** (after 6C)
+**6D — Live API Integration** (next)
 Wire all widgets to live Supabase data, Realtime for P0 widgets.
 
 **6E — Module Refinement** (after 6D)
