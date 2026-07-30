@@ -9,36 +9,58 @@ import {
   Badge,
   LineChart,
 } from '@moments/ui';
+import type { BroadcastWithMoment, IntentStats } from '@moments/api';
 import { Send, AlertTriangle, Cpu } from 'lucide-react';
 
-export function DeliverySuccessWidget() {
+export function DeliverySuccessWidget({ broadcasts }: { broadcasts: BroadcastWithMoment[] }) {
+  const completed = broadcasts.filter((b) => b.status === 'completed');
+  const avgRate = completed.length > 0
+    ? Math.round(
+        completed.reduce((sum, b) =>
+          sum + (b.recipientCount > 0 ? b.successCount / b.recipientCount : 0), 0
+        ) / completed.length * 100
+      )
+    : null;
+
   return (
     <AnalyticsCard
       title="Delivery Success Rate"
-      description="Rolling 30-day broadcast success percentage"
+      description={avgRate !== null ? `${avgRate}% avg over last ${broadcasts.length} broadcasts` : 'No broadcast data yet'}
     >
       <LineChart height={180} />
     </AnalyticsCard>
   );
 }
 
-export function FailedBroadcastsWidget() {
+export function FailedBroadcastsWidget({ broadcasts }: { broadcasts: BroadcastWithMoment[] }) {
+  const failed = broadcasts.filter((b) => b.failureCount > 0 || b.status === 'failed');
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Failed Broadcasts</CardTitle>
-          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          <AlertTriangle className={`h-4 w-4 ${failed.length > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground text-center py-6">No failed broadcasts</p>
+        {failed.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No failed broadcasts</p>
+        ) : (
+          <ul className="space-y-2">
+            {failed.map((b) => (
+              <li key={b.id} className="flex items-center justify-between text-sm">
+                <span className="truncate flex-1 mr-2">{b.moment.title}</span>
+                <Badge variant="destructive">{b.failureCount} failed</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-export function AutomationStatusWidget() {
+export function AutomationStatusWidget({ stats }: { stats: IntentStats | null }) {
   return (
     <Card>
       <CardHeader>
@@ -49,14 +71,14 @@ export function AutomationStatusWidget() {
       </CardHeader>
       <CardContent className="space-y-2">
         {[
-          { label: 'Pending intents', value: '—' },
-          { label: 'Processing', value: '—' },
-          { label: 'Failed intents', value: '—' },
-          { label: 'Last processed', value: '—' },
-        ].map(({ label, value }) => (
+          { label: 'Pending intents', value: stats ? String(stats.pending) : '—', alert: stats ? stats.pending > 10 : false },
+          { label: 'Processing', value: stats ? String(stats.processing) : '—', alert: false },
+          { label: 'Failed intents', value: stats ? String(stats.failed) : '—', alert: stats ? stats.failed > 0 : false },
+          { label: 'Last processed', value: stats?.lastProcessedAt ? new Date(stats.lastProcessedAt).toLocaleTimeString() : '—', alert: false },
+        ].map(({ label, value, alert }) => (
           <div key={label} className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">{label}</span>
-            <span className="font-medium">{value}</span>
+            <span className={`font-medium ${alert ? 'text-destructive' : ''}`}>{value}</span>
           </div>
         ))}
       </CardContent>
@@ -64,7 +86,11 @@ export function AutomationStatusWidget() {
   );
 }
 
-export function OperationsBroadcastQueueWidget() {
+export function OperationsBroadcastQueueWidget({ broadcasts }: { broadcasts: BroadcastWithMoment[] }) {
+  const pending = broadcasts.filter((b) => b.status === 'pending').length;
+  const processing = broadcasts.filter((b) => b.status === 'processing').length;
+  const completed = broadcasts.filter((b) => b.status === 'completed').length;
+
   return (
     <Card>
       <CardHeader>
@@ -74,16 +100,18 @@ export function OperationsBroadcastQueueWidget() {
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        {[
-          { label: 'Draft', variant: 'outline' as const },
-          { label: 'Scheduled', variant: 'warning' as const },
-          { label: 'Processing', variant: 'info' as const },
-        ].map(({ label, variant }) => (
-          <div key={label} className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{label}</span>
-            <Badge variant={variant}>0</Badge>
-          </div>
-        ))}
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Pending</span>
+          <Badge variant="outline">{pending}</Badge>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Processing</span>
+          <Badge variant="info">{processing}</Badge>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Completed</span>
+          <Badge variant="success">{completed}</Badge>
+        </div>
       </CardContent>
     </Card>
   );

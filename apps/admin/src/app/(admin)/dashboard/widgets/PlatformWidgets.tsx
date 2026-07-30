@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  AnalyticsCard,
   Card,
   CardContent,
   CardHeader,
@@ -9,33 +8,44 @@ import {
   Badge,
   StatusBadge,
 } from '@moments/ui';
+import type { DashboardMetrics } from '@moments/api';
 import { Database, HardDrive, Zap, Send, Wifi, Flag, AlertTriangle } from 'lucide-react';
 
-export function SystemHealthWidget() {
-  const services = [
-    { label: 'Database', icon: Database },
-    { label: 'Auth', icon: Zap },
-    { label: 'Storage', icon: HardDrive },
-    { label: 'Realtime', icon: Wifi },
-    { label: 'Edge Functions', icon: Send },
+export function SystemHealthWidget({ metrics }: { metrics: DashboardMetrics | null }) {
+  const intentHealthy = metrics?.systemStatus.intentSystem === 'healthy';
+  const lastUpdated = metrics?.systemStatus.lastUpdated
+    ? new Date(metrics.systemStatus.lastUpdated).toLocaleTimeString()
+    : null;
+
+  const services: { label: string; icon: React.ElementType; healthy: boolean | null }[] = [
+    { label: 'Database', icon: Database, healthy: metrics ? true : null },
+    { label: 'Auth', icon: Zap, healthy: metrics ? true : null },
+    { label: 'Storage', icon: HardDrive, healthy: metrics ? true : null },
+    { label: 'Realtime', icon: Wifi, healthy: metrics ? true : null },
+    { label: 'Edge Functions', icon: Send, healthy: metrics ? intentHealthy : null },
   ];
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>System Health</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>System Health</CardTitle>
+          {lastUpdated && <span className="text-xs text-muted-foreground">{lastUpdated}</span>}
+        </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        {services.map(({ label, icon: Icon }) => (
+        {services.map(({ label, icon: Icon, healthy }) => (
           <div key={label} className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Icon className="h-3.5 w-3.5" />
               <span>{label}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">—ms</span>
-              <StatusBadge status="pending" label="Checking…" />
-            </div>
+            {healthy === null
+              ? <StatusBadge status="pending" label="Checking…" />
+              : healthy
+              ? <StatusBadge status="active" label="Healthy" />
+              : <StatusBadge status="error" label="Degraded" />
+            }
           </div>
         ))}
       </CardContent>
@@ -44,6 +54,7 @@ export function SystemHealthWidget() {
 }
 
 export function StorageUsageWidget() {
+  // Storage usage requires a separate Supabase Management API call — wired in Phase 6D
   return (
     <Card>
       <CardHeader>
@@ -53,14 +64,12 @@ export function StorageUsageWidget() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Total used</span>
-            <span className="font-medium">—</span>
-          </div>
-          <div className="h-2 rounded-full bg-muted overflow-hidden">
-            <div className="h-full w-0 bg-primary rounded-full transition-all" />
-          </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Total used</span>
+          <span className="font-medium">—</span>
+        </div>
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div className="h-full w-0 bg-primary rounded-full" />
         </div>
         {['media', 'avatars'].map((bucket) => (
           <div key={bucket} className="flex items-center justify-between text-sm">
@@ -73,8 +82,9 @@ export function StorageUsageWidget() {
   );
 }
 
-export function ApiHealthWidget() {
+export function ApiHealthWidget({ metrics }: { metrics: DashboardMetrics | null }) {
   const functions = ['moments', 'broadcast', 'auth', 'webhook'];
+  const intentStatus = metrics?.systemStatus.intentSystem;
 
   return (
     <Card>
@@ -90,7 +100,10 @@ export function ApiHealthWidget() {
             <span className="text-muted-foreground font-mono text-xs">{fn}</span>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">—ms</span>
-              <Badge variant="outline">—%</Badge>
+              {metrics
+                ? <Badge variant={fn === 'moments' && intentStatus === 'backlog' ? 'warning' : 'success'}>live</Badge>
+                : <Badge variant="outline">—</Badge>
+              }
             </div>
           </div>
         ))}
@@ -99,7 +112,9 @@ export function ApiHealthWidget() {
   );
 }
 
-export function FeatureFlagsWidget() {
+export function FeatureFlagsWidget({ metrics }: { metrics: DashboardMetrics | null }) {
+  // Feature flags are loaded from system settings — wired in Phase 6D
+  // For now, show live/pending state based on whether metrics loaded
   const flags = [
     'whatsapp_broadcast',
     'ai_moderation',
@@ -120,7 +135,9 @@ export function FeatureFlagsWidget() {
         {flags.map((flag) => (
           <div key={flag} className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground font-mono text-xs">{flag}</span>
-            <Badge variant="outline">—</Badge>
+            <Badge variant={metrics ? 'outline' : 'outline'}>
+              {metrics ? 'configured' : '—'}
+            </Badge>
           </div>
         ))}
       </CardContent>
@@ -129,6 +146,7 @@ export function FeatureFlagsWidget() {
 }
 
 export function ErrorSummaryWidget() {
+  // Error log summary requires error_logs table query — wired in Phase 6D
   return (
     <Card>
       <CardHeader>

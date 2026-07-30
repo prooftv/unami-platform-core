@@ -12,6 +12,13 @@ import {
   GovernanceSection,
   CommercialSection,
   PlatformSection,
+  type OverviewProps,
+  type OperationsProps,
+  type PublishingProps,
+  type AudienceProps,
+  type GovernanceProps,
+  type CommercialProps,
+  type PlatformProps,
 } from './DashboardSections';
 
 const ROLE_LABELS: Record<AdminSession['role'], string> = {
@@ -21,22 +28,41 @@ const ROLE_LABELS: Record<AdminSession['role'], string> = {
   viewer: 'Viewer',
 };
 
-const SECTION_MAP: Record<DashboardSection, React.ReactNode> = {
-  overview: <OverviewSection />,
-  operations: <OperationsSection />,
-  publishing: <PublishingSection />,
-  audience: <AudienceSection />,
-  governance: <GovernanceSection />,
-  commercial: <CommercialSection />,
-  platform: <PlatformSection />,
+type DashboardClientProps = {
+  session: AdminSession;
+  overview: OverviewProps;
+  operations: OperationsProps;
+  publishing: PublishingProps;
+  audience: AudienceProps;
+  governance: GovernanceProps;
+  commercial: CommercialProps;
+  platform: PlatformProps;
 };
 
-export function DashboardClient({ session }: { session: AdminSession }) {
+export function DashboardClient({
+  session,
+  overview,
+  operations,
+  publishing,
+  audience,
+  governance,
+  commercial,
+  platform,
+}: DashboardClientProps) {
   const [activeSection, setActiveSection] = useState<DashboardSection>('overview');
+
+  const sections: Record<DashboardSection, React.ReactNode> = {
+    overview:   <OverviewSection {...overview} />,
+    operations: <OperationsSection {...operations} />,
+    publishing: <PublishingSection {...publishing} />,
+    audience:   <AudienceSection {...audience} />,
+    governance: <GovernanceSection {...governance} />,
+    commercial: <CommercialSection {...commercial} />,
+    platform:   <PlatformSection {...platform} />,
+  };
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Sticky section tabs below header */}
       <div className="sticky top-0 z-10 bg-background">
         <ContentLayout className="py-0 pb-0">
           <PageHeader
@@ -47,10 +73,8 @@ export function DashboardClient({ session }: { session: AdminSession }) {
         </ContentLayout>
         <DashboardTabs active={activeSection} onChange={setActiveSection} />
       </div>
-
-      {/* Section content */}
       <ContentLayout>
-        {SECTION_MAP[activeSection]}
+        {sections[activeSection]}
       </ContentLayout>
     </div>
   );

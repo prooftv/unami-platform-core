@@ -6,39 +6,54 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Badge,
   BarChart,
   PieChart,
 } from '@moments/ui';
+import type { MomentWithSponsor, CategoryStats, RegionalStats } from '@moments/api';
 import { Radio } from 'lucide-react';
 
-export function ContentSourceWidget() {
+export function ContentSourceWidget({ moments }: { moments: MomentWithSponsor[] }) {
+  const counts: Record<string, number> = {};
+  for (const m of moments) {
+    counts[m.contentSource] = (counts[m.contentSource] ?? 0) + 1;
+  }
+  const description = Object.entries(counts)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join(' · ') || 'No data yet';
+
   return (
-    <AnalyticsCard
-      title="Content Source Breakdown"
-      description="Admin vs community vs WhatsApp vs campaign"
-    >
+    <AnalyticsCard title="Content Source Breakdown" description={description}>
       <PieChart height={180} />
     </AnalyticsCard>
   );
 }
 
-export function CategoryDistributionWidget() {
+export function CategoryDistributionWidget({ stats }: { stats: CategoryStats[] }) {
+  const description = stats.length > 0
+    ? `${stats.length} categories · ${stats.reduce((s, c) => s + c.momentCount, 0)} total`
+    : 'No data yet';
+
   return (
-    <AnalyticsCard title="Category Distribution" description="Moments by category">
+    <AnalyticsCard title="Category Distribution" description={description}>
       <BarChart height={180} />
     </AnalyticsCard>
   );
 }
 
-export function RegionalDistributionWidget() {
+export function RegionalDistributionWidget({ stats }: { stats: RegionalStats[] }) {
+  const description = stats.length > 0
+    ? `${stats.length} regions · ${stats.reduce((s, r) => s + r.momentCount, 0)} total`
+    : 'No data yet';
+
   return (
-    <AnalyticsCard title="Regional Distribution" description="Moments by region">
+    <AnalyticsCard title="Regional Distribution" description={description}>
       <BarChart height={180} />
     </AnalyticsCard>
   );
 }
 
-export function PublishingRecentMomentsWidget() {
+export function PublishingRecentMomentsWidget({ moments }: { moments: MomentWithSponsor[] }) {
   return (
     <Card>
       <CardHeader>
@@ -48,7 +63,21 @@ export function PublishingRecentMomentsWidget() {
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground text-center py-6">No moments yet</p>
+        {moments.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No moments yet</p>
+        ) : (
+          <ul className="space-y-2">
+            {moments.map((m) => (
+              <li key={m.id} className="flex items-center justify-between text-sm">
+                <span className="truncate flex-1 mr-2">{m.title}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Badge variant="outline">{m.region}</Badge>
+                  <Badge variant="secondary">{m.category}</Badge>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

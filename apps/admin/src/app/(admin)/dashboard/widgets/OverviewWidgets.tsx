@@ -14,6 +14,12 @@ import {
   StatusBadge,
 } from '@moments/ui';
 import type { ActivityItem, QuickAction } from '@moments/ui';
+import type {
+  DashboardMetrics,
+  MomentWithSponsor,
+  BroadcastWithMoment,
+  ModerationStats,
+} from '@moments/api';
 import {
   Radio,
   Megaphone,
@@ -30,57 +36,110 @@ import {
   Wifi,
 } from 'lucide-react';
 
-export function TodayKPIs() {
+// ── Today's KPIs ──────────────────────────────────────────────────────────────
+
+export function TodayKPIs({ metrics }: { metrics: DashboardMetrics | null }) {
   return (
     <KPIGrid columns={4}>
-      <MetricCard title="Moments Published" value="—" description="No data yet" icon={Radio} />
-      <MetricCard title="Broadcasts Sent" value="—" description="No data yet" icon={Megaphone} />
-      <MetricCard title="New Subscribers" value="—" description="No data yet" icon={Users} />
-      <MetricCard title="Delivery Rate" value="—" description="No data yet" icon={TrendingUp} />
+      <MetricCard
+        title="Total Moments"
+        value={metrics ? metrics.totalMoments : '—'}
+        description={metrics ? `${metrics.broadcastedMoments} broadcasted` : 'No data'}
+        icon={Radio}
+      />
+      <MetricCard
+        title="Broadcasts Sent"
+        value={metrics ? metrics.totalBroadcasts : '—'}
+        description={metrics ? `${metrics.failedBroadcasts} failed` : 'No data'}
+        icon={Megaphone}
+      />
+      <MetricCard
+        title="Active Subscribers"
+        value={metrics ? metrics.activeSubscribers : '—'}
+        description={metrics ? `${metrics.totalSubscribers} total` : 'No data'}
+        icon={Users}
+      />
+      <MetricCard
+        title="Delivery Rate"
+        value={metrics ? metrics.successRate : '—'}
+        description={metrics ? `${metrics.successfulBroadcasts} successful` : 'No data'}
+        icon={TrendingUp}
+      />
     </KPIGrid>
   );
 }
 
-export function BroadcastQueueWidget() {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Broadcast Queue</CardTitle>
-          <Badge variant="outline">0 pending</Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground text-center py-6">
-          No moments awaiting broadcast
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
+// ── Broadcast Queue ───────────────────────────────────────────────────────────
 
-export function ModerationQueueWidget() {
+export function BroadcastQueueWidget({ moments }: { moments: MomentWithSponsor[] }) {
   const router = useRouter();
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
+          <CardTitle>Broadcast Queue</CardTitle>
+          <Badge variant={moments.length > 0 ? 'warning' : 'outline'}>
+            {moments.length} pending
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {moments.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            No moments awaiting broadcast
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {moments.map((m) => (
+              <li
+                key={m.id}
+                className="flex items-center justify-between text-sm cursor-pointer hover:bg-accent rounded-md px-2 py-1 transition-colors"
+                onClick={() => router.push(`/moments/${m.id}`)}
+              >
+                <span className="truncate flex-1 mr-2">{m.title}</span>
+                <Badge variant="outline">{m.status}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Moderation Queue ──────────────────────────────────────────────────────────
+
+export function ModerationQueueWidget({ stats }: { stats: ModerationStats | null }) {
+  const router = useRouter();
+  const hasPending = stats && stats.pendingMessages > 0;
+  const hasEscalated = stats && stats.escalatedAdvisories > 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
           <CardTitle>Moderation Queue</CardTitle>
-          <ShieldAlert className="h-4 w-4 text-muted-foreground" />
+          <ShieldAlert className={`h-4 w-4 ${hasPending || hasEscalated ? 'text-yellow-500' : 'text-muted-foreground'}`} />
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Pending messages</span>
-          <Badge variant="outline">0</Badge>
+          <Badge variant={hasPending ? 'warning' : 'outline'}>
+            {stats ? stats.pendingMessages : '—'}
+          </Badge>
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Escalated advisories</span>
-          <Badge variant="outline">0</Badge>
+          <Badge variant={hasEscalated ? 'destructive' : 'outline'}>
+            {stats ? stats.escalatedAdvisories : '—'}
+          </Badge>
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Oldest pending</span>
-          <span className="text-muted-foreground">—</span>
+          <span className="text-muted-foreground">
+            {stats?.oldestPendingAge != null ? `${stats.oldestPendingAge}m ago` : '—'}
+          </span>
         </div>
         <button
           onClick={() => router.push('/moderation')}
@@ -93,100 +152,80 @@ export function ModerationQueueWidget() {
   );
 }
 
-const PLACEHOLDER_ACTIVITY: ActivityItem[] = [
-  {
-    id: '1',
-    label: 'Dashboard ready',
-    description: 'Operational command centre composed',
-    timestamp: 'Just now',
-    icon: TrendingUp,
-  },
-  {
-    id: '2',
-    label: 'Edge Functions live',
-    description: 'auth · moments · broadcast · webhook',
-    timestamp: 'Today',
-    icon: Send,
-  },
-];
+// ── Recent Activity ───────────────────────────────────────────────────────────
 
-export function RecentActivityWidget() {
-  return <ActivityFeed title="Recent Activity" items={PLACEHOLDER_ACTIVITY} />;
+export function RecentActivityWidget({ moments, broadcasts }: {
+  moments: MomentWithSponsor[];
+  broadcasts: BroadcastWithMoment[];
+}) {
+  const items: ActivityItem[] = [
+    ...moments.slice(0, 3).map((m) => ({
+      id: `moment-${m.id}`,
+      label: m.title,
+      description: `${m.status} · ${m.region} · ${m.category}`,
+      timestamp: new Date(m.createdAt).toLocaleDateString(),
+      icon: Radio,
+    })),
+    ...broadcasts.slice(0, 3).map((b) => ({
+      id: `broadcast-${b.id}`,
+      label: b.moment.title,
+      description: `${b.successCount}/${b.recipientCount} delivered · ${b.status}`,
+      timestamp: new Date(b.broadcastStartedAt).toLocaleDateString(),
+      icon: Megaphone,
+    })),
+  ].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1)).slice(0, 8);
+
+  return <ActivityFeed title="Recent Activity" items={items} />;
 }
+
+// ── Quick Actions ─────────────────────────────────────────────────────────────
 
 export function QuickActionsWidget() {
   const router = useRouter();
 
   const actions: QuickAction[] = [
-    {
-      id: 'new-moment',
-      label: 'New Moment',
-      description: 'Create a draft',
-      icon: PlusCircle,
-      onClick: () => router.push('/moments/new'),
-    },
-    {
-      id: 'broadcast-queue',
-      label: 'Broadcast Queue',
-      description: 'View drafts',
-      icon: Send,
-      onClick: () => router.push('/moments?status=draft'),
-    },
-    {
-      id: 'moderation',
-      label: 'Review Moderation',
-      description: 'Pending items',
-      icon: ShieldAlert,
-      onClick: () => router.push('/moderation'),
-    },
-    {
-      id: 'subscribers',
-      label: 'Subscribers',
-      description: 'View audience',
-      icon: Users,
-      onClick: () => router.push('/subscribers'),
-    },
-    {
-      id: 'campaigns',
-      label: 'Campaigns',
-      description: 'Active campaigns',
-      icon: TrendingUp,
-      onClick: () => router.push('/campaigns'),
-    },
-    {
-      id: 'settings',
-      label: 'Platform Settings',
-      description: 'System config',
-      icon: Settings,
-      onClick: () => router.push('/settings'),
-    },
+    { id: 'new-moment', label: 'New Moment', description: 'Create a draft', icon: PlusCircle, onClick: () => router.push('/moments/new') },
+    { id: 'broadcast-queue', label: 'Broadcast Queue', description: 'View drafts', icon: Send, onClick: () => router.push('/moments?status=draft') },
+    { id: 'moderation', label: 'Review Moderation', description: 'Pending items', icon: ShieldAlert, onClick: () => router.push('/moderation') },
+    { id: 'subscribers', label: 'Subscribers', description: 'View audience', icon: Users, onClick: () => router.push('/subscribers') },
+    { id: 'campaigns', label: 'Campaigns', description: 'Active campaigns', icon: TrendingUp, onClick: () => router.push('/campaigns') },
+    { id: 'settings', label: 'Platform Settings', description: 'System config', icon: Settings, onClick: () => router.push('/settings') },
   ];
 
   return <QuickActions title="Quick Actions" actions={actions} />;
 }
 
-const HEALTH_ITEMS: { label: string; icon: React.ElementType }[] = [
-  { label: 'Database', icon: Database },
-  { label: 'Auth Service', icon: Zap },
-  { label: 'Edge Functions', icon: Send },
-  { label: 'Storage', icon: HardDrive },
-  { label: 'Realtime', icon: Wifi },
-];
+// ── Operational Health ────────────────────────────────────────────────────────
 
-export function OperationalHealthWidget() {
+export function OperationalHealthWidget({ metrics }: { metrics: DashboardMetrics | null }) {
+  const intentStatus = metrics?.systemStatus.intentSystem;
+
+  const services: { label: string; icon: React.ElementType; healthy: boolean | null }[] = [
+    { label: 'Database', icon: Database, healthy: metrics ? true : null },
+    { label: 'Auth Service', icon: Zap, healthy: metrics ? true : null },
+    { label: 'Edge Functions', icon: Send, healthy: metrics ? intentStatus === 'healthy' : null },
+    { label: 'Storage', icon: HardDrive, healthy: metrics ? true : null },
+    { label: 'Realtime', icon: Wifi, healthy: metrics ? true : null },
+  ];
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Platform Health</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        {HEALTH_ITEMS.map(({ label, icon: Icon }) => (
+        {services.map(({ label, icon: Icon, healthy }) => (
           <div key={label} className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Icon className="h-3.5 w-3.5" />
               <span>{label}</span>
             </div>
-            <StatusBadge status="pending" label="Checking…" />
+            {healthy === null
+              ? <StatusBadge status="pending" label="Checking…" />
+              : healthy
+              ? <StatusBadge status="active" label="Healthy" />
+              : <StatusBadge status="error" label="Degraded" />
+            }
           </div>
         ))}
       </CardContent>
@@ -194,7 +233,10 @@ export function OperationalHealthWidget() {
   );
 }
 
-export function RecentMomentsWidget() {
+// ── Recent Moments ────────────────────────────────────────────────────────────
+
+export function RecentMomentsWidget({ moments }: { moments: MomentWithSponsor[] }) {
+  const router = useRouter();
   return (
     <Card>
       <CardHeader>
@@ -204,13 +246,30 @@ export function RecentMomentsWidget() {
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground text-center py-6">No moments yet</p>
+        {moments.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No moments yet</p>
+        ) : (
+          <ul className="space-y-2">
+            {moments.map((m) => (
+              <li
+                key={m.id}
+                className="flex items-center justify-between text-sm cursor-pointer hover:bg-accent rounded-md px-2 py-1 transition-colors"
+                onClick={() => router.push(`/moments/${m.id}`)}
+              >
+                <span className="truncate flex-1 mr-2">{m.title}</span>
+                <Badge variant="outline">{m.status}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-export function UpcomingScheduledWidget() {
+// ── Upcoming Scheduled ────────────────────────────────────────────────────────
+
+export function UpcomingScheduledWidget({ moments }: { moments: MomentWithSponsor[] }) {
   return (
     <Card>
       <CardHeader>
@@ -220,13 +279,28 @@ export function UpcomingScheduledWidget() {
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground text-center py-6">No scheduled moments</p>
+        {moments.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No scheduled moments</p>
+        ) : (
+          <ul className="space-y-2">
+            {moments.map((m) => (
+              <li key={m.id} className="flex items-center justify-between text-sm">
+                <span className="truncate flex-1 mr-2">{m.title}</span>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {m.scheduledAt ? new Date(m.scheduledAt).toLocaleString() : '—'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-export function RecentBroadcastsWidget() {
+// ── Recent Broadcasts ─────────────────────────────────────────────────────────
+
+export function RecentBroadcastsWidget({ broadcasts }: { broadcasts: BroadcastWithMoment[] }) {
   return (
     <Card>
       <CardHeader>
@@ -236,7 +310,28 @@ export function RecentBroadcastsWidget() {
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground text-center py-6">No broadcasts yet</p>
+        {broadcasts.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No broadcasts yet</p>
+        ) : (
+          <ul className="space-y-2">
+            {broadcasts.map((b) => {
+              const rate = b.recipientCount > 0
+                ? Math.round((b.successCount / b.recipientCount) * 100)
+                : 0;
+              return (
+                <li key={b.id} className="flex items-center justify-between text-sm">
+                  <span className="truncate flex-1 mr-2">{b.moment.title}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-muted-foreground">{rate}%</span>
+                    <Badge variant={b.status === 'completed' ? 'success' : b.status === 'failed' ? 'destructive' : 'outline'}>
+                      {b.status}
+                    </Badge>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

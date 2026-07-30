@@ -8,16 +8,15 @@ import {
   CardHeader,
   CardTitle,
   Badge,
-  BarChart,
   KPIGrid,
   MetricCard,
+  BarChart,
 } from '@moments/ui';
 import type { ActivityItem } from '@moments/ui';
+import type { ModerationStats, AuthorityAuditEntry, AuthorityStats } from '@moments/api';
 import { ShieldCheck, Scale, AlertTriangle, Users } from 'lucide-react';
 
-const PLACEHOLDER_AUTHORITY: ActivityItem[] = [];
-
-export function GovernanceModerationWidget() {
+export function GovernanceModerationWidget({ stats }: { stats: ModerationStats | null }) {
   return (
     <Card>
       <CardHeader>
@@ -28,10 +27,10 @@ export function GovernanceModerationWidget() {
       </CardHeader>
       <CardContent className="space-y-2">
         {[
-          { label: 'Approved (7d)', value: '—' },
-          { label: 'Rejected (7d)', value: '—' },
-          { label: 'Escalated', value: '—' },
-          { label: 'Avg review time', value: '—' },
+          { label: 'Approved today', value: stats ? String(stats.approvedToday) : '—' },
+          { label: 'Rejected today', value: stats ? String(stats.rejectedToday) : '—' },
+          { label: 'Escalated', value: stats ? String(stats.escalatedAdvisories) : '—' },
+          { label: 'Avg review time', value: stats?.avgReviewTime7d != null ? `${stats.avgReviewTime7d}m` : '—' },
         ].map(({ label, value }) => (
           <div key={label} className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">{label}</span>
@@ -43,33 +42,59 @@ export function GovernanceModerationWidget() {
   );
 }
 
-export function AuthorityActivityWidget() {
-  return (
-    <ActivityFeed
-      title="Authority Activity"
-      items={PLACEHOLDER_AUTHORITY}
-    />
-  );
+export function AuthorityActivityWidget({ entries }: { entries: AuthorityAuditEntry[] }) {
+  const items: ActivityItem[] = entries.map((e) => ({
+    id: e.id,
+    label: e.actionType,
+    description: `Level ${e.authorityLevel} · ${e.scope} · blast radius ${e.blastRadiusApplied}`,
+    timestamp: new Date(e.performedAt).toLocaleDateString(),
+  }));
+
+  return <ActivityFeed title="Authority Activity" items={items} />;
 }
 
-export function AdvisoryConfidenceWidget() {
+export function AdvisoryConfidenceWidget({ stats }: { stats: ModerationStats | null }) {
+  const description = stats
+    ? `${stats.pendingMessages} pending · ${stats.escalatedAdvisories} escalated`
+    : 'No data yet';
+
   return (
-    <AnalyticsCard
-      title="Advisory Confidence Distribution"
-      description="AI risk score histogram"
-    >
+    <AnalyticsCard title="Advisory Confidence Distribution" description={description}>
       <BarChart height={180} />
     </AnalyticsCard>
   );
 }
 
-export function GovernanceKPIs() {
+export function GovernanceKPIs({ modStats, authStats }: {
+  modStats: ModerationStats | null;
+  authStats: AuthorityStats | null;
+}) {
   return (
     <KPIGrid columns={4}>
-      <MetricCard title="Compliance Score" value="—" description="Rolling average" icon={Scale} />
-      <MetricCard title="Pending Review" value="—" description="Awaiting moderation" icon={AlertTriangle} />
-      <MetricCard title="Authority Actions" value="—" description="Last 7 days" icon={Users} />
-      <MetricCard title="POPIA Status" value="—" description="Data retention" icon={ShieldCheck} />
+      <MetricCard
+        title="Pending Review"
+        value={modStats ? modStats.pendingMessages : '—'}
+        description="Awaiting moderation"
+        icon={AlertTriangle}
+      />
+      <MetricCard
+        title="Escalated"
+        value={modStats ? modStats.escalatedAdvisories : '—'}
+        description="High confidence advisories"
+        icon={ShieldCheck}
+      />
+      <MetricCard
+        title="Authority Actions"
+        value={authStats ? authStats.actionsLast7d : '—'}
+        description="Last 7 days"
+        icon={Users}
+      />
+      <MetricCard
+        title="Active Authorities"
+        value={authStats ? authStats.active : '—'}
+        description={authStats ? `${authStats.total} total` : 'No data'}
+        icon={Scale}
+      />
     </KPIGrid>
   );
 }
