@@ -76,10 +76,10 @@ All 8 admin modules built and deployed:
 - Module → Dashboard data relationships
 - Implementation roadmap: 6B (composition) → 6C (data providers) → 6D (live API) → 6E (module refinement)
 
-**6B — Dashboard Composition** (next)
-Build sectioned layout, widget grid, section tabs, responsive shell.
+**6B — Dashboard Composition** ✅
+Operational command centre composed. 7 sections, 17 widgets, responsive grid, section tabs, all placeholder states. Commit `83452ce`.
 
-**6C — Widget Data Providers** (after 6B)
+**6C — Widget Data Providers** (next)
 Extend `packages/api`, build server component data providers per widget.
 
 **6D — Live API Integration** (after 6C)
