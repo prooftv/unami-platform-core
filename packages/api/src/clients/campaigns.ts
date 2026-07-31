@@ -1,5 +1,5 @@
 import { apiFetch, type ApiConfig } from '../http';
-import type { Campaign, CampaignWithSponsor, PaginatedResponse } from '../types/index';
+import type { CampaignWithSponsor, PaginatedResponse } from '../types/index';
 import type { CampaignStatus } from '@moments/shared';
 
 export interface CampaignBudgetEntry {

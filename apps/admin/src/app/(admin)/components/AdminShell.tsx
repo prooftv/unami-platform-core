@@ -35,7 +35,6 @@ const PAGE_LABELS: Record<string, string> = { dashboard: 'Dashboard', moments: '
 function CommandPalette({ open, onClose, onNavigate }: { open: boolean; onClose: () => void; onNavigate: (href: string) => void }) {
   const [query, setQuery] = useState('');
   const items = useMemo(() => NAV.flatMap((section) => section.items).filter((item) => item.label.toLowerCase().includes(query.toLowerCase())), [query]);
-  useEffect(() => { if (!open) setQuery(''); }, [open]);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-foreground/20 px-4 pt-[12vh] backdrop-blur-sm" role="presentation" onMouseDown={onClose}>

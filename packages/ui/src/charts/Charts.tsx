@@ -17,7 +17,6 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  Sector,
 } from 'recharts';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
