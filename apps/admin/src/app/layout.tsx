@@ -33,7 +33,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 `.trim();
 
   return (
-    <html lang="en" className={`${geist.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${geist.variable} ${geistMono.variable} h-full bg-background antialiased`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: fouc }} />
       </head>

@@ -9,25 +9,11 @@ type AppShellProps = {
 
 export function AppShell({ sidebar, header, children, className }: AppShellProps) {
   return (
-    <div
-      className={clsx(
-        "flex h-screen w-full overflow-hidden bg-background",
-        className,
-      )}
-    >
-      {/* Sidebar — hidden on mobile, visible md+ */}
-      {sidebar && (
-        <div className="hidden md:flex md:shrink-0">
-          {sidebar}
-        </div>
-      )}
-
-      {/* Main column */}
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+    <div className={clsx("flex min-h-screen w-full bg-muted/30", className)}>
+      {sidebar && <div className="hidden shrink-0 md:block">{sidebar}</div>}
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {header}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+        <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

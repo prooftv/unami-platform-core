@@ -1,41 +1,25 @@
 import type { LucideIcon } from "lucide-react";
 import { clsx } from "clsx";
 import { Card, CardContent, CardHeader, CardTitle } from "../primitives/Card";
+import { Badge } from "../primitives/Badge";
 
 type Trend = { value: number; label?: string };
-
-type MetricCardProps = {
-  title: string;
-  value: string | number;
-  description?: string;
-  icon?: LucideIcon;
-  trend?: Trend;
-  className?: string;
-};
+type MetricCardProps = { title: string; value: string | number; description?: string; icon?: LucideIcon; trend?: Trend; className?: string };
 
 export function MetricCard({ title, value, description, icon: Icon, trend, className }: MetricCardProps) {
   const trendPositive = trend && trend.value >= 0;
-
   return (
-    <Card className={className}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>{title}</CardTitle>
-          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-        </div>
+    <Card className={clsx("overflow-hidden shadow-none", className)}>
+      <CardHeader className="flex-row items-center justify-between gap-3 pb-2">
+        <CardTitle className="text-muted-foreground">{title}</CardTitle>
+        {Icon && <div className="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground"><Icon className="size-4" /></div>}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {(description || trend) && (
-          <p className="text-xs text-muted-foreground mt-1">
-            {trend && (
-              <span className={clsx("font-medium mr-1", trendPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
-                {trendPositive ? "+" : ""}{trend.value}%
-              </span>
-            )}
-            {description}
-          </p>
-        )}
+        <div className="flex items-end justify-between gap-3">
+          <div className="text-2xl font-semibold tracking-tight md:text-3xl">{value}</div>
+          {trend && <Badge variant={trendPositive ? "success" : "destructive"}>{trendPositive ? "+" : ""}{trend.value}%</Badge>}
+        </div>
+        {description && <p className="mt-2 text-xs text-muted-foreground">{description}</p>}
       </CardContent>
     </Card>
   );
