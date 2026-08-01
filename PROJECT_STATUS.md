@@ -9,17 +9,36 @@ Read this first when resuming work or starting a new session.
 
 | Field | Value |
 |---|---|
-| Version | `v0.4.1-phase9-complete` |
-| Phase | Phase 9 — Frontend Shell Reset (In Progress) |
+| Version | `v0.5.0-platform-complete` |
+| Phase | Phase 10 — Moments CMS (Next) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
+| Last commit | `c36a0e9` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
 ---
 
-## Completed Milestones
+## Platform Completion Summary
+
+The infrastructure phase is complete. The platform is no longer the bottleneck.
+
+| Layer | Status | Completeness |
+|---|---|---|
+| Database (26 tables) | ✅ Complete | 100% |
+| Edge Functions (11 functions) | ✅ Complete | 95% |
+| `packages/shared` | ✅ Complete | 100% |
+| `packages/ui` | ✅ Complete | 100% |
+| `packages/api` | ✅ Complete | 98% |
+| `apps/admin` shell + dashboard | ✅ Complete | 90% |
+| `apps/web` public PWA | ❌ Not started | 0% |
+
+**One known bug:** `GET /broadcasts` endpoint does not exist in any Edge Function. The `broadcast` function only handles `POST /:momentId`. The broadcasts list page always renders empty. Fix in Phase 10.
+
+---
+
+## Completed Phases (Infrastructure)
 
 | Phase | Description | Status |
 |---|---|---|
@@ -28,116 +47,151 @@ Read this first when resuming work or starting a new session.
 | Phase 3 | `packages/ui` — theme engine, shell, navigation, component library | ✅ Done |
 | Phase 3.5 | Dependency audit, typecheck fixes, production build verified | ✅ Done |
 | Phase 4a | `docs/DATABASE_SCHEMA.md` — full schema specification | ✅ Done |
-| Phase 4b | `supabase/migrations/000_initial_schema.sql` — initial migration | ✅ Done |
+| Phase 4b | `supabase/migrations/000_initial_schema.sql` — 26 tables | ✅ Done |
 | Phase 4c | `docs/SCHEMA_MAPPING.md` — type → table → function → module map | ✅ Done |
-| Phase 4d | Edge Functions — `moments`, `broadcast`, `webhook` | ✅ Done |
-| Phase 4e | `packages/api` — typed API clients (`moments`, `broadcasts`, `auth`) | ✅ Done (commit d5bfaac) |
-| Phase 4f | Supabase project linked, schema applied, Edge Functions deployed | ✅ Done |
-| Phase 5 | Admin application — auth, 8 modules, all wired to live API | ✅ Done |
-| Phase 6A | Dashboard architecture blueprint | ✅ Done |
-| Phase 6B | Dashboard composition — 7 sections, 17 widgets, responsive grid | ✅ Done |
-| Phase 6C | Widget data providers — 6 new API clients, server-side providers | ✅ Done |
-| Phase 6D | Live API integration — 6 Edge Functions deployed, all widgets wired | ✅ Done |
-| Phase 6E | Module refinement — all 8 modules operational workspaces | ✅ Done |
-| Phase 7A | Operational experience — preferences, themes, presets, sidebar, skeletons | ✅ Done (commit `02124a9`) |
-| Phase 7B | Chart system in `packages/ui` — Recharts, 9 widgets with real data | ✅ Done (commit `0ae75b6`) |
-| Phase 7C | Platform UX — `FilterSelect` in `packages/ui`, pagination wired across all modules | ✅ Done |
-| Phase 7D | Realtime — P0 widgets (Broadcast Queue, Moderation Queue) live subscriptions | ✅ Done |
-| Phase 7E | Settings CRUD — feature flag toggles, system settings editor, `settings` Edge Function | ✅ Done (commit `4ce7320`) |
-| Phase 8A–8E | Dashboard urgency layout, Moments identity, preset personality, shadcn tokens, sidebar restructure | ✅ Done (commit `065b9de`) |
-| Phase 9 planning | Frontend rebuild plan — inventory, route map, component audit, phase definitions | ✅ Done (commit pending) |
+| Phase 4d–4f | All 11 Edge Functions deployed, Supabase project linked | ✅ Done |
+| Phase 5 | Admin application — auth, 11 modules, all wired to live API | ✅ Done |
+| Phase 6A–6E | Dashboard — 7 sections, 17 widgets, live data, all modules operational | ✅ Done |
+| Phase 7A–7E | Operational UX — themes, charts, realtime, settings CRUD | ✅ Done |
+| Phase 8A–8E | Shell identity, shadcn tokens, sidebar restructure | ✅ Done |
+| Phase 9A–9E | Frontend shell reset — shadcn primitives, auth cleanup, dead code removed | ✅ Done |
 
 ---
 
-## Current Phase — Phase 9: Frontend Shell Reset
+## Product Roadmap (Active)
 
-**Decision:** Adopt official shadcn/ui dashboard as permanent shell. Stop iterating on current dashboard.  
-**Plan:** `docs/FRONTEND_REBUILD_PLAN.md`
+The work has shifted from building infrastructure to building products.
+Each phase completes a full user workflow, not a technical component.
 
-### Phase 9 Sub-phases
+### Phase 10 — Moments CMS
+**Goal:** An operator can create, draft, schedule, broadcast, and audit a Moment from start to finish.
 
-| Sub-phase | Description | Status |
+| Task | Status |
+|---|---|
+| Fix `GET /broadcasts` — add list handler to broadcast Edge Function | ⏳ |
+| Moment edit form (`/moments/[id]/edit`) | ⏳ |
+| Moment cancel action | ⏳ |
+| Schedule UI — datetime picker wired to `api.moments.schedule()` | ⏳ |
+| Broadcast history per moment on detail page | ⏳ |
+| Moment analytics (views, reach) from `moment_stats` | ⏳ |
+| Draft list view (filter by status=draft) | ⏳ |
+
+**Definition of done:** Operator can complete the full draft → schedule → broadcast → review cycle without leaving the admin.
+
+---
+
+### Phase 11 — Community Management
+**Goal:** Moderators can manage the full subscriber and message lifecycle.
+
+| Task | Status |
+|---|---|
+| Subscriber detail view | ⏳ |
+| Manual opt-out from admin | ⏳ |
+| Message thread view (conversation per phone number) | ⏳ |
+| Advisory detail — full signal breakdown | ⏳ |
+| Authority profile create/edit/suspend | ⏳ |
+| Comments moderation (`comments`, `whatsapp_comments` tables) | ⏳ |
+
+---
+
+### Phase 12 — Commercial
+**Goal:** Admins can onboard sponsors, create campaigns, and track budget spend.
+
+| Task | Status |
+|---|---|
+| Sponsor create/edit form | ⏳ |
+| Campaign create form | ⏳ |
+| Campaign approval workflow (status transitions) | ⏳ |
+| Budget transaction history per campaign | ⏳ |
+| Revenue dashboard improvements | ⏳ |
+
+---
+
+### Phase 13 — Platform Hardening
+**Goal:** The platform is production-safe under load.
+
+| Task | Status |
+|---|---|
+| Rate limiting enforcement in Edge Functions | ⏳ |
+| Broadcast retry logic for failed batches | ⏳ |
+| `media` upload endpoint and storage management | ⏳ |
+| `user_profiles` admin management | ⏳ |
+| Audit log viewer in admin | ⏳ |
+| Error log viewer in admin | ⏳ |
+
+---
+
+### Phase 14 — Public Experience (`apps/web`)
+**Goal:** Community members can read moments, browse by region/category, and subscribe.
+
+| Task | Status |
+|---|---|
+| Public PWA scaffold (layout, theme, fonts) | ⏳ |
+| Moment feed page (broadcasted, publish_to_pwa=true) | ⏳ |
+| Moment detail page | ⏳ |
+| Region pages | ⏳ |
+| Category pages | ⏳ |
+| Search | ⏳ |
+| Subscribe flow (WhatsApp deep link) | ⏳ |
+| Offline support (PWA manifest, service worker) | ⏳ |
+
+---
+
+### Phase 15 — Automation
+**Goal:** WhatsApp is live in production. n8n handles advisory analysis.
+
+| Task | Status |
+|---|---|
+| WhatsApp Cloud API production credentials | ⏳ |
+| Live webhook end-to-end test | ⏳ |
+| n8n workflow — advisory confidence scoring | ⏳ |
+| n8n workflow — scheduled broadcast trigger | ⏳ |
+| n8n workflow — HELP/STATUS auto-reply | ⏳ |
+
+---
+
+### Phase 16 — Platform Expansion
+**Goal:** Second application onboards onto the platform.
+
+| Task | Status |
+|---|---|
+| Rename `@moments/*` → `@unami/*` | ⏳ |
+| Spree Operations Dashboard scaffold | ⏳ |
+| BeatsChain domain package scaffold | ⏳ |
+
+---
+
+## Architecture Freeze
+
+The platform foundation is **feature-frozen**. Do not:
+- Add new packages
+- Restructure `packages/`
+- Add new tables without a concrete product requirement
+- Redesign the admin shell
+- Create new abstraction layers
+
+Fix bugs only. All new work is product workflow completion.
+
+---
+
+## Known Issues
+
+| Issue | Severity | Phase |
 |---|---|---|
-| Phase 9A | Official shadcn shell integrated into `apps/admin` | ✅ Done (commit `5dc3abe`) |
-| Phase 9B | Shell lifted to `(admin)/layout.tsx` — all routes share sidebar | ✅ Done (commit `73b8fa3`) |
-| Phase 9C | All route clients migrated off `@moments/ui` to shadcn primitives | ✅ Done (commit `bb225e6`) |
-| Phase 9D | Dashboard widgets migrated off `@moments/ui` to shadcn primitives | ✅ Done |
-| Phase 9E — Cleanup | Remove redundant `getOperatorSession()` + `if (!session)` from page.tsx files | ⏳ Pending |
-
-### What is frozen
-
-- All backend (Supabase, Edge Functions, RLS, migrations)
-- All API contracts (`packages/api`)
-- All shared types (`packages/shared`)
-- All routes (no route changes)
-
-### What changes
-
-- `apps/admin` shell presentation only
-- Module pages rebuilt with shadcn components
-- Custom wrapper components retired in favour of direct shadcn composition
+| `GET /broadcasts` endpoint missing — broadcasts page renders empty | P0 Bug | Phase 10 |
+| Broadcast retry logic absent — failed batches are permanent | P1 | Phase 13 |
+| Advisory confidence hardcoded `0.5` — n8n not connected | P2 | Phase 15 |
+| `rate_limits` table exists but no enforcement | P2 | Phase 13 |
+| `moment_stats` populated but never surfaced in UI | P3 | Phase 10 |
 
 ---
 
-## Previous Phase — Phase 7: Operational Experience (Complete)
+## Known Technical Debt
 
-**All Phase 7 sub-phases complete. Platform is operationally live.**
-
----
-
-## Previous Phase — Phase 5: Admin Application
-
-**Auth complete. Backend live. Next: Moments modules.**
-
-### Completed
-- ✅ Supabase Auth SSR (`@supabase/ssr`) in `apps/admin`
-- ✅ Login page, auth callback, session middleware
-- ✅ Protected route group `(admin)` — redirects unauthenticated users
-- ✅ Operator session layer with role-aware context
-- ✅ Admin shell with navigation (Dashboard / Moments / Broadcasts / Analytics / Settings)
-- ✅ Deployed to Vercel: `https://moments-admin-delta.vercel.app`
-- ✅ Supabase project linked (`dpydmpydyfrrdhuezvgi`)
-- ✅ Schema applied (`000_initial_schema.sql` — 26 tables)
-- ✅ Edge Functions deployed: `auth`, `moments`, `broadcast`, `webhook`
-- ✅ Edge Function secrets set (`ADMIN_URL`, `WEB_URL`)
-
-### Phase 5 Complete ✅
-All 8 admin modules built and deployed:
-- `/dashboard` — KPIs, quick actions, activity feed
-- `/moments` — list with search/filter, `/moments/new` create form, `/moments/[id]` detail + broadcast
-- `/broadcasts` — delivery history table
-- `/subscribers` — structure ready, awaiting API client
-- `/moderation` — structure ready, awaiting API client
-- `/authority` — structure ready, awaiting API client
-- `/sponsors` — structure ready, awaiting API client
-- `/campaigns` — structure ready, awaiting API client
-- `/settings` — system settings, feature flags, admin users (superadmin only)
-
-### Phase 6 — In Progress
-
-**6A — Dashboard Architecture** ✅
-`docs/ADMIN_DASHBOARD_ARCHITECTURE.md` — complete blueprint defining:
-- Dashboard philosophy (operational command centre, not CRUD)
-- 7-section information architecture (Overview, Operations, Publishing, Audience, Governance, Commercial, Platform)
-- 17 dashboard widgets fully specified
-- Desktop / tablet / mobile layouts
-- Preset-aware design rules (Brutalist, Soft Pop, Tangerine)
-- Module → Dashboard data relationships
-- Implementation roadmap: 6B (composition) → 6C (data providers) → 6D (live API) → 6E (module refinement)
-
-**6B — Dashboard Composition** ✅
-Operational command centre composed. 7 sections, 17 widgets, responsive grid, section tabs, all placeholder states. Commit `83452ce`.
-
-**6C — Widget Data Providers** ✅
-6 new typed API clients (subscribers, moderation, authority, sponsors, campaigns, analytics). Server-side providers fetch all dashboard data in parallel. All widgets accept real typed props — zero hardcoded data. Commit `611bea3`.
-
-**6D — Live API Integration** ✅
-6 Edge Functions deployed to `dpydmpydyfrrdhuezvgi`: `subscribers`, `moderation`, `authority`, `sponsors`, `campaigns`, `analytics`. All dashboard widgets now wired to live Supabase data. Commit `26d7ff7`.
-Wire all widgets to live Supabase data, Realtime for P0 widgets.
-
-**6E — Module Refinement** ✅
-All 8 modules wired to live API. Subscribers (POPIA-masked, region/schedule filter, KPIs), Moderation (approve/reject actions, escalated advisories panel), Authority (profiles table, audit log feed, KPIs), Sponsors (tier filter, budget display), Campaigns (status filter, budget utilisation bars), Settings (live system health, session info). Commit `5bde003`.
-Elevate all 8 modules from structure to full operational workspaces.
+| Item | Location | Resolution |
+|---|---|---|
+| Moments-domain logic in shared package | `packages/shared/src/` | Refactor to `apps/moments/domain` when second app onboards |
+| Package scope `@moments/*` | All packages | Rename to `@unami/*` before Phase 16 |
 
 ---
 
@@ -146,82 +200,33 @@ Elevate all 8 modules from structure to full operational workspaces.
 ```
 unami-platform-core/
 ├── apps/
-│   ├── admin/          Next.js 16 — Moments admin dashboard (UI showcase currently)
+│   ├── admin/          Next.js 16 — Moments admin (complete shell, 11 modules)
 │   └── web/            Next.js 16 — Moments public PWA (not yet built)
 ├── packages/
-│   ├── ui/             @moments/ui — reusable component library (complete)
+│   ├── ui/             @moments/ui — design system, charts, theme engine (complete)
 │   ├── shared/         @moments/shared — enums, types, validators, constants (complete)
 │   └── api/            @moments/api — typed API clients (complete)
 ├── supabase/
-│   ├── functions/      Edge Functions (complete — moments, broadcast, webhook)
+│   ├── functions/      11 Edge Functions (complete)
 │   └── migrations/
 │       └── 000_initial_schema.sql   ← baseline, do not modify
 ├── docs/
-│   ├── DATABASE_SCHEMA.md           ← source of truth for schema
+│   ├── DATABASE_SCHEMA.md           ← schema source of truth
 │   ├── SCHEMA_MAPPING.md            ← type → table → function → module
-│   └── reference/                   ← historical only, never import from here
+│   └── context/                     ← architecture, security, decisions
 ```
-
----
-
-## Package Naming Note
-
-Current package scope is `@moments/*`. Before v1.0, rename to `@unami/*`.
-Deferred — do not interrupt active development for this.
-
----
-
-## Deferred Work
-
-| Item | Reason deferred |
-|---|---|
-| Rename `@moments/*` → `@unami/*` | Not blocking. Do before second application onboards. |
-| Moments public PWA (`apps/web`) | After admin is working end-to-end |
-| n8n workflows | After Edge Functions are stable in production |
-| WhatsApp integration (live) | After webhook Edge Function is deployed |
-| Spree Operations Dashboard | After Moments is working end-to-end |
-| Phase 7F — Production integrations | Deferred: WhatsApp live, n8n, Vercel env sync |
-| Phase 8 — Public PWA (`apps/web`) | Next major phase after admin is stable in production |
-
----
-
-## Known Technical Debt
-
-| Item | Location | Notes |
-|---|---|---|
-| Moments-domain logic in shared package | `packages/shared/src/` | Refactor to `apps/moments/domain` when second app onboards. |
-| UI showcase in admin app | `apps/admin/src/app/ui/` | Replace with real Moments admin modules after auth is complete. |
-| Root redirect goes to `/ui` | `apps/admin/src/app/page.tsx` | Replace with auth-aware redirect after login is implemented. |
-
----
-
-## Definition of Done — Phase 5 (Admin Application)
-
-- [x] Authentication working in `apps/admin` (login, session, middleware)
-- [x] Protected routes — unauthenticated users redirected to `/login`
-- [x] Role-aware session context (superadmin / content_admin / moderator / viewer)
-- [x] Real admin shell replacing UI showcase root
-- [x] Admin user created and can log in end-to-end
-- [x] Moments list module (`/moments`)
-- [x] Moments create module (`/moments/new`)
-- [x] Moment detail + broadcast trigger (`/moments/[id]`)
-- [x] Broadcasts history (`/broadcasts`)
-- [x] Subscribers module (`/subscribers`)
-- [x] Moderation module (`/moderation`)
-- [x] Authority profiles (`/authority`)
-- [x] Sponsors (`/sponsors`)
-- [x] Campaigns (`/campaigns`)
-- [x] Settings — system config, feature flags, admin users (`/settings`)
 
 ---
 
 ## Rules — Do Not Violate
 
-1. All work happens in `/workspaces/unami-platform-core`, pushed to `origin`.
-2. `/workspaces/moments-v2` is reference only. Never edit it.
-3. `supabase/migrations/000_initial_schema.sql` is the baseline. Never modify it.
-4. `docs/DATABASE_SCHEMA.md` is the schema source of truth. Change the doc first, then write a migration.
-5. `packages/ui` has no Supabase imports, no auth, no application-specific logic.
-6. `packages/shared` has no React, no Next.js, no Supabase.
-7. Edge Functions are the only code that touches the database directly.
+1. All work in `/workspaces/unami-platform-core`, pushed to `origin`.
+2. `/workspaces/moments-v2` is reference only — never edit it.
+3. `supabase/migrations/000_initial_schema.sql` is immutable — never modify it.
+4. `docs/DATABASE_SCHEMA.md` is the schema source of truth — change here first, then write a migration.
+5. `packages/ui` — no Supabase, no auth, no application-specific logic.
+6. `packages/shared` — no React, no Next.js, no Supabase.
+7. Edge Functions are the only layer that touches the database.
 8. Frontend communicates through `packages/api` typed clients only.
+9. Platform foundation is feature-frozen — no new abstractions, no shell redesigns.
+10. Each phase must answer: "Which user workflow becomes fully usable?"
