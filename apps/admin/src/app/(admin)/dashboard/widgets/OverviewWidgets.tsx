@@ -2,20 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useRealtimeTable } from '@/lib/realtime/useRealtimeTable';
-import {
-  KPIGrid,
-  MetricCard,
-  ActivityFeed,
-  QuickActions,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Badge,
-  StatusBadge,
-} from '@moments/ui';
-import type { ActivityItem, QuickAction } from '@moments/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import type {
   DashboardMetrics,
   MomentWithSponsor,
@@ -154,7 +142,7 @@ export function TodaysOperationsPanel({
             <CardTitle className="text-sm font-semibold">Broadcast Queue</CardTitle>
             <CardDescription className="text-xs mt-0.5">Moments awaiting transmission</CardDescription>
           </div>
-          <Badge variant={queueMoments.length > 0 ? 'warning' : 'outline'}>
+          <Badge variant={queueMoments.length > 0 ? 'secondary' : 'outline'}>
             {queueMoments.length} pending
           </Badge>
         </CardHeader>
@@ -191,7 +179,7 @@ export function TodaysOperationsPanel({
             <CardTitle className="text-sm font-semibold">Moderation</CardTitle>
             <CardDescription className="text-xs mt-0.5">Inbound messages pending review</CardDescription>
           </div>
-          <Badge variant={moderationStats && moderationStats.pendingMessages > 0 ? 'warning' : 'outline'}>
+          <Badge variant={moderationStats && moderationStats.pendingMessages > 0 ? 'secondary' : 'outline'}>
             {moderationStats?.pendingMessages ?? 0} pending
           </Badge>
         </CardHeader>
@@ -262,43 +250,27 @@ export function TodaysOperationsPanel({
 // ── Today's KPIs ──────────────────────────────────────────────────────────────
 
 export function TodayKPIs({ metrics }: { metrics: DashboardMetrics | null }) {
-  const broadcastRate = metrics && metrics.totalBroadcasts > 0
-    ? Math.round((metrics.successfulBroadcasts / metrics.totalBroadcasts) * 100) - 100
-    : undefined;
-  const subscriberRate = metrics && metrics.totalSubscribers > 0
-    ? Math.round(((metrics.activeSubscribers - metrics.totalSubscribers) / metrics.totalSubscribers) * 100)
-    : undefined;
-
+  const kpis = [
+    { title: 'Total Moments', value: metrics ? metrics.totalMoments : '—', description: metrics ? `${metrics.broadcastedMoments} broadcasted` : 'No data', icon: Radio },
+    { title: 'Broadcasts Sent', value: metrics ? metrics.totalBroadcasts : '—', description: metrics ? `${metrics.failedBroadcasts} failed` : 'No data', icon: Megaphone },
+    { title: 'Active Subscribers', value: metrics ? metrics.activeSubscribers : '—', description: metrics ? `${metrics.totalSubscribers} total` : 'No data', icon: Users },
+    { title: 'Delivery Rate', value: metrics ? metrics.successRate : '—', description: metrics ? `${metrics.successfulBroadcasts} successful` : 'No data', icon: TrendingUp },
+  ];
   return (
-    <KPIGrid columns={4}>
-      <MetricCard
-        title="Total Moments"
-        value={metrics ? metrics.totalMoments : '—'}
-        description={metrics ? `${metrics.broadcastedMoments} broadcasted` : 'No data'}
-        icon={Radio}
-        trend={metrics ? { value: metrics.broadcastedMoments > 0 ? Math.round((metrics.broadcastedMoments / metrics.totalMoments) * 100) - 100 : 0 } : undefined}
-      />
-      <MetricCard
-        title="Broadcasts Sent"
-        value={metrics ? metrics.totalBroadcasts : '—'}
-        description={metrics ? `${metrics.failedBroadcasts} failed` : 'No data'}
-        icon={Megaphone}
-        trend={broadcastRate !== undefined ? { value: broadcastRate } : undefined}
-      />
-      <MetricCard
-        title="Active Subscribers"
-        value={metrics ? metrics.activeSubscribers : '—'}
-        description={metrics ? `${metrics.totalSubscribers} total` : 'No data'}
-        icon={Users}
-        trend={subscriberRate !== undefined ? { value: subscriberRate } : undefined}
-      />
-      <MetricCard
-        title="Delivery Rate"
-        value={metrics ? metrics.successRate : '—'}
-        description={metrics ? `${metrics.successfulBroadcasts} successful` : 'No data'}
-        icon={TrendingUp}
-      />
-    </KPIGrid>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {kpis.map(({ title, value, description, icon: Icon }) => (
+        <Card key={title}>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{title}</CardTitle>
+            <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="px-4 pb-3">
+            <p className="text-xl font-semibold">{value}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 }
 
@@ -312,7 +284,7 @@ export function BroadcastQueueWidget({ moments }: { moments: MomentWithSponsor[]
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Broadcast Queue</CardTitle>
-          <Badge variant={moments.length > 0 ? 'warning' : 'outline'}>
+          <Badge variant={moments.length > 0 ? 'secondary' : 'outline'}>
             {moments.length} pending
           </Badge>
         </div>
@@ -360,7 +332,7 @@ export function ModerationQueueWidget({ stats }: { stats: ModerationStats | null
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Pending messages</span>
-          <Badge variant={hasPending ? 'warning' : 'outline'}>
+          <Badge variant={hasPending ? 'secondary' : 'outline'}>
             {stats ? stats.pendingMessages : '—'}
           </Badge>
         </div>
@@ -393,7 +365,7 @@ export function RecentActivityWidget({ moments, broadcasts }: {
   moments: MomentWithSponsor[];
   broadcasts: BroadcastWithMoment[];
 }) {
-  const items: ActivityItem[] = [
+  const items = [
     ...moments.slice(0, 3).map((m) => ({
       id: `moment-${m.id}`,
       label: m.title,
@@ -410,24 +382,55 @@ export function RecentActivityWidget({ moments, broadcasts }: {
     })),
   ].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1)).slice(0, 8);
 
-  return <ActivityFeed title="Recent Activity" items={items} />;
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-sm">Recent Activity</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        {items.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No recent activity.</p>
+        ) : items.map(({ id, label, description, timestamp, icon: Icon }) => (
+          <div key={id} className="flex items-start gap-2 text-xs">
+            <Icon className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
+            <div>
+              <p className="font-medium">{label}</p>
+              <p className="text-muted-foreground">{description}</p>
+              <p className="text-muted-foreground">{timestamp}</p>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
 }
 
 // ── Quick Actions ─────────────────────────────────────────────────────────────
 
 export function QuickActionsWidget() {
   const router = useRouter();
-
-  const actions: QuickAction[] = [
-    { id: 'new-moment', label: 'New Moment', description: 'Create a draft', icon: PlusCircle, onClick: () => router.push('/moments/new') },
-    { id: 'broadcast-queue', label: 'Broadcast Queue', description: 'View drafts', icon: Send, onClick: () => router.push('/moments?status=draft') },
-    { id: 'moderation', label: 'Review Moderation', description: 'Pending items', icon: ShieldAlert, onClick: () => router.push('/moderation') },
-    { id: 'subscribers', label: 'Subscribers', description: 'View audience', icon: Users, onClick: () => router.push('/subscribers') },
-    { id: 'campaigns', label: 'Campaigns', description: 'Active campaigns', icon: TrendingUp, onClick: () => router.push('/campaigns') },
-    { id: 'settings', label: 'Platform Settings', description: 'System config', icon: Settings, onClick: () => router.push('/settings') },
+  const actions = [
+    { id: 'new-moment', label: 'New Moment', description: 'Create a draft', icon: PlusCircle, href: '/moments/new' },
+    { id: 'broadcast-queue', label: 'Broadcast Queue', description: 'View drafts', icon: Send, href: '/moments?status=draft' },
+    { id: 'moderation', label: 'Review Moderation', description: 'Pending items', icon: ShieldAlert, href: '/moderation' },
+    { id: 'subscribers', label: 'Subscribers', description: 'View audience', icon: Users, href: '/subscribers' },
+    { id: 'campaigns', label: 'Campaigns', description: 'Active campaigns', icon: TrendingUp, href: '/campaigns' },
+    { id: 'settings', label: 'Platform Settings', description: 'System config', icon: Settings, href: '/settings' },
   ];
-
-  return <QuickActions title="Quick Actions" actions={actions} />;
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-sm">Quick Actions</CardTitle></CardHeader>
+      <CardContent className="grid grid-cols-2 gap-2">
+        {actions.map(({ id, label, description, icon: Icon, href }) => (
+          <button key={id} onClick={() => router.push(href)} className="flex items-start gap-2 rounded-md border p-2 text-left text-xs hover:bg-accent transition-colors">
+            <Icon className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
+            <div>
+              <p className="font-medium">{label}</p>
+              <p className="text-muted-foreground">{description}</p>
+            </div>
+          </button>
+        ))}
+      </CardContent>
+    </Card>
+  );
 }
 
 // ── Operational Health ────────────────────────────────────────────────────────
@@ -457,10 +460,10 @@ export function OperationalHealthWidget({ metrics }: { metrics: DashboardMetrics
               <span>{label}</span>
             </div>
             {healthy === null
-              ? <StatusBadge status="pending" label="Checking…" />
+              ? <Badge variant="secondary">Checking…</Badge>
               : healthy
-              ? <StatusBadge status="active" label="Healthy" />
-              : <StatusBadge status="error" label="Degraded" />
+              ? <Badge variant="default">Healthy</Badge>
+              : <Badge variant="destructive">Degraded</Badge>
             }
           </div>
         ))}
@@ -561,7 +564,7 @@ export function RecentBroadcastsWidget({ broadcasts }: { broadcasts: BroadcastWi
                   <span className="truncate flex-1 mr-2">{b.moment.title}</span>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-xs text-muted-foreground">{rate}%</span>
-                    <Badge variant={b.status === 'completed' ? 'success' : b.status === 'failed' ? 'destructive' : 'outline'}>
+                    <Badge variant={b.status === 'completed' ? 'default' : b.status === 'failed' ? 'destructive' : 'outline'}>
                       {b.status}
                     </Badge>
                   </div>

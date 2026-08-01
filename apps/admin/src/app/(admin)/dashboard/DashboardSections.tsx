@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@moments/ui';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   TodayKPIs,
   BroadcastQueueWidget,

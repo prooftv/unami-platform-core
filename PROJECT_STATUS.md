@@ -9,7 +9,7 @@ Read this first when resuming work or starting a new session.
 
 | Field | Value |
 |---|---|
-| Version | `v0.4.0-frontend-rebuild` |
+| Version | `v0.4.1-phase9-complete` |
 | Phase | Phase 9 — Frontend Shell Reset (In Progress) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
@@ -58,10 +58,11 @@ Read this first when resuming work or starting a new session.
 
 | Sub-phase | Description | Status |
 |---|---|---|
-| Phase A | Official shadcn shell integrated into `apps/admin` | ⏳ Next |
-| Phase B | Shell integration — auth, theme, preferences, session | ⏳ Pending |
-| Phase C | Dashboard rebuilt inside shell | ⏳ Pending |
-| Phase D | Module migration — all 10 routes | ⏳ Pending |
+| Phase 9A | Official shadcn shell integrated into `apps/admin` | ✅ Done (commit `5dc3abe`) |
+| Phase 9B | Shell lifted to `(admin)/layout.tsx` — all routes share sidebar | ✅ Done (commit `73b8fa3`) |
+| Phase 9C | All route clients migrated off `@moments/ui` to shadcn primitives | ✅ Done (commit `bb225e6`) |
+| Phase 9D | Dashboard widgets migrated off `@moments/ui` to shadcn primitives | ✅ Done |
+| Phase 9E — Cleanup | Remove redundant `getOperatorSession()` + `if (!session)` from page.tsx files | ⏳ Pending |
 
 ### What is frozen
 

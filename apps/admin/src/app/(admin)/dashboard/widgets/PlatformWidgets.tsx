@@ -1,13 +1,7 @@
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Badge,
-  StatusBadge,
-} from '@moments/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import type { DashboardMetrics } from '@moments/api';
 import { Database, HardDrive, Zap, Send, Wifi, Flag, AlertTriangle } from 'lucide-react';
 
@@ -41,10 +35,10 @@ export function SystemHealthWidget({ metrics }: { metrics: DashboardMetrics | nu
               <span>{label}</span>
             </div>
             {healthy === null
-              ? <StatusBadge status="pending" label="Checking…" />
+              ? <Badge variant="secondary">Checking…</Badge>
               : healthy
-              ? <StatusBadge status="active" label="Healthy" />
-              : <StatusBadge status="error" label="Degraded" />
+              ? <Badge variant="default">Healthy</Badge>
+              : <Badge variant="destructive">Degraded</Badge>
             }
           </div>
         ))}
@@ -101,7 +95,7 @@ export function ApiHealthWidget({ metrics }: { metrics: DashboardMetrics | null 
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">—ms</span>
               {metrics
-                ? <Badge variant={fn === 'moments' && intentStatus === 'backlog' ? 'warning' : 'success'}>live</Badge>
+                ? <Badge variant={fn === 'moments' && intentStatus === 'backlog' ? 'secondary' : 'default'}>live</Badge>
                 : <Badge variant="outline">—</Badge>
               }
             </div>

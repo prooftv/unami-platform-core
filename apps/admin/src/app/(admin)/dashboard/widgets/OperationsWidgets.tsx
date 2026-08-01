@@ -1,12 +1,9 @@
 'use client';
 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   AnalyticsCard,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Badge,
   LineChart,
 } from '@moments/ui';
 import type { BroadcastWithMoment, IntentStats } from '@moments/api';
@@ -116,11 +113,11 @@ export function OperationsBroadcastQueueWidget({ broadcasts }: { broadcasts: Bro
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Processing</span>
-          <Badge variant="info">{processing}</Badge>
+          <Badge variant="default">{processing}</Badge>
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Completed</span>
-          <Badge variant="success">{completed}</Badge>
+          <Badge variant="default">{completed}</Badge>
         </div>
       </CardContent>
     </Card>

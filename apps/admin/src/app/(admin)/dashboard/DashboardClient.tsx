@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, Suspense } from 'react';
-import { ContentLayout, Badge } from '@moments/ui';
+import { Badge } from '@/components/ui/badge';
 import type { AdminSession } from '@moments/api';
 import { RefreshCw } from 'lucide-react';
 import { DashboardTabs, type DashboardSection } from './DashboardTabs';
@@ -57,34 +57,32 @@ export function DashboardClient({ session, overview, operations, publishing, aud
   return (
     <div className="flex flex-col min-h-full">
       <div className="sticky top-0 z-10 bg-background border-b">
-        <ContentLayout className="py-0 pb-0">
-          <div className="flex items-end justify-between pt-6 pb-3">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight">Moments Command Centre</h1>
-                <Badge variant="success">Live</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {session.name ?? session.email} · {ROLE_LABELS[session.role]}
-              </p>
+        <div className="flex items-end justify-between px-4 pt-6 pb-3 lg:px-6">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight">Moments Command Centre</h1>
+              <Badge variant="default">Live</Badge>
             </div>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-accent mb-3"
-            >
-              <RefreshCw className="size-4" />
-              Refresh
-            </button>
+            <p className="text-sm text-muted-foreground">
+              {session.name ?? session.email} · {ROLE_LABELS[session.role]}
+            </p>
           </div>
-        </ContentLayout>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-sm font-medium hover:bg-accent mb-3"
+          >
+            <RefreshCw className="size-4" />
+            Refresh
+          </button>
+        </div>
         <DashboardTabs active={activeSection} onChange={setActiveSection} />
       </div>
-      <ContentLayout>
+      <div className="p-4 lg:p-6">
         <Suspense fallback={<SectionSkeleton />}>
           {sections[activeSection]}
         </Suspense>
-      </ContentLayout>
+      </div>
     </div>
   );
 }
