@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import type { PublicMoment, PaginatedResponse } from '@moments/api';
 import { FeedClient } from '@/components/FeedClient';

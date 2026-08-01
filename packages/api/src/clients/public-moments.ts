@@ -2,6 +2,24 @@ import { apiFetch, type ApiConfig } from '../http';
 import type { PaginatedResponse } from '../types/index';
 import type { Region, Category } from '@moments/shared';
 
+// Shape returned by the Edge Function (raw DB columns, snake_case)
+interface RawPublicMoment {
+  id: string;
+  title: string;
+  content: string;
+  region: Region;
+  category: Category;
+  language: string;
+  urgency_level: string;
+  is_sponsored: boolean;
+  sponsor_id: string | null;
+  pwa_link: string | null;
+  media_urls: string[];
+  created_at: string;
+  sponsors: { display_name: string; logo_url: string | null; tier: string } | null;
+}
+
+// Camelcase shape consumed by the frontend
 export interface PublicMoment {
   id: string;
   title: string;
@@ -26,15 +44,37 @@ export interface PublicListParams {
   search?: string;
 }
 
+function mapMoment(raw: RawPublicMoment): PublicMoment {
+  return {
+    id: raw.id,
+    title: raw.title,
+    content: raw.content,
+    region: raw.region,
+    category: raw.category,
+    language: raw.language,
+    urgencyLevel: raw.urgency_level,
+    isSponsored: raw.is_sponsored,
+    sponsorId: raw.sponsor_id,
+    pwaLink: raw.pwa_link,
+    mediaUrls: raw.media_urls,
+    createdAt: raw.created_at,
+    sponsor: raw.sponsors
+      ? { displayName: raw.sponsors.display_name, logoUrl: raw.sponsors.logo_url, tier: raw.sponsors.tier }
+      : null,
+  };
+}
+
 export function createPublicMomentsClient(config: ApiConfig) {
   return {
-    list(params?: PublicListParams): Promise<PaginatedResponse<PublicMoment>> {
+    async list(params?: PublicListParams): Promise<PaginatedResponse<PublicMoment>> {
       const qs = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
-      return apiFetch(config, `/moments/public${qs}`);
+      const raw = await apiFetch<PaginatedResponse<RawPublicMoment>>(config, `/moments/public${qs}`);
+      return { ...raw, data: raw.data.map(mapMoment) };
     },
 
-    get(id: string): Promise<PublicMoment> {
-      return apiFetch(config, `/moments/public/${id}`);
+    async get(id: string): Promise<PublicMoment> {
+      const raw = await apiFetch<RawPublicMoment>(config, `/moments/public/${id}`);
+      return mapMoment(raw);
     },
   };
 }

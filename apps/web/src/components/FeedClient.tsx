@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { PublicMoment } from '@moments/api';
 import type { PaginatedResponse } from '@moments/api';
-import { Region, Category } from '@moments/shared';
-
 const URGENCY_LABEL: Record<string, string> = {
   urgent: '🔴 Urgent',
   high: '🟠 High',
