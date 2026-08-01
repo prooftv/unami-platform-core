@@ -1,7 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { requireAuth, corsHeaders, json, err, logError } from '../_shared/auth.ts';
+import { requireAuth, corsHeaders, json, err, logAudit, logError } from '../_shared/auth.ts';
 
-// Mask phone number per POPIA — show only last 4 digits
 function maskPhone(phone: string): string {
   if (phone.length <= 4) return '****';
   return phone.slice(0, 3) + '...' + phone.slice(-4);
@@ -18,6 +17,7 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'GET' && parts.length === 0) return await listSubscribers(req, cors);
     if (req.method === 'GET' && parts[0] === 'stats') return await subscriberStats(req, cors);
     if (req.method === 'GET' && parts.length === 1) return await getSubscriber(req, parts[0], cors);
+    if (req.method === 'POST' && parts.length === 2 && parts[1] === 'opt-out') return await optOut(req, parts[0], cors);
     return err('Not found', 404, cors);
   } catch (e) {
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -48,7 +48,6 @@ async function listSubscribers(req: Request, cors: Record<string, string>) {
   const { data, error, count } = await query;
   if (error) return err(error.message, 500, cors);
 
-  // Mask phone numbers — POPIA
   const masked = (data ?? []).map((s: Record<string, unknown>) => ({
     ...s,
     phone_number: maskPhone(s.phone_number as string),
@@ -67,7 +66,27 @@ async function getSubscriber(req: Request, id: string, cors: Record<string, stri
 
   const { data, error } = await supabase.from('subscriptions').select('*').eq('id', id).single();
   if (error) return err('Subscriber not found', 404, cors);
+  return json({ ...data, phone_number: maskPhone(data.phone_number) }, 200, cors);
+}
 
+async function optOut(req: Request, id: string, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin', 'moderator']);
+  if (auth instanceof Response) return auth;
+  const { context, supabase } = auth;
+
+  const { data: existing } = await supabase.from('subscriptions').select('opted_in').eq('id', id).single();
+  if (!existing) return err('Subscriber not found', 404, cors);
+  if (!existing.opted_in) return err('Subscriber is already opted out', 409, cors);
+
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .update({ opted_in: false, opted_out_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) return err(error.message, 500, cors);
+  await logAudit(supabase, context.userId, 'opt_out', 'subscription', id);
   return json({ ...data, phone_number: maskPhone(data.phone_number) }, 200, cors);
 }
 
@@ -87,7 +106,6 @@ async function subscriberStats(req: Request, cors: Record<string, string>) {
     supabase.from('subscriptions').select('regions').eq('opted_in', true),
   ]);
 
-  // Opt-out rate over last 7 days
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
   const { count: optOutCount } = await supabase
     .from('subscriptions')
@@ -96,17 +114,14 @@ async function subscriberStats(req: Request, cors: Record<string, string>) {
     .gte('opted_out_at', sevenDaysAgo);
 
   const total = totalRes.count ?? 0;
-  const active = activeRes.count ?? 0;
   const optOutRate7d = total > 0 ? ((optOutCount ?? 0) / total) * 100 : 0;
 
-  // Aggregate delivery schedule counts
   const bySchedule: Record<string, number> = {};
   for (const row of scheduleRes.data ?? []) {
     const s = row.delivery_schedule as string;
     bySchedule[s] = (bySchedule[s] ?? 0) + 1;
   }
 
-  // Aggregate region counts (each subscriber can have multiple regions)
   const byRegion: Record<string, number> = {};
   for (const row of regionRes.data ?? []) {
     for (const r of (row.regions as string[]) ?? []) {
@@ -116,7 +131,7 @@ async function subscriberStats(req: Request, cors: Record<string, string>) {
 
   return json({
     total,
-    active,
+    active: activeRes.count ?? 0,
     optedOut: optedOutRes.count ?? 0,
     newToday: todayRes.count ?? 0,
     optOutRate7d: parseFloat(optOutRate7d.toFixed(2)),

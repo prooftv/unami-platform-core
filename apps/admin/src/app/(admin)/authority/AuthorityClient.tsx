@@ -1,11 +1,13 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { AuthorityProfile, PaginatedResponse } from '@moments/api';
 import type { AuthorityAuditEntry, AuthorityStats } from '@moments/api';
-import { Network, Users, Zap, Shield } from 'lucide-react';
+import { Network, Users, Zap, Shield, PlusCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const STATUS_VARIANT: Record<string, 'default' | 'destructive' | 'secondary'> = {
   active: 'default', suspended: 'destructive', expired: 'secondary',
@@ -20,9 +22,11 @@ interface Props {
   profiles: PaginatedResponse<AuthorityProfile> | null;
   auditLog: PaginatedResponse<AuthorityAuditEntry> | null;
   stats: AuthorityStats | null;
+  session: { role: string };
 }
 
-export function AuthorityClient({ profiles, auditLog, stats }: Props) {
+export function AuthorityClient({ profiles, auditLog, stats, session }: Props) {
+  const router = useRouter();
   const kpis = [
     { title: 'Total Profiles', value: stats?.total ?? '—', description: 'All authorities', icon: Network },
     { title: 'Active', value: stats?.active ?? '—', description: 'Currently active', icon: Users },
@@ -32,9 +36,17 @@ export function AuthorityClient({ profiles, auditLog, stats }: Props) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Authority Profiles</h1>
-        <p className="text-sm text-muted-foreground">Trusted community members with elevated publishing privileges — authority levels 1–5</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Authority Profiles</h1>
+          <p className="text-sm text-muted-foreground">Trusted community members with elevated publishing privileges — authority levels 1–5</p>
+        </div>
+        {session.role === 'superadmin' && (
+          <Button size="sm" onClick={() => router.push('/authority/new')}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Profile
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -71,7 +83,7 @@ export function AuthorityClient({ profiles, auditLog, stats }: Props) {
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No authority profiles yet.</TableCell>
                 </TableRow>
               ) : (profiles?.data ?? []).map((p) => (
-                <TableRow key={p.id}>
+                <TableRow key={p.id} className="cursor-pointer" onClick={() => router.push(`/authority/${p.id}/edit`)}>
                   <TableCell><span className="font-mono text-sm">{p.userIdentifier}</span></TableCell>
                   <TableCell>
                     <p className="text-sm font-medium">Level {p.authorityLevel}</p>

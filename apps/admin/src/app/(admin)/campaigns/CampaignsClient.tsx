@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { CampaignWithSponsor, PaginatedResponse } from '@moments/api';
 import type { CampaignBudgetEntry } from '@moments/api';
 import { CampaignStatus } from '@moments/shared';
-import { Briefcase, Target, DollarSign, CheckCircle } from 'lucide-react';
+import { Briefcase, Target, DollarSign, CheckCircle, PlusCircle } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
   pending_review: 'secondary', approved: 'outline', active: 'default',
@@ -22,9 +22,10 @@ interface Props {
   initialData: PaginatedResponse<CampaignWithSponsor> | null;
   budgetOverview: CampaignBudgetEntry[];
   currentPage: number;
+  session: { role: string };
 }
 
-export function CampaignsClient({ initialData, budgetOverview, currentPage }: Props) {
+export function CampaignsClient({ initialData, budgetOverview, currentPage, session }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -51,9 +52,17 @@ export function CampaignsClient({ initialData, budgetOverview, currentPage }: Pr
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Campaigns</h1>
-        <p className="text-sm text-muted-foreground">Sponsored broadcast campaigns — from pending review through to active delivery</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Campaigns</h1>
+          <p className="text-sm text-muted-foreground">Sponsored broadcast campaigns — from pending review through to active delivery</p>
+        </div>
+        {(session.role === 'superadmin' || session.role === 'content_admin') && (
+          <Button size="sm" onClick={() => router.push('/campaigns/new')}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Campaign
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -121,7 +130,7 @@ export function CampaignsClient({ initialData, budgetOverview, currentPage }: Pr
               <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No campaigns yet.</TableCell>
             </TableRow>
           ) : rows.map((c) => (
-            <TableRow key={c.id}>
+            <TableRow key={c.id} className="cursor-pointer" onClick={() => router.push(`/campaigns/${c.id}`)}>
               <TableCell>
                 <p className="font-medium text-sm">{c.title}</p>
                 <p className="text-xs text-muted-foreground">{c.sponsor?.displayName ?? '—'}</p>

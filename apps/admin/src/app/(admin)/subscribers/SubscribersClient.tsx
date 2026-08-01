@@ -103,7 +103,7 @@ export function SubscribersClient({ initialData, stats, currentPage }: Props) {
               <TableCell colSpan={5} className="text-center text-muted-foreground py-8">No subscribers yet.</TableCell>
             </TableRow>
           ) : rows.map((s) => (
-            <TableRow key={s.id}>
+            <TableRow key={s.id} className="cursor-pointer" onClick={() => router.push(`/subscribers/${s.id}`)}>
               <TableCell><span className="font-mono text-sm">{s.phoneNumber}</span></TableCell>
               <TableCell>
                 <Badge variant={s.optedIn ? 'default' : 'destructive'}>{s.optedIn ? 'Opted in' : 'Opted out'}</Badge>

@@ -10,7 +10,7 @@ import type { Message, Advisory, PaginatedResponse, AdminSession } from '@moment
 import type { ModerationStats } from '@moments/api';
 import { createApiClient } from '@moments/api';
 import { createClient } from '@/lib/supabase/client';
-import { ShieldAlert, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, CheckCircle, XCircle, Clock, MessageSquare } from 'lucide-react';
 
 async function getToken() {
   const supabase = createClient();
@@ -58,9 +58,15 @@ export function ModerationClient({ messages, advisories, stats, session }: Props
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Moderation</h1>
-        <p className="text-sm text-muted-foreground">Inbound WhatsApp messages and AI advisory flags awaiting community review</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Moderation</h1>
+          <p className="text-sm text-muted-foreground">Inbound WhatsApp messages and AI advisory flags awaiting community review</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => router.push('/moderation/comments')}>
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Comments
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -122,7 +128,7 @@ export function ModerationClient({ messages, advisories, stats, session }: Props
                 <TableCell colSpan={canAct ? 5 : 4} className="text-center text-muted-foreground py-8">No pending messages.</TableCell>
               </TableRow>
             ) : (messages?.data ?? []).map((m) => (
-              <TableRow key={m.id}>
+              <TableRow key={m.id} className="cursor-pointer" onClick={() => router.push(`/moderation/messages/${m.id}`)}>
                 <TableCell><span className="font-mono text-sm">{m.fromNumber}</span></TableCell>
                 <TableCell><Badge variant="outline">{m.messageType}</Badge></TableCell>
                 <TableCell><p className="text-sm truncate max-w-xs">{m.content ?? '(media)'}</p></TableCell>

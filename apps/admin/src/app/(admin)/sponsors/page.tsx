@@ -20,5 +20,5 @@ export default async function SponsorsPage({
     api ? api.sponsors.stats().catch(() => null) : null,
   ]);
 
-  return <SponsorsClient initialData={listResult} stats={stats} currentPage={page} />;
+  return <SponsorsClient initialData={listResult} stats={stats} currentPage={page} session={session!} />;
 }

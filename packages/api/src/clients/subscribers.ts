@@ -26,5 +26,9 @@ export function createSubscribersClient(config: ApiConfig) {
     stats(): Promise<SubscriberStats> {
       return apiFetch(config, '/subscribers/stats');
     },
+
+    optOut(id: string): Promise<Subscription> {
+      return apiFetch(config, `/subscribers/${id}/opt-out`, { method: 'POST' });
+    },
   };
 }

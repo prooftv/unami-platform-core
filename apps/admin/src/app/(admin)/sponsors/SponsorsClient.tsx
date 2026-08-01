@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { Sponsor, PaginatedResponse } from '@moments/api';
 import type { SponsorStats } from '@moments/api';
 import { SponsorTier } from '@moments/shared';
-import { Tag, Users, Star, Award } from 'lucide-react';
+import { Tag, Users, Star, Award, PlusCircle } from 'lucide-react';
 
 const TIER_VARIANT: Record<string, 'secondary' | 'outline' | 'default'> = {
   bronze: 'secondary', silver: 'outline', gold: 'outline', platinum: 'default',
@@ -21,9 +21,10 @@ interface Props {
   initialData: PaginatedResponse<Sponsor> | null;
   stats: SponsorStats | null;
   currentPage: number;
+  session: { role: string };
 }
 
-export function SponsorsClient({ initialData, stats, currentPage }: Props) {
+export function SponsorsClient({ initialData, stats, currentPage, session }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState('');
@@ -47,9 +48,17 @@ export function SponsorsClient({ initialData, stats, currentPage }: Props) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Sponsors</h1>
-        <p className="text-sm text-muted-foreground">Organisations funding community broadcasts — tier assignments and budget tracking</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Sponsors</h1>
+          <p className="text-sm text-muted-foreground">Organisations funding community broadcasts — tier assignments and budget tracking</p>
+        </div>
+        {(session.role === 'superadmin' || session.role === 'content_admin') && (
+          <Button size="sm" onClick={() => router.push('/sponsors/new')}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Sponsor
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -94,7 +103,7 @@ export function SponsorsClient({ initialData, stats, currentPage }: Props) {
               <TableCell colSpan={5} className="text-center text-muted-foreground py-8">No sponsors yet.</TableCell>
             </TableRow>
           ) : rows.map((s) => (
-            <TableRow key={s.id}>
+            <TableRow key={s.id} className="cursor-pointer" onClick={() => router.push(`/sponsors/${s.id}/edit`)}>
               <TableCell>
                 <p className="font-medium text-sm">{s.displayName}</p>
                 <p className="text-xs text-muted-foreground">{s.name}</p>

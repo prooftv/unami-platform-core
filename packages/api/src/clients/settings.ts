@@ -1,4 +1,5 @@
 import { apiFetch, type ApiConfig } from '../http';
+import type { PaginatedResponse } from '../types/index';
 
 export interface FeatureFlag {
   flagKey: string;
@@ -12,6 +13,25 @@ export interface SystemSetting {
   settingValue: string;
   description: string | null;
   updatedAt: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  userId: string;
+  action: string;
+  resourceType: string;
+  resourceId: string;
+  changes: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface ErrorLogEntry {
+  id: string;
+  errorType: string;
+  errorMessage: string;
+  context: Record<string, unknown> | null;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  createdAt: string;
 }
 
 export function createSettingsClient(config: ApiConfig) {
@@ -36,6 +56,16 @@ export function createSettingsClient(config: ApiConfig) {
         method: 'POST',
         body: JSON.stringify({ value }),
       });
+    },
+
+    auditLogs(params?: { page?: number; limit?: number; resourceType?: string; userId?: string }): Promise<PaginatedResponse<AuditLogEntry>> {
+      const qs = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
+      return apiFetch(config, `/settings/audit-logs${qs}`);
+    },
+
+    errorLogs(params?: { page?: number; limit?: number; severity?: string }): Promise<PaginatedResponse<ErrorLogEntry>> {
+      const qs = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
+      return apiFetch(config, `/settings/error-logs${qs}`);
     },
   };
 }

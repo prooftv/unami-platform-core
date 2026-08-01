@@ -1,5 +1,28 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { requireAuth, corsHeaders, json, err, logError } from '../_shared/auth.ts';
+import { z } from 'https://esm.sh/zod@3';
+import { requireAuth, corsHeaders, json, err, logAudit, logError } from '../_shared/auth.ts';
+
+const AuthorityScope = ['community', 'region', 'province', 'national'] as const;
+const ApprovalMode = ['admin_review', 'ai_review', 'auto'] as const;
+
+const CreateAuthoritySchema = z.object({
+  user_identifier: z.string().min(1),
+  authority_level: z.coerce.number().int().min(1).max(5),
+  role_label: z.string().min(1).max(100),
+  scope: z.enum(AuthorityScope),
+  scope_identifier: z.string().nullable().default(null),
+  approval_mode: z.enum(ApprovalMode).default('admin_review'),
+  blast_radius: z.coerce.number().int().min(1).max(10000).default(100),
+  risk_threshold: z.coerce.number().min(0.1).max(0.9).default(0.7),
+  valid_until: z.string().datetime().nullable().default(null),
+});
+
+const UpdateAuthoritySchema = CreateAuthoritySchema.omit({ user_identifier: true }).partial().refine(
+  (d) => Object.keys(d).length > 0,
+  { message: 'At least one field required' },
+);
+
+const SuspendSchema = z.object({ reason: z.string().min(1).max(500) });
 
 Deno.serve(async (req: Request) => {
   const cors = corsHeaders(req);
@@ -13,6 +36,9 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'GET' && parts[0] === 'stats') return await authorityStats(req, cors);
     if (req.method === 'GET' && parts[0] === 'audit') return await auditLog(req, cors);
     if (req.method === 'GET' && parts.length === 1) return await getAuthority(req, parts[0], cors);
+    if (req.method === 'POST' && parts.length === 0) return await createAuthority(req, cors);
+    if (req.method === 'PUT' && parts.length === 1) return await updateAuthority(req, parts[0], cors);
+    if (req.method === 'POST' && parts.length === 2 && parts[1] === 'suspend') return await suspendAuthority(req, parts[0], cors);
     return err('Not found', 404, cors);
   } catch (e) {
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -58,6 +84,99 @@ async function getAuthority(req: Request, id: string, cors: Record<string, strin
   return json(data, 200, cors);
 }
 
+async function createAuthority(req: Request, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin']);
+  if (auth instanceof Response) return auth;
+  const { context, supabase } = auth;
+
+  const body = await req.json();
+  const parsed = CreateAuthoritySchema.safeParse(body);
+  if (!parsed.success) return json({ error: 'Validation failed', details: parsed.error.flatten() }, 400, cors);
+
+  const { data, error } = await supabase
+    .from('authority_profiles')
+    .insert({ ...parsed.data, created_by: context.userId, status: 'active' })
+    .select()
+    .single();
+
+  if (error) return err(error.message, 500, cors);
+
+  await supabase.from('authority_audit_log').insert({
+    authority_profile_id: data.id,
+    action: 'created',
+    actor_id: context.userId,
+    context: { blast_radius_applied: data.blast_radius },
+  });
+
+  await logAudit(supabase, context.userId, 'create', 'authority_profile', data.id, parsed.data);
+  return json(data, 201, cors);
+}
+
+async function updateAuthority(req: Request, id: string, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin']);
+  if (auth instanceof Response) return auth;
+  const { context, supabase } = auth;
+
+  const { data: existing } = await supabase.from('authority_profiles').select('status').eq('id', id).single();
+  if (!existing) return err('Authority profile not found', 404, cors);
+
+  const body = await req.json();
+  const parsed = UpdateAuthoritySchema.safeParse(body);
+  if (!parsed.success) return json({ error: 'Validation failed', details: parsed.error.flatten() }, 400, cors);
+
+  const { data, error } = await supabase
+    .from('authority_profiles')
+    .update({ ...parsed.data, updated_by: context.userId })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) return err(error.message, 500, cors);
+
+  await supabase.from('authority_audit_log').insert({
+    authority_profile_id: id,
+    action: 'updated',
+    actor_id: context.userId,
+    context: { changes: parsed.data },
+  });
+
+  await logAudit(supabase, context.userId, 'update', 'authority_profile', id, parsed.data);
+  return json(data, 200, cors);
+}
+
+async function suspendAuthority(req: Request, id: string, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin']);
+  if (auth instanceof Response) return auth;
+  const { context, supabase } = auth;
+
+  const { data: existing } = await supabase.from('authority_profiles').select('status').eq('id', id).single();
+  if (!existing) return err('Authority profile not found', 404, cors);
+  if (existing.status === 'suspended') return err('Authority profile is already suspended', 409, cors);
+
+  const body = await req.json();
+  const parsed = SuspendSchema.safeParse(body);
+  if (!parsed.success) return json({ error: 'Validation failed', details: parsed.error.flatten() }, 400, cors);
+
+  const { data, error } = await supabase
+    .from('authority_profiles')
+    .update({ status: 'suspended', updated_by: context.userId })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) return err(error.message, 500, cors);
+
+  await supabase.from('authority_audit_log').insert({
+    authority_profile_id: id,
+    action: 'suspended',
+    actor_id: context.userId,
+    context: { reason: parsed.data.reason },
+  });
+
+  await logAudit(supabase, context.userId, 'suspend', 'authority_profile', id, { reason: parsed.data.reason });
+  return json(data, 200, cors);
+}
+
 async function auditLog(req: Request, cors: Record<string, string>) {
   const auth = await requireAuth(req, ['superadmin', 'content_admin', 'moderator', 'viewer']);
   if (auth instanceof Response) return auth;
@@ -78,14 +197,14 @@ async function auditLog(req: Request, cors: Record<string, string>) {
 
   const mapped = (data ?? []).map((row: Record<string, unknown>) => {
     const profile = row.authority_profiles as Record<string, unknown> | null;
-    const context = (row.context ?? {}) as Record<string, unknown>;
+    const ctx = (row.context ?? {}) as Record<string, unknown>;
     return {
       id: row.id,
       authorityId: row.authority_profile_id,
       actionType: row.action,
       authorityLevel: profile?.authority_level ?? null,
       scope: profile?.scope ?? null,
-      blastRadiusApplied: context.blast_radius_applied ?? 0,
+      blastRadiusApplied: ctx.blast_radius_applied ?? 0,
       performedAt: row.timestamp,
     };
   });

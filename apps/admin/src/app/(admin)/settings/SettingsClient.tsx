@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AdminSession, DashboardMetrics, FeatureFlag, SystemSetting } from '@moments/api';
 import { createApiClient } from '@moments/api';
 import { createClient } from '@/lib/supabase/client';
-import { Database, Zap, HardDrive, Wifi, Send, Users, Radio, Megaphone } from 'lucide-react';
+import { Database, Zap, HardDrive, Wifi, Send, Users, Radio, Megaphone, FileText, AlertCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   session: AdminSession;
@@ -22,6 +24,7 @@ async function getToken(): Promise<string> {
 }
 
 export function SettingsClient({ session, metrics, flags: initialFlags, systemSettings: initialSettings }: Props) {
+  const router = useRouter();
   const [flags, setFlags] = useState(initialFlags);
   const [settings, setSettings] = useState(initialSettings);
   const [toggling, setToggling] = useState<string | null>(null);
@@ -217,6 +220,19 @@ export function SettingsClient({ session, metrics, flags: initialFlags, systemSe
           ))}
         </CardContent>
       </Card>
+
+      {isSuperadmin && (
+        <div className="flex gap-3">
+          <Button variant="outline" size="sm" onClick={() => router.push('/settings/audit-logs')}>
+            <FileText className="h-4 w-4 mr-2" />
+            Audit Log
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => router.push('/settings/error-logs')}>
+            <AlertCircle className="h-4 w-4 mr-2" />
+            Error Log
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardHeader><CardTitle>Current Session</CardTitle></CardHeader>

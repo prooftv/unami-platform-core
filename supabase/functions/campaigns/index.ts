@@ -1,5 +1,26 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { requireAuth, corsHeaders, json, err, logError } from '../_shared/auth.ts';
+import { z } from 'https://esm.sh/zod@3';
+import { requireAuth, corsHeaders, json, err, logAudit, logError } from '../_shared/auth.ts';
+
+const Region = ['KZN','WC','GP','EC','FS','LP','MP','NC','NW','National'] as const;
+const Category = ['Education','Safety','Culture','Opportunity','Events','Health','Technology','Community'] as const;
+
+const CreateCampaignSchema = z.object({
+  title: z.string().min(1).max(200),
+  content: z.string().min(10).max(2000),
+  category: z.enum(Category),
+  sponsor_id: z.string().uuid().nullable().default(null),
+  budget: z.coerce.number().nonnegative().default(0),
+  target_regions: z.array(z.enum(Region)).min(1),
+  target_categories: z.array(z.enum(Category)).default([]),
+  media_urls: z.array(z.string().url()).default([]),
+  scheduled_at: z.string().datetime().nullable().default(null),
+});
+
+const UpdateCampaignSchema = CreateCampaignSchema.partial().refine(
+  (d) => Object.keys(d).length > 0,
+  { message: 'At least one field required' },
+);
 
 Deno.serve(async (req: Request) => {
   const cors = corsHeaders(req);
@@ -12,6 +33,12 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'GET' && parts.length === 0) return await listCampaigns(req, cors);
     if (req.method === 'GET' && parts[0] === 'budget') return await budgetOverview(req, cors);
     if (req.method === 'GET' && parts.length === 1) return await getCampaign(req, parts[0], cors);
+    if (req.method === 'GET' && parts.length === 2 && parts[1] === 'transactions') return await getTransactions(req, parts[0], cors);
+    if (req.method === 'POST' && parts.length === 0) return await createCampaign(req, cors);
+    if (req.method === 'PUT' && parts.length === 1) return await updateCampaign(req, parts[0], cors);
+    if (req.method === 'POST' && parts.length === 2 && parts[1] === 'approve') return await approveCampaign(req, parts[0], cors);
+    if (req.method === 'POST' && parts.length === 2 && parts[1] === 'pause') return await pauseCampaign(req, parts[0], cors);
+    if (req.method === 'POST' && parts.length === 2 && parts[1] === 'cancel') return await cancelCampaign(req, parts[0], cors);
     return err('Not found', 404, cors);
   } catch (e) {
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -59,6 +86,149 @@ async function getCampaign(req: Request, id: string, cors: Record<string, string
     .single();
 
   if (error) return err('Campaign not found', 404, cors);
+  return json(data, 200, cors);
+}
+
+async function getTransactions(req: Request, id: string, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin']);
+  if (auth instanceof Response) return auth;
+  const { supabase } = auth;
+
+  const { data: existing } = await supabase.from('campaigns').select('id').eq('id', id).single();
+  if (!existing) return err('Campaign not found', 404, cors);
+
+  const { data, error } = await supabase
+    .from('budget_transactions')
+    .select('*')
+    .eq('campaign_id', id)
+    .order('created_at', { ascending: false });
+
+  if (error) return err(error.message, 500, cors);
+
+  const mapped = (data ?? []).map((t: Record<string, unknown>) => ({
+    id: t.id,
+    transactionType: t.transaction_type,
+    amount: t.amount,
+    recipientCount: t.recipient_count,
+    costPerRecipient: t.cost_per_recipient,
+    status: t.status,
+    createdAt: t.created_at,
+  }));
+
+  return json(mapped, 200, cors);
+}
+
+async function createCampaign(req: Request, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin']);
+  if (auth instanceof Response) return auth;
+  const { context, supabase } = auth;
+
+  const body = await req.json();
+  const parsed = CreateCampaignSchema.safeParse(body);
+  if (!parsed.success) return json({ error: 'Validation failed', details: parsed.error.flatten() }, 400, cors);
+
+  const { data, error } = await supabase
+    .from('campaigns')
+    .insert({ ...parsed.data, created_by: context.userId, status: 'pending_review' })
+    .select()
+    .single();
+
+  if (error) return err(error.message, 500, cors);
+  await logAudit(supabase, context.userId, 'create', 'campaign', data.id, parsed.data);
+  return json(data, 201, cors);
+}
+
+async function updateCampaign(req: Request, id: string, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin']);
+  if (auth instanceof Response) return auth;
+  const { context, supabase } = auth;
+
+  const { data: existing } = await supabase.from('campaigns').select('status').eq('id', id).single();
+  if (!existing) return err('Campaign not found', 404, cors);
+  if (['active', 'completed'].includes(existing.status as string)) {
+    return err('Cannot update an active or completed campaign', 409, cors);
+  }
+
+  const body = await req.json();
+  const parsed = UpdateCampaignSchema.safeParse(body);
+  if (!parsed.success) return json({ error: 'Validation failed', details: parsed.error.flatten() }, 400, cors);
+
+  const { data, error } = await supabase
+    .from('campaigns')
+    .update(parsed.data)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) return err(error.message, 500, cors);
+  await logAudit(supabase, context.userId, 'update', 'campaign', id, parsed.data);
+  return json(data, 200, cors);
+}
+
+async function approveCampaign(req: Request, id: string, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin']);
+  if (auth instanceof Response) return auth;
+  const { context, supabase } = auth;
+
+  const { data: existing } = await supabase.from('campaigns').select('status').eq('id', id).single();
+  if (!existing) return err('Campaign not found', 404, cors);
+  if (existing.status !== 'pending_review' && existing.status !== 'paused') {
+    return err('Campaign must be pending_review or paused to approve', 409, cors);
+  }
+
+  const newStatus = existing.status === 'paused' ? 'active' : 'approved';
+  const { data, error } = await supabase
+    .from('campaigns')
+    .update({ status: newStatus })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) return err(error.message, 500, cors);
+  await logAudit(supabase, context.userId, 'approve', 'campaign', id, { newStatus });
+  return json(data, 200, cors);
+}
+
+async function pauseCampaign(req: Request, id: string, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin']);
+  if (auth instanceof Response) return auth;
+  const { context, supabase } = auth;
+
+  const { data: existing } = await supabase.from('campaigns').select('status').eq('id', id).single();
+  if (!existing) return err('Campaign not found', 404, cors);
+  if (existing.status !== 'active') return err('Only active campaigns can be paused', 409, cors);
+
+  const { data, error } = await supabase
+    .from('campaigns')
+    .update({ status: 'paused' })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) return err(error.message, 500, cors);
+  await logAudit(supabase, context.userId, 'pause', 'campaign', id);
+  return json(data, 200, cors);
+}
+
+async function cancelCampaign(req: Request, id: string, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin']);
+  if (auth instanceof Response) return auth;
+  const { context, supabase } = auth;
+
+  const { data: existing } = await supabase.from('campaigns').select('status').eq('id', id).single();
+  if (!existing) return err('Campaign not found', 404, cors);
+  if (existing.status === 'completed') return err('Cannot cancel a completed campaign', 409, cors);
+  if (existing.status === 'cancelled') return err('Campaign is already cancelled', 409, cors);
+
+  const { data, error } = await supabase
+    .from('campaigns')
+    .update({ status: 'cancelled' })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) return err(error.message, 500, cors);
+  await logAudit(supabase, context.userId, 'cancel', 'campaign', id);
   return json(data, 200, cors);
 }
 

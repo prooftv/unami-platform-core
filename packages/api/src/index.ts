@@ -3,12 +3,12 @@ export type { ApiConfig } from './http';
 export type * from './types/index';
 
 export type { SubscriberStats } from './clients/subscribers';
-export type { ModerationStats } from './clients/moderation';
-export type { AuthorityAuditEntry, AuthorityStats } from './clients/authority';
-export type { SponsorStats } from './clients/sponsors';
-export type { CampaignBudgetEntry } from './clients/campaigns';
+export type { ModerationStats, MessageWithAdvisories, Comment } from './clients/moderation';
+export type { AuthorityAuditEntry, AuthorityStats, CreateAuthorityInput, UpdateAuthorityInput } from './clients/authority';
+export type { SponsorStats, CreateSponsorInput, UpdateSponsorInput } from './clients/sponsors';
+export type { CampaignBudgetEntry, BudgetTransaction, CreateCampaignInput, UpdateCampaignInput } from './clients/campaigns';
 export type { IntentStats } from './clients/analytics';
-export type { FeatureFlag, SystemSetting } from './clients/settings';
+export type { FeatureFlag, SystemSetting, AuditLogEntry, ErrorLogEntry } from './clients/settings';
 
 import { createMomentsClient } from './clients/moments';
 import { createBroadcastsClient } from './clients/broadcasts';

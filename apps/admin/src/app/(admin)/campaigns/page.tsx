@@ -20,5 +20,5 @@ export default async function CampaignsPage({
     api ? api.campaigns.budgetOverview().catch(() => null) : null,
   ]);
 
-  return <CampaignsClient initialData={listResult} budgetOverview={budgetOverview ?? []} currentPage={page} />;
+  return <CampaignsClient initialData={listResult} budgetOverview={budgetOverview ?? []} currentPage={page} session={session!} />;
 }

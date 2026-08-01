@@ -14,5 +14,5 @@ export default async function AuthorityPage() {
     api ? api.authority.stats().catch(() => null) : null,
   ]);
 
-  return <AuthorityClient profiles={profiles} auditLog={auditLog} stats={stats} />;
+  return <AuthorityClient profiles={profiles} auditLog={auditLog} stats={stats} session={session!} />;
 }

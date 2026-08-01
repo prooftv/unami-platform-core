@@ -85,12 +85,12 @@ Each phase completes a full user workflow, not a technical component.
 
 | Task | Status |
 |---|---|
-| Subscriber detail view | ⏳ |
-| Manual opt-out from admin | ⏳ |
-| Message thread view (conversation per phone number) | ⏳ |
-| Advisory detail — full signal breakdown | ⏳ |
-| Authority profile create/edit/suspend | ⏳ |
-| Comments moderation (`comments`, `whatsapp_comments` tables) | ⏳ |
+| Subscriber detail view | ✅ |
+| Manual opt-out from admin | ✅ |
+| Message thread view (conversation per phone number) | ✅ |
+| Advisory detail — full signal breakdown | ✅ |
+| Authority profile create/edit/suspend | ✅ |
+| Comments moderation (`comments`, `whatsapp_comments` tables) | ✅ |
 
 ---
 
@@ -99,10 +99,10 @@ Each phase completes a full user workflow, not a technical component.
 
 | Task | Status |
 |---|---|
-| Sponsor create/edit form | ⏳ |
-| Campaign create form | ⏳ |
-| Campaign approval workflow (status transitions) | ⏳ |
-| Budget transaction history per campaign | ⏳ |
+| Sponsor create/edit form | ✅ |
+| Campaign create form | ✅ |
+| Campaign approval workflow (status transitions) | ✅ |
+| Budget transaction history per campaign | ✅ |
 | Revenue dashboard improvements | ⏳ |
 
 ---
@@ -116,8 +116,8 @@ Each phase completes a full user workflow, not a technical component.
 | Broadcast retry logic for failed batches | ⏳ |
 | `media` upload endpoint and storage management | ⏳ |
 | `user_profiles` admin management | ⏳ |
-| Audit log viewer in admin | ⏳ |
-| Error log viewer in admin | ⏳ |
+| Audit log viewer in admin | ✅ |
+| Error log viewer in admin | ✅ |
 
 ---
 

@@ -13,6 +13,8 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'POST' && parts[0] === 'flags' && parts[1]) return await updateFlag(req, cors, parts[1]);
     if (req.method === 'GET' && parts[0] === 'system') return await listSystemSettings(req, cors);
     if (req.method === 'POST' && parts[0] === 'system' && parts[1]) return await updateSystemSetting(req, cors, parts[1]);
+    if (req.method === 'GET' && parts[0] === 'audit-logs') return await auditLogs(req, cors);
+    if (req.method === 'GET' && parts[0] === 'error-logs') return await errorLogs(req, cors);
     return err('Not found', 404, cors);
   } catch (e) {
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -56,7 +58,6 @@ async function updateFlag(req: Request, cors: Record<string, string>, flagKey: s
     .single();
 
   if (error) return err(error.message, 500, cors);
-
   await logAudit(supabase, context.userId, 'update', 'feature_flag', flagKey, { enabled: body.enabled });
   return json(data, 200, cors);
 }
@@ -91,7 +92,61 @@ async function updateSystemSetting(req: Request, cors: Record<string, string>, s
     .single();
 
   if (error) return err(error.message, 500, cors);
-
   await logAudit(supabase, context.userId, 'update', 'system_setting', settingKey, { value: body.value });
   return json(data, 200, cors);
+}
+
+async function auditLogs(req: Request, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin']);
+  if (auth instanceof Response) return auth;
+  const { supabase } = auth;
+
+  const params = Object.fromEntries(new URL(req.url).searchParams);
+  const page = Math.max(1, parseInt(params.page ?? '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(params.limit ?? '20')));
+  const offset = (page - 1) * limit;
+
+  let query = supabase
+    .from('audit_logs')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (params.resourceType) query = query.eq('resource_type', params.resourceType);
+  if (params.userId) query = query.eq('user_id', params.userId);
+
+  const { data, error, count } = await query;
+  if (error) return err(error.message, 500, cors);
+
+  return json({
+    data: data ?? [],
+    pagination: { page, limit, total: count ?? 0, totalPages: Math.ceil((count ?? 0) / limit) },
+  }, 200, cors);
+}
+
+async function errorLogs(req: Request, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin']);
+  if (auth instanceof Response) return auth;
+  const { supabase } = auth;
+
+  const params = Object.fromEntries(new URL(req.url).searchParams);
+  const page = Math.max(1, parseInt(params.page ?? '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(params.limit ?? '20')));
+  const offset = (page - 1) * limit;
+
+  let query = supabase
+    .from('error_logs')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (params.severity) query = query.eq('severity', params.severity);
+
+  const { data, error, count } = await query;
+  if (error) return err(error.message, 500, cors);
+
+  return json({
+    data: data ?? [],
+    pagination: { page, limit, total: count ?? 0, totalPages: Math.ceil((count ?? 0) / limit) },
+  }, 200, cors);
 }
