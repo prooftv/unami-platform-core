@@ -33,5 +33,13 @@ export function createMomentsClient(config: ApiConfig) {
     schedule(id: string, input: ScheduleMomentInput): Promise<Moment> {
       return apiFetch(config, `/moments/${id}/schedule`, { method: 'POST', body: JSON.stringify(input) });
     },
+
+    cancel(id: string): Promise<Moment> {
+      return apiFetch(config, `/moments/${id}/cancel`, { method: 'POST', body: JSON.stringify({}) });
+    },
+
+    stats(id: string): Promise<{ viewCount: number; commentCount: number; shareCount: number; reactionCount: number; updatedAt: string }> {
+      return apiFetch(config, `/moments/${id}/stats`);
+    },
   };
 }

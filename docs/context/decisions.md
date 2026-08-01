@@ -61,7 +61,7 @@ are retained as legitimate shared assets.
 ## D-013: Product phases over technical fixes
 From Phase 10 onward, work is organised by product workflow, not by technical component.
 Each phase must answer: "Which user workflow becomes fully usable?"
-Phases: 10 Moments CMS → 11 Community → 12 Commercial → 13 Hardening → 14 Public PWA → 15 Automation → 16 Expansion.
+Phases: 10 Moments Workflow → 11 Community → 12 Commercial → 13 Hardening → 14 Public PWA → 15 Automation → 16 Expansion.
 
 ## D-014: Badge variants — shadcn only
 shadcn `Badge` accepts only: `default | secondary | destructive | outline | ghost | link`.

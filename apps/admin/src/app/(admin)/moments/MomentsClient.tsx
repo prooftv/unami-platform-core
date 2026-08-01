@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { MomentWithSponsor, PaginatedResponse, AdminSession } from '@moments/api';
 import { MomentStatus } from '@moments/shared';
 import { PlusCircle } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
   draft: 'outline', scheduled: 'secondary', broadcasted: 'default', cancelled: 'destructive',
@@ -19,24 +19,40 @@ interface Props {
   initialData: PaginatedResponse<MomentWithSponsor> | null;
   session: AdminSession;
   currentPage: number;
+  currentStatus: string;
+  currentSearch: string;
 }
 
-export function MomentsClient({ initialData, session, currentPage }: Props) {
+export function MomentsClient({ initialData, session, currentPage, currentStatus, currentSearch }: Props) {
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [search, setSearch] = useState(currentSearch);
 
   const canCreate = session.role === 'superadmin' || session.role === 'content_admin';
-
-  const rows = (initialData?.data ?? []).filter((m) => {
-    const matchSearch = !search || m.title.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || statusFilter === 'all' || m.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
 
   const total = initialData?.pagination.total ?? 0;
   const limit = initialData?.pagination.limit ?? 20;
   const totalPages = Math.ceil(total / limit);
+
+  function buildUrl(overrides: { page?: number; status?: string; search?: string }) {
+    const params = new URLSearchParams();
+    const p = overrides.page ?? currentPage;
+    const s = overrides.status !== undefined ? overrides.status : currentStatus;
+    const q = overrides.search !== undefined ? overrides.search : currentSearch;
+    if (p > 1) params.set('page', String(p));
+    if (s && s !== 'all') params.set('status', s);
+    if (q) params.set('search', q);
+    const qs = params.toString();
+    return `/moments${qs ? '?' + qs : ''}`;
+  }
+
+  const handleStatusChange = useCallback((value: string) => {
+    router.push(buildUrl({ status: value, page: 1 }));
+  }, [currentSearch, router]);
+
+  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    router.push(buildUrl({ search, page: 1 }));
+  }, [search, currentStatus, router]);
 
   return (
     <div className="space-y-4">
@@ -53,14 +69,15 @@ export function MomentsClient({ initialData, session, currentPage }: Props) {
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
         <Input
           placeholder="Search moments..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-8 w-64"
         />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Button type="submit" variant="outline" size="sm">Search</Button>
+        <Select value={currentStatus || 'all'} onValueChange={handleStatusChange}>
           <SelectTrigger className="h-8 w-40">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
@@ -71,7 +88,7 @@ export function MomentsClient({ initialData, session, currentPage }: Props) {
             ))}
           </SelectContent>
         </Select>
-      </div>
+      </form>
 
       <Table>
         <TableHeader>
@@ -84,13 +101,13 @@ export function MomentsClient({ initialData, session, currentPage }: Props) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.length === 0 ? (
+          {(initialData?.data ?? []).length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                No moments yet. Create your first moment.
+                No moments found.
               </TableCell>
             </TableRow>
-          ) : rows.map((m) => (
+          ) : (initialData?.data ?? []).map((m) => (
             <TableRow key={m.id} className="cursor-pointer" onClick={() => router.push(`/moments/${m.id}`)}>
               <TableCell>
                 <p className="font-medium text-sm">{m.title}</p>
@@ -115,9 +132,9 @@ export function MomentsClient({ initialData, session, currentPage }: Props) {
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>{total} total</span>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => router.push(`/moments?page=${currentPage - 1}`)}>Previous</Button>
+            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => router.push(buildUrl({ page: currentPage - 1 }))}>Previous</Button>
             <span>Page {currentPage} of {totalPages}</span>
-            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => router.push(`/moments?page=${currentPage + 1}`)}>Next</Button>
+            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => router.push(buildUrl({ page: currentPage + 1 }))}>Next</Button>
           </div>
         </div>
       )}

@@ -68,6 +68,11 @@ Deno.serve(async (req: Request) => {
       return await getMoment(req, parts[0], cors);
     }
 
+    // GET /moments/:id/stats
+    if (req.method === 'GET' && parts.length === 2 && parts[1] === 'stats') {
+      return await getMomentStats(req, parts[0], cors);
+    }
+
     // POST /moments — create
     if (req.method === 'POST' && parts.length === 0) {
       return await createMoment(req, cors);
@@ -86,6 +91,11 @@ Deno.serve(async (req: Request) => {
     // POST /moments/:id/schedule
     if (req.method === 'POST' && parts.length === 2 && parts[1] === 'schedule') {
       return await scheduleMoment(req, parts[0], cors);
+    }
+
+    // POST /moments/:id/cancel
+    if (req.method === 'POST' && parts.length === 2 && parts[1] === 'cancel') {
+      return await cancelMoment(req, parts[0], cors);
     }
 
     return err('Not found', 404, cors);
@@ -244,5 +254,42 @@ async function scheduleMoment(req: Request, id: string, cors: Record<string, str
 
   if (error) return err(error.message, 500, cors);
   await logAudit(supabase, context.userId, 'schedule', 'moment', id, parsed.data);
+  return json(data, 200, cors);
+}
+
+async function cancelMoment(req: Request, id: string, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin']);
+  if (auth instanceof Response) return auth;
+  const { context, supabase } = auth;
+
+  const { data: existing } = await supabase.from('moments').select('status').eq('id', id).single();
+  if (!existing) return err('Moment not found', 404, cors);
+  if (existing.status === 'broadcasted') return err('Cannot cancel a broadcasted moment', 409, cors);
+  if (existing.status === 'cancelled') return err('Moment is already cancelled', 409, cors);
+
+  const { data, error } = await supabase
+    .from('moments')
+    .update({ status: 'cancelled' })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) return err(error.message, 500, cors);
+  await logAudit(supabase, context.userId, 'cancel', 'moment', id);
+  return json(data, 200, cors);
+}
+
+async function getMomentStats(req: Request, id: string, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin', 'moderator', 'viewer']);
+  if (auth instanceof Response) return auth;
+  const { supabase } = auth;
+
+  const { data, error } = await supabase
+    .from('moment_stats')
+    .select('view_count, comment_count, share_count, reaction_count, updated_at')
+    .eq('moment_id', id)
+    .single();
+
+  if (error) return err('Stats not found', 404, cors);
   return json(data, 200, cors);
 }

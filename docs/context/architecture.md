@@ -53,7 +53,7 @@ No application code calls Supabase directly. No exceptions.
 | `auth` | `GET /auth` | JWT validation → role + authority_id |
 | `moments` | `GET/POST/PUT/DELETE /moments`, `POST /moments/:id/schedule` | requireAuth |
 | `broadcast` | `POST /broadcast/:momentId` | requireAuth — content_admin+ |
-| `broadcasts` | `GET /broadcasts` | **Missing — P0 bug** |
+| `broadcasts` | `GET /broadcasts`, `GET /broadcasts/:id` | requireAuth |
 | `webhook` | `GET/POST /webhook` | HMAC-SHA256 verification |
 | `moderation` | `GET /moderation/messages`, `/advisories`, `/stats`, `POST approve/reject` | requireAuth |
 | `authority` | `GET /authority`, `/stats`, `/audit` | requireAuth |
@@ -109,7 +109,7 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 
 ## Current Phase
 
-**Phase 10 — Moments CMS**
+**Phase 10 — Moments Workflow**
 
 Fix the broadcasts list endpoint. Complete the full Moments workflow:
 draft → edit → schedule → broadcast → history → analytics.

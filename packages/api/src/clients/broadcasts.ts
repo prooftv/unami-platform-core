@@ -7,7 +7,7 @@ export function createBroadcastsClient(config: ApiConfig) {
       return apiFetch(config, `/broadcast/${momentId}`, { method: 'POST' });
     },
 
-    list(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<BroadcastWithMoment>> {
+    list(params?: { page?: number; limit?: number; momentId?: string }): Promise<PaginatedResponse<BroadcastWithMoment>> {
       const qs = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
       return apiFetch(config, `/broadcasts${qs}`);
     },

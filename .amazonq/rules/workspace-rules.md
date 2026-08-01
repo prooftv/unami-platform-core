@@ -22,7 +22,7 @@
 - Fix bugs only — no speculative improvements to infrastructure
 
 ## Current priority
-Phase 10 — Moments CMS.
+Phase 10 — Moments Workflow.
 The one known P0 bug: `GET /broadcasts` endpoint does not exist.
 The `broadcast` Edge Function only handles `POST /:momentId`.
 Fix this before any other Phase 10 work.

@@ -10,7 +10,7 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v0.5.0-platform-complete` |
-| Phase | Phase 10 — Moments CMS (Next) |
+| Phase | Phase 10 — Moments Workflow (Next) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
@@ -27,14 +27,14 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 | Layer | Status | Completeness |
 |---|---|---|
 | Database (26 tables) | ✅ Complete | 100% |
-| Edge Functions (11 functions) | ✅ Complete | 95% |
+| Edge Functions (12 functions) | ✅ Complete | 100% |
 | `packages/shared` | ✅ Complete | 100% |
 | `packages/ui` | ✅ Complete | 100% |
 | `packages/api` | ✅ Complete | 98% |
 | `apps/admin` shell + dashboard | ✅ Complete | 90% |
 | `apps/web` public PWA | ❌ Not started | 0% |
 
-**One known bug:** `GET /broadcasts` endpoint does not exist in any Edge Function. The `broadcast` function only handles `POST /:momentId`. The broadcasts list page always renders empty. Fix in Phase 10.
+**One known bug:** ~~`GET /broadcasts` endpoint did not exist.~~ Fixed — `supabase/functions/broadcasts/index.ts` added.
 
 ---
 
@@ -63,18 +63,18 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 The work has shifted from building infrastructure to building products.
 Each phase completes a full user workflow, not a technical component.
 
-### Phase 10 — Moments CMS
+### Phase 10 — Moments Workflow
 **Goal:** An operator can create, draft, schedule, broadcast, and audit a Moment from start to finish.
 
 | Task | Status |
 |---|---|
-| Fix `GET /broadcasts` — add list handler to broadcast Edge Function | ⏳ |
-| Moment edit form (`/moments/[id]/edit`) | ⏳ |
-| Moment cancel action | ⏳ |
-| Schedule UI — datetime picker wired to `api.moments.schedule()` | ⏳ |
-| Broadcast history per moment on detail page | ⏳ |
-| Moment analytics (views, reach) from `moment_stats` | ⏳ |
-| Draft list view (filter by status=draft) | ⏳ |
+| Fix `GET /broadcasts` — add list handler to broadcast Edge Function | ✅ |
+| Moment edit form (`/moments/[id]/edit`) | ✅ |
+| Moment cancel action | ✅ |
+| Schedule UI — datetime picker wired to `api.moments.schedule()` | ✅ |
+| Broadcast history per moment on detail page | ✅ |
+| Moment analytics (views, reach) from `moment_stats` | ✅ |
+| Draft list view (filter by status=draft) | ✅ |
 
 **Definition of done:** Operator can complete the full draft → schedule → broadcast → review cycle without leaving the admin.
 
@@ -178,11 +178,11 @@ Fix bugs only. All new work is product workflow completion.
 
 | Issue | Severity | Phase |
 |---|---|---|
-| `GET /broadcasts` endpoint missing — broadcasts page renders empty | P0 Bug | Phase 10 |
+| `GET /broadcasts` endpoint missing — broadcasts page renders empty | ~~P0 Bug~~ | ✅ Fixed |
 | Broadcast retry logic absent — failed batches are permanent | P1 | Phase 13 |
 | Advisory confidence hardcoded `0.5` — n8n not connected | P2 | Phase 15 |
 | `rate_limits` table exists but no enforcement | P2 | Phase 13 |
-| `moment_stats` populated but never surfaced in UI | P3 | Phase 10 |
+| `moment_stats` populated but never surfaced in UI | ~~P3~~ | ✅ Fixed |
 
 ---
 
@@ -207,7 +207,7 @@ unami-platform-core/
 │   ├── shared/         @moments/shared — enums, types, validators, constants (complete)
 │   └── api/            @moments/api — typed API clients (complete)
 ├── supabase/
-│   ├── functions/      11 Edge Functions (complete)
+│   ├── functions/      12 Edge Functions (complete)
 │   └── migrations/
 │       └── 000_initial_schema.sql   ← baseline, do not modify
 ├── docs/
