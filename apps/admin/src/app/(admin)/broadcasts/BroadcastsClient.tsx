@@ -71,7 +71,7 @@ export function BroadcastsClient({ initialData, currentPage }: Props) {
     <div className="p-6 space-y-6">
       <PageHeader
         title="Broadcasts"
-        description="Delivery history for all broadcasted moments"
+        description="WhatsApp delivery history — recipient reach, success rates, and failed sends"
       />
 
       <DataTable

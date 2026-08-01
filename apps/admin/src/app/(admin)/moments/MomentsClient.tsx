@@ -95,7 +95,7 @@ export function MomentsClient({ initialData, session, currentPage }: Props) {
     <div className="p-6 space-y-6">
       <PageHeader
         title="Moments"
-        description="Create and manage community moments"
+        description="Draft, schedule, and publish community moments for WhatsApp broadcast"
         actions={
           canCreate ? (
             <Button onClick={() => router.push('/moments/new')}>

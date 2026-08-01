@@ -82,7 +82,7 @@ export function AuthorityClient({ profiles, auditLog, stats }: Props) {
     <div className="p-6 space-y-6">
       <PageHeader
         title="Authority Profiles"
-        description="Trusted community members with elevated content privileges — levels 1–5"
+        description="Trusted community members with elevated publishing privileges — authority levels 1–5"
       />
 
       <KPIGrid columns={4}>

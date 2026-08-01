@@ -108,7 +108,7 @@ export function ModerationClient({ messages, advisories, stats, session }: Props
     <div className="p-6 space-y-6">
       <PageHeader
         title="Moderation"
-        description="Review inbound WhatsApp messages and AI advisory flags"
+        description="Inbound WhatsApp messages and AI advisory flags awaiting community review"
       />
 
       <KPIGrid columns={4}>

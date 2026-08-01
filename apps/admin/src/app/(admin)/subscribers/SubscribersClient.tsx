@@ -88,7 +88,7 @@ export function SubscribersClient({ initialData, stats, currentPage }: Props) {
     <div className="p-6 space-y-6">
       <PageHeader
         title="Subscribers"
-        description="WhatsApp subscribers who have opted in — phone numbers masked per POPIA"
+        description="WhatsApp community members who have opted in — numbers masked per POPIA"
       />
 
       <KPIGrid columns={4}>

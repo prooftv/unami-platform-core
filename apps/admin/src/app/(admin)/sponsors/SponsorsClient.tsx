@@ -84,7 +84,7 @@ export function SponsorsClient({ initialData, stats, currentPage }: Props) {
     <div className="p-6 space-y-6">
       <PageHeader
         title="Sponsors"
-        description="Manage sponsor profiles and tier assignments"
+        description="Organisations funding community broadcasts — tier assignments and budget tracking"
       />
 
       <KPIGrid columns={4}>

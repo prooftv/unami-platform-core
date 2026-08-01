@@ -92,7 +92,7 @@ export function CampaignsClient({ initialData, budgetOverview, currentPage }: Pr
     <div className="p-6 space-y-6">
       <PageHeader
         title="Campaigns"
-        description="Sponsored broadcast campaigns — pending_review → approved → active"
+        description="Sponsored broadcast campaigns — from pending review through to active delivery"
       />
 
       <KPIGrid columns={4}>

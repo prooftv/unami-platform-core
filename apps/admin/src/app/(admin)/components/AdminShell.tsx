@@ -14,19 +14,19 @@ import { PreferencesPanel } from './PreferencesPanel';
 import { useSidebarCollapsible } from '@/lib/preferences/client';
 
 const NAV: NavigationSection[] = [
-  { title: 'Workspace', items: [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { title: 'Publishing', items: [
+    { label: 'Command Centre', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Moments', href: '/moments', icon: Radio },
     { label: 'Broadcasts', href: '/broadcasts', icon: Megaphone },
     { label: 'Campaigns', href: '/campaigns', icon: Briefcase },
   ] },
-  { title: 'Operations', items: [
+  { title: 'Community', items: [
     { label: 'Subscribers', href: '/subscribers', icon: Users },
     { label: 'Moderation', href: '/moderation', icon: ShieldAlert },
     { label: 'Authority', href: '/authority', icon: Network },
     { label: 'Sponsors', href: '/sponsors', icon: Tag },
   ] },
-  { title: 'System', items: [{ label: 'Settings', href: '/settings', icon: Settings }] },
+  { title: 'Platform', items: [{ label: 'Settings', href: '/settings', icon: Settings }] },
 ];
 
 const ROLE_LABELS: Record<AdminSession['role'], string> = { superadmin: 'Super Admin', content_admin: 'Content Admin', moderator: 'Moderator', viewer: 'Viewer' };
@@ -79,7 +79,7 @@ export function AdminShell({ session, children }: { session: AdminSession; child
       <button type="button" onClick={handleLogout} className="flex h-9 w-full items-center gap-3 rounded-md px-2 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"><LogOut className="size-4" />{!collapsed && <span>Sign out</span>}</button>
     </div>
   );
-  const sidebar = <Sidebar sections={NAV} activePath={pathname} collapsed={collapsed} onNavigate={navigate} header={collapsed ? <Radio className="size-5" /> : <div className="flex items-center gap-3"><div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"><Radio className="size-4" /></div><div><p className="text-sm font-semibold tracking-tight">Moments</p><p className="text-[11px] text-sidebar-foreground/50">Operations platform</p></div></div>} footer={sidebarFooter} />;
+  const sidebar = <Sidebar sections={NAV} activePath={pathname} collapsed={collapsed} onNavigate={navigate} header={collapsed ? <Radio className="size-5" /> : <div className="flex items-center gap-3"><div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"><Radio className="size-4" /></div><div><p className="text-sm font-semibold tracking-tight">Moments</p><p className="text-[11px] text-sidebar-foreground/50">Community publishing</p></div></div>} footer={sidebarFooter} />;
 
   return (
     <>
