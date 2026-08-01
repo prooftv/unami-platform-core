@@ -1,52 +1,50 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import { PreferencesStoreProvider } from '@moments/ui';
-import { getServerPreferences } from '@/lib/preferences/server';
-import './globals.css';
-
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' });
+import type { Metadata } from "next";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { fontVars } from "@/lib/fonts/registry";
+import { PREFERENCE_DEFAULTS } from "@/lib/preferences/preferences-config";
+import { ThemeBootScript } from "@/scripts/theme-boot";
+import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provider";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'Unami Platform',
-  description: 'Unami Platform Core — Admin',
+  title: "Moments — Community Publishing",
+  description: "Moments v2 Admin",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const prefs = await getServerPreferences();
-
-  // Inline script runs synchronously before React hydrates — prevents FOUC
-  const fouc = `
-(function(){
-  var r = document.documentElement;
-  r.setAttribute('data-theme-mode', '${prefs.themeMode}');
-  r.setAttribute('data-theme-preset', '${prefs.themePreset}');
-  r.setAttribute('data-font', '${prefs.font}');
-  r.setAttribute('data-content-layout', '${prefs.contentLayout}');
-  r.setAttribute('data-navbar-style', '${prefs.navbarStyle}');
-  r.setAttribute('data-sidebar-collapsible', '${prefs.sidebarCollapsible}');
-  if ('${prefs.themeMode}' === 'dark' || ('${prefs.themeMode}' === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    r.classList.add('dark');
-    r.style.colorScheme = 'dark';
-  }
-})();
-`.trim();
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const {
+    theme_mode,
+    theme_preset,
+    content_layout,
+    navbar_style,
+    sidebar_variant,
+    sidebar_collapsible,
+    font,
+  } = PREFERENCE_DEFAULTS;
 
   return (
-    <html lang="en" className={`${geist.variable} ${geistMono.variable} h-full bg-background antialiased`}>
+    <html
+      lang="en"
+      data-theme-mode={theme_mode}
+      data-theme-preset={theme_preset}
+      data-content-layout={content_layout}
+      data-navbar-style={navbar_style}
+      data-sidebar-variant={sidebar_variant}
+      data-sidebar-collapsible={sidebar_collapsible}
+      data-font={font}
+      suppressHydrationWarning
+    >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: fouc }} />
+        <ThemeBootScript />
       </head>
-      <body className="h-full bg-background text-foreground">
-        <PreferencesStoreProvider
-          themeMode={prefs.themeMode}
-          themePreset={prefs.themePreset}
-          font={prefs.font}
-          contentLayout={prefs.contentLayout}
-          navbarStyle={prefs.navbarStyle}
-        >
-          {children}
-        </PreferencesStoreProvider>
+      <body className={`${fontVars} min-h-screen antialiased`}>
+        <TooltipProvider>
+          <PreferencesStoreProvider initialValues={PREFERENCE_DEFAULTS}>
+            {children}
+            <Toaster />
+          </PreferencesStoreProvider>
+        </TooltipProvider>
       </body>
     </html>
   );
