@@ -23,7 +23,7 @@ export function Sidebar({ sections, header, footer, collapsed = false, className
         className,
       )}
     >
-      {header && <div className={clsx("flex h-16 shrink-0 items-center border-b border-sidebar-border", collapsed ? "justify-center px-2" : "px-4")}>{header}</div>}
+      {header && <div className={clsx("shrink-0 border-b border-sidebar-border", collapsed ? "flex h-16 items-center justify-center px-2" : "px-4 py-4")}>{header}</div>}
       <nav className="flex-1 overflow-y-auto px-2 py-4" aria-label="Primary navigation">
         <div className="flex flex-col gap-5">
           {sections.map((section, sectionIndex) => (
