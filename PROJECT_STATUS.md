@@ -9,8 +9,8 @@ Read this first when resuming work or starting a new session.
 
 | Field | Value |
 |---|---|
-| Version | `v0.3.0-operational-experience` |
-| Phase | Phase 7 — Operational Experience (Complete) |
+| Version | `v0.4.0-frontend-rebuild` |
+| Phase | Phase 9 — Frontend Shell Reset (In Progress) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
@@ -44,10 +44,41 @@ Read this first when resuming work or starting a new session.
 | Phase 7C | Platform UX — `FilterSelect` in `packages/ui`, pagination wired across all modules | ✅ Done |
 | Phase 7D | Realtime — P0 widgets (Broadcast Queue, Moderation Queue) live subscriptions | ✅ Done |
 | Phase 7E | Settings CRUD — feature flag toggles, system settings editor, `settings` Edge Function | ✅ Done (commit `4ce7320`) |
+| Phase 8A–8E | Dashboard urgency layout, Moments identity, preset personality, shadcn tokens, sidebar restructure | ✅ Done (commit `065b9de`) |
+| Phase 9 planning | Frontend rebuild plan — inventory, route map, component audit, phase definitions | ✅ Done (commit pending) |
 
 ---
 
-## Current Phase — Phase 7: Operational Experience (Complete)
+## Current Phase — Phase 9: Frontend Shell Reset
+
+**Decision:** Adopt official shadcn/ui dashboard as permanent shell. Stop iterating on current dashboard.  
+**Plan:** `docs/FRONTEND_REBUILD_PLAN.md`
+
+### Phase 9 Sub-phases
+
+| Sub-phase | Description | Status |
+|---|---|---|
+| Phase A | Official shadcn shell integrated into `apps/admin` | ⏳ Next |
+| Phase B | Shell integration — auth, theme, preferences, session | ⏳ Pending |
+| Phase C | Dashboard rebuilt inside shell | ⏳ Pending |
+| Phase D | Module migration — all 10 routes | ⏳ Pending |
+
+### What is frozen
+
+- All backend (Supabase, Edge Functions, RLS, migrations)
+- All API contracts (`packages/api`)
+- All shared types (`packages/shared`)
+- All routes (no route changes)
+
+### What changes
+
+- `apps/admin` shell presentation only
+- Module pages rebuilt with shadcn components
+- Custom wrapper components retired in favour of direct shadcn composition
+
+---
+
+## Previous Phase — Phase 7: Operational Experience (Complete)
 
 **All Phase 7 sub-phases complete. Platform is operationally live.**
 
