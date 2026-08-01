@@ -2,17 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  PageHeader, Badge, Button, Card, CardContent, CardHeader, CardTitle,
-  FormSection, FieldGroup,
-} from '@moments/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { MomentWithSponsor, AdminSession } from '@moments/api';
 import { createApiClient } from '@moments/api';
 import { createClient } from '@/lib/supabase/client';
 import { Send, ArrowLeft } from 'lucide-react';
 
-const STATUS_VARIANT: Record<string, 'outline' | 'warning' | 'success' | 'destructive' | 'secondary'> = {
-  draft: 'outline', scheduled: 'warning', broadcasted: 'success', cancelled: 'destructive',
+const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
+  draft: 'outline', scheduled: 'secondary', broadcasted: 'default', cancelled: 'destructive',
 };
 
 async function getToken() {
@@ -42,10 +41,7 @@ export function MomentDetailClient({ moment, session }: Props) {
     setError(null);
     try {
       const token = await getToken();
-      const api = createApiClient({
-        baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1',
-        token,
-      });
+      const api = createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
       const res = await api.broadcasts.trigger(moment.id);
       setResult(`Broadcast complete — ${res.successCount} of ${res.recipientCount} delivered`);
       router.refresh();
@@ -57,25 +53,25 @@ export function MomentDetailClient({ moment, session }: Props) {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-3xl">
-      <PageHeader
-        title={moment.title}
-        description={`${moment.region} · ${moment.category} · ${moment.language}`}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => router.push('/moments')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+    <div className="space-y-6 max-w-3xl">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">{moment.title}</h1>
+          <p className="text-sm text-muted-foreground">{moment.region} · {moment.category} · {moment.language}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => router.push('/moments')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          {canBroadcast && (
+            <Button size="sm" onClick={handleBroadcast} disabled={broadcasting}>
+              <Send className="h-4 w-4 mr-2" />
+              {broadcasting ? 'Broadcasting...' : 'Broadcast'}
             </Button>
-            {canBroadcast && (
-              <Button onClick={handleBroadcast} disabled={broadcasting}>
-                <Send className="h-4 w-4 mr-2" />
-                {broadcasting ? 'Broadcasting...' : 'Broadcast'}
-              </Button>
-            )}
-          </div>
-        }
-      />
+          )}
+        </div>
+      </div>
 
       {result && <p className="text-sm text-green-600 dark:text-green-400">{result}</p>}
       {error && <p className="text-sm text-destructive">{error}</p>}
@@ -86,7 +82,7 @@ export function MomentDetailClient({ moment, session }: Props) {
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2">
               <Badge variant={STATUS_VARIANT[moment.status]}>{moment.status}</Badge>
-              {moment.isSponsored && <Badge variant="info">Sponsored</Badge>}
+              {moment.isSponsored && <Badge variant="secondary">Sponsored</Badge>}
             </div>
             <div className="text-xs text-muted-foreground space-y-1">
               <p>Urgency: <span className="font-medium text-foreground">{moment.urgencyLevel}</span></p>
@@ -120,9 +116,7 @@ export function MomentDetailClient({ moment, session }: Props) {
       </Card>
 
       {moment.status === 'broadcasted' && (
-        <p className="text-xs text-muted-foreground">
-          This moment has been broadcasted and is immutable.
-        </p>
+        <p className="text-xs text-muted-foreground">This moment has been broadcasted and is immutable.</p>
       )}
     </div>
   );

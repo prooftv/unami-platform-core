@@ -2,30 +2,18 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  PageHeader, DataTable, TableToolbar, TablePagination,
-  Badge, Button, FilterSelect,
-} from '@moments/ui';
-import type { ColumnDef } from '@moments/ui';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { MomentWithSponsor, PaginatedResponse, AdminSession } from '@moments/api';
 import { MomentStatus } from '@moments/shared';
 import { PlusCircle } from 'lucide-react';
 
-const STATUS_VARIANT: Record<string, 'outline' | 'warning' | 'success' | 'destructive' | 'secondary'> = {
-  draft:       'outline',
-  scheduled:   'warning',
-  broadcasted: 'success',
-  cancelled:   'destructive',
+const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
+  draft: 'outline', scheduled: 'secondary', broadcasted: 'default', cancelled: 'destructive',
 };
-
-const URGENCY_VARIANT: Record<string, 'secondary' | 'info' | 'warning' | 'destructive'> = {
-  low:    'secondary',
-  medium: 'info',
-  high:   'warning',
-  urgent: 'destructive',
-};
-
-const STATUS_OPTIONS = Object.values(MomentStatus).map((s) => ({ value: s, label: s }));
 
 interface Props {
   initialData: PaginatedResponse<MomentWithSponsor> | null;
@@ -42,99 +30,96 @@ export function MomentsClient({ initialData, session, currentPage }: Props) {
 
   const rows = (initialData?.data ?? []).filter((m) => {
     const matchSearch = !search || m.title.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || m.status === statusFilter;
+    const matchStatus = !statusFilter || statusFilter === 'all' || m.status === statusFilter;
     return matchSearch && matchStatus;
   });
 
-  function handlePageChange(page: number) {
-    router.push(`/moments?page=${page}`);
-  }
-
-  const columns: ColumnDef<MomentWithSponsor>[] = [
-    {
-      key: 'title',
-      header: 'Title',
-      cell: (m) => (
-        <div>
-          <p className="font-medium text-sm">{m.title}</p>
-          <p className="text-xs text-muted-foreground">{m.region} · {m.category}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      cell: (m) => <Badge variant={STATUS_VARIANT[m.status]}>{m.status}</Badge>,
-    },
-    {
-      key: 'urgency',
-      header: 'Urgency',
-      cell: (m) => <Badge variant={URGENCY_VARIANT[m.urgencyLevel]}>{m.urgencyLevel}</Badge>,
-    },
-    {
-      key: 'sponsor',
-      header: 'Sponsor',
-      cell: (m) => m.sponsor ? (
-        <span className="text-sm">{m.sponsor.displayName}</span>
-      ) : (
-        <span className="text-xs text-muted-foreground">—</span>
-      ),
-    },
-    {
-      key: 'created',
-      header: 'Created',
-      cell: (m) => (
-        <span className="text-xs text-muted-foreground">
-          {new Date(m.createdAt).toLocaleDateString()}
-        </span>
-      ),
-    },
-  ];
+  const total = initialData?.pagination.total ?? 0;
+  const limit = initialData?.pagination.limit ?? 20;
+  const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader
-        title="Moments"
-        description="Draft, schedule, and publish community moments for WhatsApp broadcast"
-        actions={
-          canCreate ? (
-            <Button onClick={() => router.push('/moments/new')}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Moment
-            </Button>
-          ) : undefined
-        }
-      />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Moments</h1>
+          <p className="text-sm text-muted-foreground">Draft, schedule, and publish community moments for WhatsApp broadcast</p>
+        </div>
+        {canCreate && (
+          <Button size="sm" onClick={() => router.push('/moments/new')}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Moment
+          </Button>
+        )}
+      </div>
 
-      <TableToolbar
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search moments..."
-        filters={
-          <FilterSelect
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={STATUS_OPTIONS}
-            placeholder="All statuses"
-          />
-        }
-      />
-
-      <DataTable
-        columns={columns}
-        data={rows}
-        getRowKey={(m) => m.id}
-        onRowClick={(m) => router.push(`/moments/${m.id}`)}
-        emptyMessage="No moments yet. Create your first moment."
-      />
-
-      {initialData && (
-        <TablePagination
-          page={currentPage}
-          pageSize={initialData.pagination.limit}
-          total={initialData.pagination.total}
-          onPageChange={handlePageChange}
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Search moments..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-8 w-64"
         />
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-8 w-40">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {Object.values(MomentStatus).map((s) => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Urgency</TableHead>
+            <TableHead>Sponsor</TableHead>
+            <TableHead>Created</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                No moments yet. Create your first moment.
+              </TableCell>
+            </TableRow>
+          ) : rows.map((m) => (
+            <TableRow key={m.id} className="cursor-pointer" onClick={() => router.push(`/moments/${m.id}`)}>
+              <TableCell>
+                <p className="font-medium text-sm">{m.title}</p>
+                <p className="text-xs text-muted-foreground">{m.region} · {m.category}</p>
+              </TableCell>
+              <TableCell><Badge variant={STATUS_VARIANT[m.status]}>{m.status}</Badge></TableCell>
+              <TableCell><Badge variant="outline">{m.urgencyLevel}</Badge></TableCell>
+              <TableCell>
+                {m.sponsor
+                  ? <span className="text-sm">{m.sponsor.displayName}</span>
+                  : <span className="text-xs text-muted-foreground">—</span>}
+              </TableCell>
+              <TableCell>
+                <span className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleDateString()}</span>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>{total} total</span>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => router.push(`/moments?page=${currentPage - 1}`)}>Previous</Button>
+            <span>Page {currentPage} of {totalPages}</span>
+            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => router.push(`/moments?page=${currentPage + 1}`)}>Next</Button>
+          </div>
+        </div>
       )}
     </div>
   );
