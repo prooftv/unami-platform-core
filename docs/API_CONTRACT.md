@@ -54,8 +54,23 @@ Last updated: Phase 10 complete. Phases 11–13 endpoints defined here before im
 | POST | `/moments/:id/schedule` | superadmin, content_admin | Set scheduled_at, status → scheduled |
 | POST | `/moments/:id/cancel` | superadmin, content_admin | status → cancelled |
 | GET | `/moments/:id/stats` | all | Engagement counters from moment_stats |
+| GET | `/moments/public` | **public** | Broadcasted + publish_to_pwa=true, paginated |
+| GET | `/moments/public/:id` | **public** | Single public moment |
 
-### GET /moments — Query params
+### GET /moments/public — Query params (public, no auth)
+| Param | Type | Description |
+|---|---|
+| page | number | default 1 |
+| limit | number | default 20, max 50 |
+| region | Region | filter by region |
+| category | Category | filter by category |
+| search | string | ilike on title + content |
+
+Returns only `status = 'broadcasted' AND publish_to_pwa = true` moments.
+Phone numbers, admin metadata, and internal fields are excluded from the response.
+
+### GET /moments/public/:id — Response 200
+Same shape as list item. Returns 404 if moment is not broadcasted or not publish_to_pwa.
 | Param | Type | Description |
 |---|---|---|
 | page | number | default 1 |
@@ -445,6 +460,7 @@ active/suspended → expired (system, when valid_until passes)
 
 | Endpoint group | Backend | API Client | UI |
 |---|---|---|---|
+| Moments (public read) | ✅ | ✅ | ✅ |
 | Auth | ✅ | ✅ | ✅ |
 | Moments (CRUD + schedule + cancel + stats) | ✅ | ✅ | ✅ |
 | Broadcast (trigger) | ✅ | ✅ | ✅ |

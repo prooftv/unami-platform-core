@@ -55,9 +55,19 @@ Deno.serve(async (req: Request) => {
 
   const url = new URL(req.url);
   const parts = url.pathname.replace(/^\/moments\/?/, '').split('/').filter(Boolean);
-  // parts[0] = moment id (optional), parts[1] = sub-action (e.g. 'broadcast', 'schedule')
+  // parts[0] = moment id or 'public', parts[1] = sub-action or moment id
 
   try {
+    // GET /moments/public — public feed (no auth, publish_to_pwa=true only)
+    if (req.method === 'GET' && parts.length === 1 && parts[0] === 'public') {
+      return await listPublicMoments(req, cors);
+    }
+
+    // GET /moments/public/:id — public detail
+    if (req.method === 'GET' && parts.length === 2 && parts[0] === 'public') {
+      return await getPublicMoment(req, parts[1], cors);
+    }
+
     // GET /moments — list
     if (req.method === 'GET' && parts.length === 0) {
       return await listMoments(req, cors);
@@ -276,6 +286,70 @@ async function cancelMoment(req: Request, id: string, cors: Record<string, strin
 
   if (error) return err(error.message, 500, cors);
   await logAudit(supabase, context.userId, 'cancel', 'moment', id);
+  return json(data, 200, cors);
+}
+
+// ---------------------------------------------------------------------------
+// Public handlers (no auth — publish_to_pwa=true + broadcasted only)
+// ---------------------------------------------------------------------------
+
+const PublicListSchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(50).default(20),
+  region: z.enum(Region).optional(),
+  category: z.enum(Category).optional(),
+  search: z.string().max(200).optional(),
+});
+
+async function listPublicMoments(req: Request, cors: Record<string, string>) {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
+
+  const params = Object.fromEntries(new URL(req.url).searchParams);
+  const parsed = PublicListSchema.safeParse(params);
+  if (!parsed.success) return err('Invalid query parameters', 400, cors);
+
+  const { page, limit, region, category, search } = parsed.data;
+  const offset = (page - 1) * limit;
+
+  let query = supabase
+    .from('moments')
+    .select('id, title, content, region, category, language, urgency_level, is_sponsored, sponsor_id, pwa_link, media_urls, created_at, sponsors(display_name, logo_url, tier)', { count: 'exact' })
+    .eq('status', 'broadcasted')
+    .eq('publish_to_pwa', true)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (region)   query = query.eq('region', region);
+  if (category) query = query.eq('category', category);
+  if (search)   query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
+
+  const { data, error, count } = await query;
+  if (error) return err(error.message, 500, cors);
+
+  return json({
+    data,
+    pagination: { page, limit, total: count ?? 0, totalPages: Math.ceil((count ?? 0) / limit) },
+  }, 200, cors);
+}
+
+async function getPublicMoment(req: Request, id: string, cors: Record<string, string>) {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
+
+  const { data, error } = await supabase
+    .from('moments')
+    .select('id, title, content, region, category, language, urgency_level, is_sponsored, sponsor_id, pwa_link, media_urls, created_at, sponsors(display_name, logo_url, tier)')
+    .eq('id', id)
+    .eq('status', 'broadcasted')
+    .eq('publish_to_pwa', true)
+    .single();
+
+  if (error || !data) return err('Moment not found', 404, cors);
   return json(data, 200, cors);
 }
 

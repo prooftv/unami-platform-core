@@ -22,10 +22,9 @@
 - Fix bugs only — no speculative improvements to infrastructure
 
 ## Current priority
-Phase 10 — Moments Workflow.
-The one known P0 bug: `GET /broadcasts` endpoint does not exist.
-The `broadcast` Edge Function only handles `POST /:momentId`.
-Fix this before any other Phase 10 work.
+Phase 15 — Automation & Production.
+Phase 14 (Public PWA) is complete — `apps/web` built and passing.
+Phase 15 work: n8n intent executor, WhatsApp production credentials, rate limiting, broadcast retry, service worker.
 
 ## Layer rules
 - `packages/ui` — no Supabase, no auth, no app-specific logic

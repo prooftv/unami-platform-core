@@ -61,7 +61,7 @@ are retained as legitimate shared assets.
 ## D-013: Product phases over technical fixes
 From Phase 10 onward, work is organised by product workflow, not by technical component.
 Each phase must answer: "Which user workflow becomes fully usable?"
-Phases: 10 Moments Workflow → 11 Community → 12 Commercial → 13 Hardening → 14 Public PWA → 15 Automation → 16 Expansion.
+Phases: 10 Moments Workflow ✅ → 11 Community ✅ → 12 Commercial ✅ → 13 Hardening (partial) → 14 Public PWA ✅ → 15 Automation & Production → 16 Expansion.
 
 ## D-014: Badge variants — shadcn only
 shadcn `Badge` accepts only: `default | secondary | destructive | outline | ghost | link`.
@@ -72,3 +72,20 @@ Map: `warning` → `secondary`, `success` → `default`, `info` → `outline`.
 `data-active={isActive || undefined}` — never `data-active={isActive}`.
 When false, the attribute must be omitted entirely. Tailwind v4 `data-active:` matches
 any element with the attribute present regardless of value, causing all items to appear active.
+
+## D-016: Public data access — separate endpoint path, no auth bypass
+Public read routes live at `/moments/public` and `/moments/public/:id` in the moments Edge Function.
+They do not call `requireAuth()`. They enforce `status = 'broadcasted' AND publish_to_pwa = true` at the DB query level.
+The service role key is used server-side in the Edge Function — the anon key is only used as a bearer token
+to reach the Edge Function, not to query the database directly.
+This preserves the architectural rule: no application code calls Supabase directly.
+
+## D-017: `createPublicApiClient` — separate factory, same package
+Public API access uses `createPublicApiClient({ baseUrl, token: anonKey })` from `packages/api`.
+This is a separate factory from `createApiClient` — it returns only `{ moments }` (public client).
+`apps/web` never imports `createApiClient`. The distinction is enforced at the import level.
+
+## D-018: `apps/web` has no Supabase client
+`apps/web` does not depend on `@supabase/supabase-js` or `@supabase/ssr`.
+All data flows through `packages/api` → Edge Functions. The anon key is an env var used
+only as a bearer token in the API client config. No direct DB access from the public app.

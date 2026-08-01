@@ -9,12 +9,12 @@ Read this first when resuming work or starting a new session.
 
 | Field | Value |
 |---|---|
-| Version | `v0.5.0-platform-complete` |
-| Phase | Phase 10 — Moments Workflow (Next) |
+| Version | `v0.6.0-public-pwa` |
+| Phase | Phase 14 — Public Experience (Complete) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `c36a0e9` |
+| Last commit | pending |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -32,7 +32,7 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 | `packages/ui` | ✅ Complete | 100% |
 | `packages/api` | ✅ Complete | 98% |
 | `apps/admin` shell + dashboard | ✅ Complete | 90% |
-| `apps/web` public PWA | ❌ Not started | 0% |
+| `apps/web` public PWA | ✅ Complete | 100% |
 
 **One known bug:** ~~`GET /broadcasts` endpoint did not exist.~~ Fixed — `supabase/functions/broadcasts/index.ts` added.
 
@@ -126,38 +126,49 @@ Each phase completes a full user workflow, not a technical component.
 
 | Task | Status |
 |---|---|
-| Public PWA scaffold (layout, theme, fonts) | ⏳ |
-| Moment feed page (broadcasted, publish_to_pwa=true) | ⏳ |
-| Moment detail page | ⏳ |
-| Region pages | ⏳ |
-| Category pages | ⏳ |
-| Search | ⏳ |
-| Subscribe flow (WhatsApp deep link) | ⏳ |
-| Offline support (PWA manifest, service worker) | ⏳ |
+| Public PWA scaffold (layout, theme, fonts) | ✅ |
+| Public read endpoints in moments Edge Function (`/moments/public`) | ✅ |
+| `createPublicApiClient` in `packages/api` | ✅ |
+| Moment feed page (broadcasted, publish_to_pwa=true) | ✅ |
+| Moment detail page | ✅ |
+| Region pages | ✅ |
+| Category pages | ✅ |
+| Search | ✅ |
+| Subscribe flow (WhatsApp deep link) | ✅ |
+| PWA manifest | ✅ |
+| Offline support (service worker) | ⏳ Phase 15 |
 
 ---
 
-### Phase 15 — Automation
-**Goal:** WhatsApp is live in production. n8n handles advisory analysis.
+### Phase 15 — Automation & Production
+**Goal:** WhatsApp is live in production. n8n handles delivery. Platform is production-hardened.
 
 | Task | Status |
 |---|---|
 | WhatsApp Cloud API production credentials | ⏳ |
 | Live webhook end-to-end test | ⏳ |
-| n8n workflow — advisory confidence scoring | ⏳ |
+| n8n workflow — intent executor (broadcast delivery loop) | ⏳ |
 | n8n workflow — scheduled broadcast trigger | ⏳ |
-| n8n workflow — HELP/STATUS auto-reply | ⏳ |
+| n8n workflow — HELP/STATUS/STOP auto-reply | ⏳ |
+| n8n workflow — weekly digest generator | ⏳ |
+| Rate limiting enforcement in Edge Functions | ⏳ |
+| Broadcast retry logic for failed batches | ⏳ |
+| `media` upload endpoint and storage management | ⏳ |
+| Service worker (offline support for PWA) | ⏳ |
+| `user_profiles` admin management | ⏳ |
 
 ---
 
 ### Phase 16 — Platform Expansion
-**Goal:** Second application onboards onto the platform.
+**Goal:** Second application onboards onto the platform. Package scope renamed.
 
 | Task | Status |
 |---|---|
-| Rename `@moments/*` → `@unami/*` | ⏳ |
-| Spree Operations Dashboard scaffold | ⏳ |
-| BeatsChain domain package scaffold | ⏳ |
+| Rename `@moments/*` → `@unami/*` across all packages and apps | ⏳ |
+| Extract Moments domain enums from `packages/shared` into `apps/admin/domain` | ⏳ |
+| Spree Operations Dashboard scaffold (`apps/spree`) | ⏳ |
+| BeatsChain domain package scaffold (`packages/domain/beatschain`) | ⏳ |
+| Umkhandlu governance domain scaffold | ⏳ |
 
 ---
 

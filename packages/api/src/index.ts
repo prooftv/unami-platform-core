@@ -1,6 +1,7 @@
 export { ApiError } from './http';
 export type { ApiConfig } from './http';
 export type * from './types/index';
+export type { PublicMoment, PublicListParams } from './clients/public-moments';
 
 export type { SubscriberStats } from './clients/subscribers';
 export type { ModerationStats, MessageWithAdvisories, Comment } from './clients/moderation';
@@ -10,6 +11,7 @@ export type { CampaignBudgetEntry, BudgetTransaction, CreateCampaignInput, Updat
 export type { IntentStats } from './clients/analytics';
 export type { FeatureFlag, SystemSetting, AuditLogEntry, ErrorLogEntry } from './clients/settings';
 
+import { createPublicMomentsClient } from './clients/public-moments';
 import { createMomentsClient } from './clients/moments';
 import { createBroadcastsClient } from './clients/broadcasts';
 import { createAuthClient } from './clients/auth';
@@ -25,6 +27,15 @@ export interface ApiClientConfig {
   baseUrl: string;
   token: string;
 }
+
+// Public client — uses anon key as token, no user auth required
+export function createPublicApiClient(config: ApiClientConfig) {
+  return {
+    moments: createPublicMomentsClient(config),
+  };
+}
+
+export type PublicApiClient = ReturnType<typeof createPublicApiClient>;
 
 export function createApiClient(config: ApiClientConfig) {
   return {

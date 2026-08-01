@@ -29,7 +29,7 @@ https://github.com/prooftv/unami-platform-core
 | API contracts | `packages/api` | ✅ Complete | Frontend never calls Supabase directly |
 | Edge Functions | `supabase/functions/` | ✅ Complete | Only layer that touches the database |
 | Admin app | `apps/admin` | ✅ Shell complete, product workflows in progress | Consumes packages, never reimplements platform |
-| Public PWA | `apps/web` | ❌ Not started | Will consume same packages |
+| Public PWA | `apps/web` | ✅ Complete | Consumes same packages, public read via anon key |
 
 ---
 
@@ -37,7 +37,9 @@ https://github.com/prooftv/unami-platform-core
 
 ```
 apps/admin or apps/web
-  → packages/api (typed client, createApiClient())
+  → packages/api (typed client)
+      createApiClient({ baseUrl, token: jwt })       ← admin: user JWT
+      createPublicApiClient({ baseUrl, token: anon }) ← web: anon key
     → supabase/functions/* (Edge Function, Deno)
       → Supabase DB (service role key, RLS enforced)
 ```
@@ -51,7 +53,7 @@ No application code calls Supabase directly. No exceptions.
 | Function | Routes | Auth |
 |---|---|---|
 | `auth` | `GET /auth` | JWT validation → role + authority_id |
-| `moments` | `GET/POST/PUT/DELETE /moments`, `POST /moments/:id/schedule` | requireAuth |
+| `moments` | `GET/POST/PUT/DELETE /moments`, `POST /moments/:id/schedule`, `GET/POST /moments/public` | requireAuth (admin routes), public (public routes) |
 | `broadcast` | `POST /broadcast/:momentId` | requireAuth — content_admin+ |
 | `broadcasts` | `GET /broadcasts`, `GET /broadcasts/:id` | requireAuth |
 | `webhook` | `GET/POST /webhook` | HMAC-SHA256 verification |
@@ -67,8 +69,28 @@ No application code calls Supabase directly. No exceptions.
 
 ## API Client (`packages/api`)
 
-Single factory: `createApiClient({ baseUrl, token })` returns typed clients for all 10 domains.
+Two factories:
+- `createApiClient({ baseUrl, token })` — authenticated, returns all 10 domain clients. Used by `apps/admin`.
+- `createPublicApiClient({ baseUrl, token })` — uses anon key, returns `{ moments }` public client only. Used by `apps/web`.
+
 All response types flow from `packages/shared` types — no duplication.
+
+---
+
+## Public PWA (`apps/web`)
+
+**Shell:** `(public)/layout.tsx` — sticky nav header + footer with region/category links. No auth.
+
+**Routes:**
+- `/` — moment feed (broadcasted + publish_to_pwa=true), paginated
+- `/moments/[id]` — moment detail, WhatsApp share button
+- `/region/[region]` — feed filtered by region
+- `/category/[category]` — feed filtered by category
+- `/search` — keyword search across moments
+- `/subscribe` — WhatsApp deep link opt-in flow
+
+**Data access:** `getPublicApiClient()` — anon key, calls `/moments/public` endpoints only.
+**No auth, no Supabase client, no `@supabase/ssr`.**
 
 ---
 
@@ -109,12 +131,10 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 
 ## Current Phase
 
-**Phase 10 — Moments Workflow**
+**Phase 14 — Public Experience — Complete**
 
-Fix the broadcasts list endpoint. Complete the full Moments workflow:
-draft → edit → schedule → broadcast → history → analytics.
-
-See `PROJECT_STATUS.md` for full phase breakdown.
+`apps/web` is built and passing. Public feed, detail, region, category, search, subscribe all live.
+Next: Phase 15 — Automation & Production (n8n, WhatsApp credentials, hardening).
 
 ---
 

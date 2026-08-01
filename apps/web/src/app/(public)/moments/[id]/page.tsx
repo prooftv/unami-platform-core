@@ -1,0 +1,75 @@
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import type { Metadata } from 'next';
+import { getPublicApiClient } from '@/lib/api/client';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const api = getPublicApiClient();
+  const moment = await api.moments.get(id).catch(() => null);
+  if (!moment) return { title: 'Moment not found' };
+  return { title: moment.title, description: moment.content.slice(0, 160) };
+}
+
+export default async function MomentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const api = getPublicApiClient();
+  const moment = await api.moments.get(id).catch(() => null);
+  if (!moment) notFound();
+
+  const waText = encodeURIComponent(`${moment.title}\n\n${moment.content}`);
+  const waShareUrl = `https://wa.me/?text=${waText}`;
+
+  return (
+    <article className="space-y-6 max-w-2xl">
+      <div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-3">
+          <Link href={`/region/${moment.region}`} className="hover:text-foreground transition-colors font-medium">
+            {moment.region}
+          </Link>
+          <span>·</span>
+          <Link href={`/category/${moment.category}`} className="hover:text-foreground transition-colors">
+            {moment.category}
+          </Link>
+          <span>·</span>
+          <time>{new Date(moment.createdAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}</time>
+        </div>
+        <h1 className="text-2xl font-semibold leading-snug tracking-tight">{moment.title}</h1>
+      </div>
+
+      {moment.isSponsored && moment.sponsor && (
+        <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          In partnership with <span className="font-medium text-foreground">{moment.sponsor.displayName}</span>
+        </div>
+      )}
+
+      <div className="prose prose-sm max-w-none text-foreground">
+        {moment.content.split('\n').map((line, i) => (
+          <p key={i} className="mb-3 last:mb-0 leading-relaxed">{line}</p>
+        ))}
+      </div>
+
+      {moment.mediaUrls && moment.mediaUrls.length > 0 && (
+        <div className="space-y-3">
+          {moment.mediaUrls.map((url, i) => (
+            <img key={i} src={url} alt="" className="rounded-lg w-full object-cover max-h-96" />
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-3 pt-2 border-t">
+        <a
+          href={waShareUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-md bg-[#25D366] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+        >
+          Share on WhatsApp
+        </a>
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          ← All moments
+        </Link>
+      </div>
+    </article>
+  );
+}
