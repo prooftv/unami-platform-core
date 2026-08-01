@@ -35,7 +35,234 @@ import {
   Zap,
   HardDrive,
   Wifi,
+  CheckCircle2,
+  AlertTriangle,
+  CalendarClock,
+  MessageSquareWarning,
 } from 'lucide-react';
+
+// ── Platform Status Banner ───────────────────────────────────────────────────
+
+type PlatformState = 'operational' | 'degraded' | 'attention';
+
+function derivePlatformState(
+  metrics: DashboardMetrics | null,
+  queueMoments: MomentWithSponsor[],
+  moderationStats: ModerationStats | null,
+  scheduledMoments: MomentWithSponsor[],
+): { state: PlatformState; attentionItems: string[] } {
+  const items: string[] = [];
+
+  if (queueMoments.length > 0)
+    items.push(`${queueMoments.length} moment${queueMoments.length > 1 ? 's' : ''} awaiting broadcast`);
+
+  if (moderationStats && moderationStats.escalatedAdvisories > 0)
+    items.push(`${moderationStats.escalatedAdvisories} escalated advisor${moderationStats.escalatedAdvisories > 1 ? 'ies' : 'y'}`);
+
+  if (moderationStats && moderationStats.pendingMessages > 0)
+    items.push(`${moderationStats.pendingMessages} message${moderationStats.pendingMessages > 1 ? 's' : ''} pending moderation`);
+
+  const imminent = scheduledMoments.filter((m) => {
+    if (!m.scheduledAt) return false;
+    const diff = new Date(m.scheduledAt).getTime() - Date.now();
+    return diff > 0 && diff < 30 * 60 * 1000;
+  });
+  if (imminent.length > 0)
+    items.push(`Broadcast scheduled in ${Math.round((new Date(imminent[0].scheduledAt!).getTime() - Date.now()) / 60000)} minutes`);
+
+  const state: PlatformState =
+    metrics === null ? 'degraded' :
+    items.length > 0 ? 'attention' :
+    'operational';
+
+  return { state, attentionItems: items };
+}
+
+export function PlatformStatusBanner({
+  metrics,
+  queueMoments,
+  moderationStats,
+  scheduledMoments,
+}: {
+  metrics: DashboardMetrics | null;
+  queueMoments: MomentWithSponsor[];
+  moderationStats: ModerationStats | null;
+  scheduledMoments: MomentWithSponsor[];
+}) {
+  const { state, attentionItems } = derivePlatformState(metrics, queueMoments, moderationStats, scheduledMoments);
+
+  if (state === 'operational') {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 px-4 py-3">
+        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+        <span className="text-sm font-medium text-green-800 dark:text-green-300">Platform operational — no items require attention</span>
+      </div>
+    );
+  }
+
+  if (state === 'degraded') {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30 px-4 py-3">
+        <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
+        <span className="text-sm font-medium text-red-800 dark:text-red-300">Platform status unavailable — check connectivity</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 px-4 py-3 space-y-2">
+      <div className="flex items-center gap-3">
+        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+        <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+          Needs attention ({attentionItems.length})
+        </span>
+      </div>
+      <ul className="ml-7 space-y-1">
+        {attentionItems.map((item) => (
+          <li key={item} className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+            <span className="h-1 w-1 rounded-full bg-amber-500 shrink-0" />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ── Today's Operations Panel ──────────────────────────────────────────────────
+
+export function TodaysOperationsPanel({
+  queueMoments,
+  moderationStats,
+  scheduledMoments,
+}: {
+  queueMoments: MomentWithSponsor[];
+  moderationStats: ModerationStats | null;
+  scheduledMoments: MomentWithSponsor[];
+}) {
+  const router = useRouter();
+  useRealtimeTable('moments', () => router.refresh());
+  useRealtimeTable('messages', () => router.refresh());
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Broadcast Queue */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Send className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm">Broadcast Queue</CardTitle>
+            </div>
+            <Badge variant={queueMoments.length > 0 ? 'warning' : 'outline'}>
+              {queueMoments.length}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {queueMoments.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-3 text-center">Queue clear</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {queueMoments.slice(0, 4).map((m) => (
+                <li
+                  key={m.id}
+                  className="flex items-center justify-between text-xs cursor-pointer hover:bg-accent rounded px-1.5 py-1 transition-colors"
+                  onClick={() => router.push(`/moments/${m.id}`)}
+                >
+                  <span className="truncate flex-1 mr-2">{m.title}</span>
+                  <Badge variant="outline" className="text-[10px]">{m.status}</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            onClick={() => router.push('/moments?status=draft')}
+            className="mt-3 w-full text-xs text-primary hover:underline text-left"
+          >
+            View all →
+          </button>
+        </CardContent>
+      </Card>
+
+      {/* Moderation Queue */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageSquareWarning className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm">Moderation</CardTitle>
+            </div>
+            <Badge variant={moderationStats && moderationStats.pendingMessages > 0 ? 'warning' : 'outline'}>
+              {moderationStats?.pendingMessages ?? '—'}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Pending review</span>
+            <span className="font-medium">{moderationStats?.pendingMessages ?? '—'}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Escalated</span>
+            <span className={moderationStats && moderationStats.escalatedAdvisories > 0 ? 'font-medium text-destructive' : 'font-medium'}>
+              {moderationStats?.escalatedAdvisories ?? '—'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Oldest pending</span>
+            <span className="text-muted-foreground">
+              {moderationStats?.oldestPendingAge != null ? `${moderationStats.oldestPendingAge}m ago` : '—'}
+            </span>
+          </div>
+          <button
+            onClick={() => router.push('/moderation')}
+            className="mt-2 w-full text-xs text-primary hover:underline text-left"
+          >
+            Review queue →
+          </button>
+        </CardContent>
+      </Card>
+
+      {/* Scheduled Publications */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm">Scheduled</CardTitle>
+            </div>
+            <Badge variant={scheduledMoments.length > 0 ? 'outline' : 'outline'}>
+              {scheduledMoments.length}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {scheduledMoments.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-3 text-center">Nothing scheduled</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {scheduledMoments.slice(0, 4).map((m) => (
+                <li key={m.id} className="flex items-center justify-between text-xs">
+                  <span className="truncate flex-1 mr-2">{m.title}</span>
+                  <span className="text-muted-foreground shrink-0">
+                    {m.scheduledAt ? new Date(m.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            onClick={() => router.push('/moments?status=scheduled')}
+            className="mt-3 w-full text-xs text-primary hover:underline text-left"
+          >
+            View all →
+          </button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 // ── Today's KPIs ──────────────────────────────────────────────────────────────
 

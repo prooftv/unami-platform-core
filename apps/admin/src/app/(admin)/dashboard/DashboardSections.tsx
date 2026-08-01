@@ -11,6 +11,8 @@ import {
   RecentMomentsWidget,
   UpcomingScheduledWidget,
   RecentBroadcastsWidget,
+  PlatformStatusBanner,
+  TodaysOperationsPanel,
 } from './widgets/OverviewWidgets';
 import {
   DeliverySuccessWidget,
@@ -166,28 +168,48 @@ export type PlatformProps = {
 
 export function OverviewSection({ metrics, queueMoments, moderationStats, recentMoments, scheduledMoments, recentBroadcasts }: OverviewProps) {
   return (
-    <div className="space-y-4 animate-in fade-in duration-300">
-      <TodayKPIs metrics={metrics} />
+    <div className="space-y-6 animate-in fade-in duration-300">
 
-      <WidgetGrid>
-        <Col6><BroadcastQueueWidget moments={queueMoments} /></Col6>
-        <Col6><ModerationQueueWidget stats={moderationStats} /></Col6>
-      </WidgetGrid>
+      {/* 1 — Platform status: what is the state of the platform right now? */}
+      <PlatformStatusBanner
+        metrics={metrics}
+        queueMoments={queueMoments}
+        moderationStats={moderationStats}
+        scheduledMoments={scheduledMoments}
+      />
 
-      <WidgetGrid>
-        <Col6><QuickActionsWidget /></Col6>
-        <Col6><RecentActivityWidget moments={recentMoments} broadcasts={recentBroadcasts} /></Col6>
-      </WidgetGrid>
+      {/* 2 — Today's operations: what needs action today? */}
+      <div>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Today’s Operations</h2>
+        <TodaysOperationsPanel
+          queueMoments={queueMoments}
+          moderationStats={moderationStats}
+          scheduledMoments={scheduledMoments}
+        />
+      </div>
 
-      <WidgetGrid>
-        <Col4><OperationalHealthWidget metrics={metrics} /></Col4>
-        <Col4><RecentMomentsWidget moments={recentMoments} /></Col4>
-        <Col4><UpcomingScheduledWidget moments={scheduledMoments} /></Col4>
-      </WidgetGrid>
+      {/* 3 — Recent activity: what just happened? */}
+      <div>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Recent Activity</h2>
+        <WidgetGrid>
+          <Col8><RecentActivityWidget moments={recentMoments} broadcasts={recentBroadcasts} /></Col8>
+          <Col4><QuickActionsWidget /></Col4>
+        </WidgetGrid>
+      </div>
 
-      <WidgetGrid>
-        <Col12><RecentBroadcastsWidget broadcasts={recentBroadcasts} /></Col12>
-      </WidgetGrid>
+      {/* 4 — Platform snapshot: KPIs and health (context, not urgency) */}
+      <div>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Platform Snapshot</h2>
+        <TodayKPIs metrics={metrics} />
+        <div className="mt-4">
+          <WidgetGrid>
+            <Col4><OperationalHealthWidget metrics={metrics} /></Col4>
+            <Col4><RecentMomentsWidget moments={recentMoments} /></Col4>
+            <Col4><RecentBroadcastsWidget broadcasts={recentBroadcasts} /></Col4>
+          </WidgetGrid>
+        </div>
+      </div>
+
     </div>
   );
 }
