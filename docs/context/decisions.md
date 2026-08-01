@@ -89,3 +89,24 @@ This is a separate factory from `createApiClient` — it returns only `{ moments
 `apps/web` does not depend on `@supabase/supabase-js` or `@supabase/ssr`.
 All data flows through `packages/api` → Edge Functions. The anon key is an env var used
 only as a bearer token in the API client config. No direct DB access from the public app.
+
+## D-019: Rate limiting — enforced at Edge Function layer
+Rate limiting is enforced via the `rate_limits` table in `_shared/auth.ts` `checkRateLimit()`.
+Limits: webhook 1000/min (keyed by IP, always returns 200 to Meta), moments POST 60/min (by IP),
+broadcast 10/min (by user ID). The `rate_limits` table already existed in the schema — this
+completes the enforcement that was previously absent.
+
+## D-020: Broadcast retry — separate function, MAX_ATTEMPTS=3
+Failed broadcast batches are retried via `POST /retry-batches` (new Edge Function).
+Max 3 attempts tracked via `moment_intents.attempts`. Only partial failures are retried —
+batches where all recipients failed are skipped (likely invalid numbers).
+
+## D-021: Media storage — Supabase Storage bucket `moments-media`
+Media uploads go through `POST /media` Edge Function → Supabase Storage bucket `moments-media`.
+Allowed types: image/jpeg, png, webp, gif, audio/mpeg, ogg, wav, video/mp4, webm, application/pdf.
+Max 16 MB. Returns public URL. Records in `media` table. Superadmin-only delete.
+
+## D-022: Service worker — cache-first static, network-first navigation
+`apps/web/public/sw.js` registered via Next.js Script (afterInteractive).
+Strategy: cache-first for static assets (.js/.css/images), network-first for navigation
+with offline fallback to `/offline` page. API calls and cross-origin requests bypass the cache.

@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { z } from 'https://esm.sh/zod@3';
-import { requireAuth, corsHeaders, json, err, logAudit, logError } from '../_shared/auth.ts';
+import { requireAuth, corsHeaders, json, err, logAudit, logError, checkRateLimit } from '../_shared/auth.ts';
 
 // ---------------------------------------------------------------------------
 // Validators (inline — Edge Functions cannot import from packages/shared)
@@ -180,6 +180,10 @@ async function createMoment(req: Request, cors: Record<string, string>) {
   const auth = await requireAuth(req, ['superadmin', 'content_admin']);
   if (auth instanceof Response) return auth;
   const { context, supabase } = auth;
+
+  const ip = req.headers.get('CF-Connecting-IP') ?? req.headers.get('X-Forwarded-For') ?? context.userId;
+  const rateLimited = await checkRateLimit(supabase, ip, '/moments');
+  if (rateLimited) return rateLimited;
 
   const body = await req.json();
   const parsed = CreateMomentSchema.safeParse(body);

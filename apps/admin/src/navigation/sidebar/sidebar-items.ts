@@ -7,6 +7,7 @@ import {
   Settings,
   ShieldAlert,
   Tag,
+  UserCircle,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -71,6 +72,7 @@ export const sidebarItems: NavGroup[] = [
     items: [
       { id: "moderation", title: "Moderation", url: "/moderation", icon: ShieldAlert },
       { id: "authority", title: "Authority", url: "/authority", icon: Network },
+      { id: "community-profiles", title: "Community Profiles", url: "/community-profiles", icon: UserCircle },
       { id: "sponsors", title: "Sponsors", url: "/sponsors", icon: Tag },
     ],
   },

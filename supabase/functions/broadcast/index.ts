@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { requireAuth, corsHeaders, json, err, logAudit, logError } from '../_shared/auth.ts';
+import { requireAuth, corsHeaders, json, err, logAudit, logError, checkRateLimit } from '../_shared/auth.ts';
 
 const BATCH_SIZE = 50;
 
@@ -19,6 +19,9 @@ Deno.serve(async (req: Request) => {
   const auth = await requireAuth(req, ['superadmin', 'content_admin']);
   if (auth instanceof Response) return auth;
   const { context, supabase } = auth;
+
+  const rateLimited = await checkRateLimit(supabase, context.userId, '/broadcast');
+  if (rateLimited) return rateLimited;
 
   try {
     return await executeBroadcast(supabase, momentId, context.userId, cors);

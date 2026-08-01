@@ -22,9 +22,9 @@
 - Fix bugs only — no speculative improvements to infrastructure
 
 ## Current priority
-Phase 15 — Automation & Production.
-Phase 14 (Public PWA) is complete — `apps/web` built and passing.
-Phase 15 work: n8n intent executor, WhatsApp production credentials, rate limiting, broadcast retry, service worker.
+Phase 16 — Platform Expansion.
+Phase 15 (Automation & Production) is complete.
+Phase 16 work: rename `@moments/*` → `@unami/*`, extract Moments domain from `packages/shared`, scaffold second application.
 
 ## Layer rules
 - `packages/ui` — no Supabase, no auth, no app-specific logic

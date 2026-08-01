@@ -55,6 +55,7 @@ No application code calls Supabase directly. No exceptions.
 | `auth` | `GET /auth` | JWT validation → role + authority_id |
 | `moments` | `GET/POST/PUT/DELETE /moments`, `POST /moments/:id/schedule`, `GET/POST /moments/public` | requireAuth (admin routes), public (public routes) |
 | `broadcast` | `POST /broadcast/:momentId` | requireAuth — content_admin+ |
+| `retry-batches` | `POST /retry-batches` | requireAuth — content_admin+ |
 | `broadcasts` | `GET /broadcasts`, `GET /broadcasts/:id` | requireAuth |
 | `webhook` | `GET/POST /webhook` | HMAC-SHA256 verification |
 | `moderation` | `GET /moderation/messages`, `/advisories`, `/stats`, `POST approve/reject` | requireAuth |
@@ -64,6 +65,9 @@ No application code calls Supabase directly. No exceptions.
 | `campaigns` | `GET /campaigns`, `/budget` | requireAuth |
 | `analytics` | `GET /analytics/dashboard`, `/daily`, `/regional`, `/categories`, `/revenue`, `/intents` | requireAuth |
 | `settings` | `GET/POST /settings/flags`, `/system` | requireAuth — superadmin for writes |
+| `media` | `POST /media`, `GET /media`, `DELETE /media/:id` | requireAuth |
+| `user-profiles` | `GET /user-profiles`, `GET /user-profiles/:id` | requireAuth |
+| `retry-batches` | `POST /retry-batches` | requireAuth — content_admin+ |
 
 ---
 
@@ -131,10 +135,10 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 
 ## Current Phase
 
-**Phase 14 — Public Experience — Complete**
+**Current Phase:** Phase 15 — Automation & Production — Complete
 
-`apps/web` is built and passing. Public feed, detail, region, category, search, subscribe all live.
-Next: Phase 15 — Automation & Production (n8n, WhatsApp credentials, hardening).
+Rate limiting enforced on webhook, moments POST, broadcast. Retry-batches function added. Media upload/storage function added. Service worker added to `apps/web`. Community Profiles admin module added.
+Next: Phase 16 — Platform Expansion (package rename, second application).
 
 ---
 

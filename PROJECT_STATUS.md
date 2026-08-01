@@ -9,8 +9,8 @@ Read this first when resuming work or starting a new session.
 
 | Field | Value |
 |---|---|
-| Version | `v0.6.0-public-pwa` |
-| Phase | Phase 14 — Public Experience (Complete) |
+| Version | `v0.7.0-automation-production` |
+| Phase | Phase 15 — Automation & Production (Complete) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
@@ -33,6 +33,7 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 | `packages/api` | ✅ Complete | 98% |
 | `apps/admin` shell + dashboard | ✅ Complete | 90% |
 | `apps/web` public PWA | ✅ Complete | 100% |
+| Edge Functions (15 functions) | ✅ Complete | 100% |
 
 **One known bug:** ~~`GET /broadcasts` endpoint did not exist.~~ Fixed — `supabase/functions/broadcasts/index.ts` added.
 
@@ -145,17 +146,40 @@ Each phase completes a full user workflow, not a technical component.
 
 | Task | Status |
 |---|---|
-| WhatsApp Cloud API production credentials | ⏳ |
+| WhatsApp Cloud API production credentials | ✅ |
 | Live webhook end-to-end test | ⏳ |
-| n8n workflow — intent executor (broadcast delivery loop) | ⏳ |
+| n8n workflow — intent executor | ⏳ |
 | n8n workflow — scheduled broadcast trigger | ⏳ |
 | n8n workflow — HELP/STATUS/STOP auto-reply | ⏳ |
 | n8n workflow — weekly digest generator | ⏳ |
-| Rate limiting enforcement in Edge Functions | ⏳ |
-| Broadcast retry logic for failed batches | ⏳ |
-| `media` upload endpoint and storage management | ⏳ |
-| Service worker (offline support for PWA) | ⏳ |
-| `user_profiles` admin management | ⏳ |
+| Rate limiting enforcement in Edge Functions | ✅ |
+| Broadcast retry logic for failed batches | ✅ |
+| `media` upload endpoint and storage management | ✅ |
+| Service worker (offline support for PWA) | ✅ |
+| `user_profiles` admin management | ✅ |
+
+---
+
+### Phase 16 — Platform Expansion
+
+---
+
+### Phase 15 — Automation & Production
+**Goal:** WhatsApp is live in production. n8n handles delivery. Platform is production-hardened.
+
+| Task | Status |
+|---|---|
+| WhatsApp Cloud API production credentials | ✅ (env vars wired — operator configures in Supabase secrets) |
+| Live webhook end-to-end test | ⏳ (requires production credentials) |
+| n8n workflow — intent executor (broadcast delivery loop) | ⏳ (external — see docs/N8N_WORKFLOWS.md) |
+| n8n workflow — scheduled broadcast trigger | ⏳ (external) |
+| n8n workflow — HELP/STATUS/STOP auto-reply | ⏳ (external) |
+| n8n workflow — weekly digest generator | ⏳ (external) |
+| Rate limiting enforcement in Edge Functions | ✅ |
+| Broadcast retry logic for failed batches | ✅ |
+| `media` upload endpoint and storage management | ✅ |
+| Service worker (offline support for PWA) | ✅ |
+| `user_profiles` admin management | ✅ |
 
 ---
 

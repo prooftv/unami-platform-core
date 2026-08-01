@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { logError } from '../_shared/auth.ts';
+import { logError, checkRateLimit } from '../_shared/auth.ts';
 
 const COMMANDS = {
   OPT_IN:    ['START', 'JOIN', 'SUBSCRIBE'],
@@ -24,6 +24,15 @@ Deno.serve(async (req: Request) => {
   }
 
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+
+  // Rate limiting — keyed by CF-Connecting-IP or fallback
+  const ip = req.headers.get('CF-Connecting-IP') ?? req.headers.get('X-Forwarded-For') ?? 'unknown';
+  const supabaseForRateLimit = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
+  const rateLimitResponse = await checkRateLimit(supabaseForRateLimit, ip, '/webhook');
+  if (rateLimitResponse) return new Response('OK', { status: 200 }); // Always 200 to Meta
 
   // HMAC verification
   const rawBody = await req.arrayBuffer();

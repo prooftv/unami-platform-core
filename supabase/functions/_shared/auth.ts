@@ -79,6 +79,60 @@ export async function logAudit(
   });
 }
 
+// ---------------------------------------------------------------------------
+// Rate limiting
+// ---------------------------------------------------------------------------
+
+const RATE_LIMITS: Record<string, { windowMs: number; max: number }> = {
+  '/webhook':   { windowMs: 60_000, max: 1000 },
+  '/moments':   { windowMs: 60_000, max: 60 },
+  '/broadcast': { windowMs: 60_000, max: 10 },
+  '/analytics': { windowMs: 60_000, max: 30 },
+  '/auth':      { windowMs: 60_000, max: 5 },
+};
+
+export async function checkRateLimit(
+  supabase: ReturnType<typeof createClient>,
+  identifier: string,
+  endpoint: string,
+): Promise<Response | null> {
+  const limit = RATE_LIMITS[endpoint];
+  if (!limit) return null;
+
+  const now = new Date();
+  const windowStart = new Date(now.getTime() - limit.windowMs);
+
+  const { data: existing } = await supabase
+    .from('rate_limits')
+    .select('id, request_count, window_start')
+    .eq('identifier', identifier)
+    .eq('endpoint', endpoint)
+    .single();
+
+  if (!existing || new Date(existing.window_start) < windowStart) {
+    // New window — upsert with count 1
+    await supabase.from('rate_limits').upsert(
+      { identifier, endpoint, request_count: 1, window_start: now.toISOString() },
+      { onConflict: 'identifier,endpoint' },
+    );
+    return null;
+  }
+
+  if (existing.request_count >= limit.max) {
+    return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json', 'Retry-After': '60' },
+    });
+  }
+
+  await supabase
+    .from('rate_limits')
+    .update({ request_count: existing.request_count + 1 })
+    .eq('id', existing.id);
+
+  return null;
+}
+
 export async function logError(
   supabase: ReturnType<typeof createClient>,
   errorType: string,
