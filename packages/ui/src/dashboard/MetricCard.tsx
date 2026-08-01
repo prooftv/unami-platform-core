@@ -9,17 +9,17 @@ type MetricCardProps = { title: string; value: string | number; description?: st
 export function MetricCard({ title, value, description, icon: Icon, trend, className }: MetricCardProps) {
   const trendPositive = trend && trend.value >= 0;
   return (
-    <Card className={clsx("overflow-hidden shadow-none", className)}>
+    <Card className={clsx("overflow-hidden", className)}>
       <CardHeader className="flex-row items-center justify-between gap-3 pb-2">
-        <CardTitle className="text-muted-foreground">{title}</CardTitle>
-        {Icon && <div className="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground"><Icon className="size-4" /></div>}
+        <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</CardTitle>
+        {Icon && <Icon className="size-4 text-muted-foreground" />}
       </CardHeader>
       <CardContent>
-        <div className="flex items-end justify-between gap-3">
-          <div className="text-2xl font-semibold tracking-tight md:text-3xl">{value}</div>
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="text-3xl font-bold tracking-tight">{value}</div>
           {trend && <Badge variant={trendPositive ? "success" : "destructive"}>{trendPositive ? "+" : ""}{trend.value}%</Badge>}
         </div>
-        {description && <p className="mt-2 text-xs text-muted-foreground">{description}</p>}
+        {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
       </CardContent>
     </Card>
   );

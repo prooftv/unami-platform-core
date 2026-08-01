@@ -9,6 +9,7 @@ import {
   QuickActions,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   Badge,
@@ -148,16 +149,14 @@ export function TodaysOperationsPanel({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Broadcast Queue */}
       <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Send className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm">Broadcast Queue</CardTitle>
-            </div>
-            <Badge variant={queueMoments.length > 0 ? 'warning' : 'outline'}>
-              {queueMoments.length}
-            </Badge>
+        <CardHeader className="flex-row items-center justify-between border-b pb-3">
+          <div>
+            <CardTitle className="text-sm font-semibold">Broadcast Queue</CardTitle>
+            <CardDescription className="text-xs mt-0.5">Moments awaiting transmission</CardDescription>
           </div>
+          <Badge variant={queueMoments.length > 0 ? 'warning' : 'outline'}>
+            {queueMoments.length} pending
+          </Badge>
         </CardHeader>
         <CardContent>
           {queueMoments.length === 0 ? (
@@ -187,16 +186,14 @@ export function TodaysOperationsPanel({
 
       {/* Moderation Queue */}
       <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageSquareWarning className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm">Moderation</CardTitle>
-            </div>
-            <Badge variant={moderationStats && moderationStats.pendingMessages > 0 ? 'warning' : 'outline'}>
-              {moderationStats?.pendingMessages ?? '—'}
-            </Badge>
+        <CardHeader className="flex-row items-center justify-between border-b pb-3">
+          <div>
+            <CardTitle className="text-sm font-semibold">Moderation</CardTitle>
+            <CardDescription className="text-xs mt-0.5">Inbound messages pending review</CardDescription>
           </div>
+          <Badge variant={moderationStats && moderationStats.pendingMessages > 0 ? 'warning' : 'outline'}>
+            {moderationStats?.pendingMessages ?? 0} pending
+          </Badge>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex items-center justify-between text-xs">
@@ -226,16 +223,14 @@ export function TodaysOperationsPanel({
 
       {/* Scheduled Publications */}
       <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm">Scheduled</CardTitle>
-            </div>
-            <Badge variant={scheduledMoments.length > 0 ? 'outline' : 'outline'}>
-              {scheduledMoments.length}
-            </Badge>
+        <CardHeader className="flex-row items-center justify-between border-b pb-3">
+          <div>
+            <CardTitle className="text-sm font-semibold">Scheduled</CardTitle>
+            <CardDescription className="text-xs mt-0.5">Upcoming publications</CardDescription>
           </div>
+          <Badge variant="outline">
+            {scheduledMoments.length} upcoming
+          </Badge>
         </CardHeader>
         <CardContent>
           {scheduledMoments.length === 0 ? (
@@ -450,8 +445,9 @@ export function OperationalHealthWidget({ metrics }: { metrics: DashboardMetrics
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Platform Health</CardTitle>
+      <CardHeader className="border-b pb-3">
+        <CardTitle className="text-sm font-semibold">Platform Health</CardTitle>
+        <CardDescription className="text-xs">Service status</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         {services.map(({ label, icon: Icon, healthy }) => (
@@ -479,11 +475,12 @@ export function RecentMomentsWidget({ moments }: { moments: MomentWithSponsor[] 
   const router = useRouter();
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Recent Moments</CardTitle>
-          <Radio className="h-4 w-4 text-muted-foreground" />
+      <CardHeader className="flex-row items-center justify-between border-b pb-3">
+        <div>
+          <CardTitle className="text-sm font-semibold">Recent Moments</CardTitle>
+          <CardDescription className="text-xs mt-0.5">Latest community content</CardDescription>
         </div>
+        <Radio className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
         {moments.length === 0 ? (
@@ -543,11 +540,12 @@ export function UpcomingScheduledWidget({ moments }: { moments: MomentWithSponso
 export function RecentBroadcastsWidget({ broadcasts }: { broadcasts: BroadcastWithMoment[] }) {
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Recent Broadcasts</CardTitle>
-          <Megaphone className="h-4 w-4 text-muted-foreground" />
+      <CardHeader className="flex-row items-center justify-between border-b pb-3">
+        <div>
+          <CardTitle className="text-sm font-semibold">Recent Broadcasts</CardTitle>
+          <CardDescription className="text-xs mt-0.5">WhatsApp delivery history</CardDescription>
         </div>
+        <Megaphone className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
         {broadcasts.length === 0 ? (

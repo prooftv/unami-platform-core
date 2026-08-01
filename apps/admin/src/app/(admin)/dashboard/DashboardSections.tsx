@@ -170,7 +170,7 @@ export function OverviewSection({ metrics, queueMoments, moderationStats, recent
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
 
-      {/* 1 — Platform status: what is the state of the platform right now? */}
+      {/* Status banner */}
       <PlatformStatusBanner
         metrics={metrics}
         queueMoments={queueMoments}
@@ -178,42 +178,26 @@ export function OverviewSection({ metrics, queueMoments, moderationStats, recent
         scheduledMoments={scheduledMoments}
       />
 
-      {/* 2 — Today's operations: what needs action today? */}
-      <div>
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Today’s Operations</h2>
-        <TodaysOperationsPanel
-          queueMoments={queueMoments}
-          moderationStats={moderationStats}
-          scheduledMoments={scheduledMoments}
-        />
-      </div>
+      {/* Row 1 — 4-col KPI summary */}
+      <TodayKPIs metrics={metrics} />
 
-      {/* 3 — Recent activity: what just happened? */}
-      <div>
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Recent Activity</h2>
-        <WidgetGrid>
-          <Col8><RecentActivityWidget moments={recentMoments} broadcasts={recentBroadcasts} /></Col8>
-          <Col4><QuickActionsWidget /></Col4>
-        </WidgetGrid>
-      </div>
+      {/* Row 2 — 3-col operations */}
+      <TodaysOperationsPanel
+        queueMoments={queueMoments}
+        moderationStats={moderationStats}
+        scheduledMoments={scheduledMoments}
+      />
 
-      {/* 4 — Platform snapshot: KPIs and health (context, not urgency) */}
-      <div>
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Platform Snapshot</h2>
-        <TodayKPIs metrics={metrics} />
-        <div className="mt-4">
-          <WidgetGrid>
-            <Col4><OperationalHealthWidget metrics={metrics} /></Col4>
-            <Col4><RecentMomentsWidget moments={recentMoments} /></Col4>
-            <Col4><RecentBroadcastsWidget broadcasts={recentBroadcasts} /></Col4>
-          </WidgetGrid>
-        </div>
+      {/* Row 3 — 3-col: health + recent moments + recent broadcasts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <OperationalHealthWidget metrics={metrics} />
+        <RecentMomentsWidget moments={recentMoments} />
+        <RecentBroadcastsWidget broadcasts={recentBroadcasts} />
       </div>
 
     </div>
   );
 }
-
 export function OperationsSection({ broadcasts, intentStats }: OperationsProps) {
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
