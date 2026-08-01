@@ -5,8 +5,7 @@ import { ModerationClient } from './ModerationClient';
 
 export default async function ModerationPage() {
   const session = await getOperatorSession();
-  if (!session) redirect('/login');
-  if (session.role === 'viewer') redirect('/dashboard');
+  if (session?.role === 'viewer') redirect('/dashboard');
 
   const api = await getApiClient();
   const [messages, advisories, stats] = await Promise.all([
@@ -15,5 +14,5 @@ export default async function ModerationPage() {
     api ? api.moderation.stats().catch(() => null) : null,
   ]);
 
-  return <ModerationClient messages={messages} advisories={advisories} stats={stats} session={session} />;
+  return <ModerationClient messages={messages} advisories={advisories} stats={stats} session={session!} />;
 }

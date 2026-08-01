@@ -26,7 +26,6 @@ import {
 
 export default async function DashboardPage() {
   const session = await getOperatorSession();
-  if (!session) redirect('/login');
 
   // Fetch all data in parallel — each provider fails gracefully to null/[]
   const [
@@ -71,7 +70,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      session={session}
+      session={session!}
       overview={{ metrics, queueMoments, moderationStats, recentMoments, scheduledMoments, recentBroadcasts }}
       operations={{ broadcasts: broadcastsFull, intentStats }}
       publishing={{ moments: recentMoments, categoryStats, regionalStats }}

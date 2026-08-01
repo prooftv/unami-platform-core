@@ -9,8 +9,7 @@ export default async function SponsorsPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const session = await getOperatorSession();
-  if (!session) redirect('/login');
-  if (session.role === 'moderator' || session.role === 'viewer') redirect('/dashboard');
+  if (session?.role === 'moderator' || session?.role === 'viewer') redirect('/dashboard');
 
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? '1'));

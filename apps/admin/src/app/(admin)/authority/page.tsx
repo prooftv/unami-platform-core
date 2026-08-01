@@ -5,8 +5,7 @@ import { AuthorityClient } from './AuthorityClient';
 
 export default async function AuthorityPage() {
   const session = await getOperatorSession();
-  if (!session) redirect('/login');
-  if (session.role === 'moderator' || session.role === 'viewer') redirect('/dashboard');
+  if (session?.role === 'moderator' || session?.role === 'viewer') redirect('/dashboard');
 
   const api = await getApiClient();
   const [profiles, auditLog, stats] = await Promise.all([

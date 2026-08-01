@@ -5,8 +5,7 @@ import { SettingsClient } from './SettingsClient';
 
 export default async function SettingsPage() {
   const session = await getOperatorSession();
-  if (!session) redirect('/login');
-  if (session.role !== 'superadmin') redirect('/dashboard');
+  if (session?.role !== 'superadmin') redirect('/dashboard');
 
   const api = await getApiClient();
   const [metrics, flags, systemSettings] = await Promise.all([
@@ -17,7 +16,7 @@ export default async function SettingsPage() {
 
   return (
     <SettingsClient
-      session={session}
+      session={session!}
       metrics={metrics}
       flags={flags ?? []}
       systemSettings={systemSettings ?? []}

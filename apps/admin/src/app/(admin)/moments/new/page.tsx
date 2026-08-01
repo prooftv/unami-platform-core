@@ -4,7 +4,6 @@ import { CreateMomentClient } from './CreateMomentClient';
 
 export default async function NewMomentPage() {
   const session = await getOperatorSession();
-  if (!session) redirect('/login');
-  if (session.role === 'moderator' || session.role === 'viewer') redirect('/moments');
+  if (session?.role === 'moderator' || session?.role === 'viewer') redirect('/moments');
   return <CreateMomentClient />;
 }

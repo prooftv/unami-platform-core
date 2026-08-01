@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { getOperatorSession } from '@/lib/auth/operator';
 import { getApiClient } from '@/lib/api/client';
 import { BroadcastsClient } from './BroadcastsClient';
 
@@ -8,9 +7,6 @@ export default async function BroadcastsPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const session = await getOperatorSession();
-  if (!session) redirect('/login');
-
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? '1'));
 
