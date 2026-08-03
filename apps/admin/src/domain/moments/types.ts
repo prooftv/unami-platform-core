@@ -1,55 +1,27 @@
-export type { Pagination, PaginatedResponse, AdminUser, SystemSetting, Message } from '@unami/shared';
-
-// API response envelope
-export interface ApiResponse<T> {
-  data: T;
-  pagination?: import('@unami/shared').Pagination;
-}
-
-// Broadcast result
-export interface BroadcastResult {
-  broadcastId: string;
-  recipientCount: number;
-  successCount: number;
-  failureCount: number;
-  status: 'completed' | 'failed';
-}
-
-// Auth session — returned by Edge Function GET /auth/me
-export interface AuthSession {
-  id: string;
-  email: string;
-  role: 'superadmin' | 'content_admin' | 'moderator' | 'viewer';
-  authority_id: string | null;
-}
-
-// Admin session — serialisable contract passed from server layout to client shell
-export interface AdminSession {
-  id: string;
-  email: string;
-  name: string | null;
-  role: 'superadmin' | 'content_admin' | 'moderator' | 'viewer';
-  authority_id: string | null;
-}
+import type {
+  MomentStatus,
+  ContentSource,
+  UrgencyLevel,
+  Category,
+  Region,
+  SponsorTier,
+  CampaignStatus,
+  DeliverySchedule,
+  BroadcastStatus,
+  IntentChannel,
+  IntentStatus,
+  IntentAction,
+  AdvisoryType,
+  AuthorityLevel,
+  AuthorityScope,
+  ApprovalMode,
+  AuthorityProfileStatus,
+} from './enums';
+import type { Language } from '@unami/shared';
 
 // ---------------------------------------------------------------------------
-// Moments domain types — inlined here so packages/api has no domain dependency
+// Moment
 // ---------------------------------------------------------------------------
-
-export type MomentStatus = 'draft' | 'scheduled' | 'broadcasted' | 'cancelled';
-export type ContentSource = 'admin' | 'community' | 'whatsapp' | 'campaign';
-export type UrgencyLevel = 'low' | 'medium' | 'high' | 'urgent';
-export type Category = 'Education' | 'Safety' | 'Culture' | 'Opportunity' | 'Events' | 'Health' | 'Technology' | 'Community';
-export type Region = 'KZN' | 'WC' | 'GP' | 'EC' | 'FS' | 'LP' | 'MP' | 'NC' | 'NW' | 'National';
-export type SponsorTier = 'bronze' | 'silver' | 'gold' | 'platinum';
-export type CampaignStatus = 'pending_review' | 'approved' | 'active' | 'paused' | 'completed' | 'cancelled' | 'published';
-export type DeliverySchedule = 'instant' | 'morning' | 'evening' | 'weekly';
-export type BroadcastStatus = 'pending' | 'processing' | 'completed' | 'failed';
-export type AuthorityLevel = 1 | 2 | 3 | 4 | 5;
-export type AuthorityScope = 'community' | 'region' | 'province' | 'national';
-export type ApprovalMode = 'admin_review' | 'ai_review' | 'auto';
-export type AuthorityProfileStatus = 'active' | 'suspended' | 'expired';
-export type AdvisoryType = 'language' | 'urgency' | 'harm' | 'spam' | 'content_quality';
 
 export interface Moment {
   id: string;
@@ -58,7 +30,7 @@ export interface Moment {
   rawContent: string | null;
   region: Region;
   category: Category;
-  language: string;
+  language: Language;
   sponsorId: string | null;
   isSponsored: boolean;
   pwaLink: string | null;
@@ -80,6 +52,10 @@ export interface MomentWithSponsor extends Moment {
   sponsor: Pick<Sponsor, 'displayName' | 'logoUrl' | 'tier'> | null;
 }
 
+// ---------------------------------------------------------------------------
+// Sponsor
+// ---------------------------------------------------------------------------
+
 export interface Sponsor {
   id: string;
   name: string;
@@ -93,6 +69,10 @@ export interface Sponsor {
   createdAt: string;
   updatedAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// Campaign
+// ---------------------------------------------------------------------------
 
 export interface Campaign {
   id: string;
@@ -116,13 +96,17 @@ export interface CampaignWithSponsor extends Campaign {
   sponsor: Pick<Sponsor, 'displayName'> | null;
 }
 
+// ---------------------------------------------------------------------------
+// Subscription
+// ---------------------------------------------------------------------------
+
 export interface Subscription {
   id: string;
   phoneNumber: string;
   optedIn: boolean;
   regions: Region[];
   categories: Category[];
-  languagePreference: string;
+  languagePreference: Language;
   deliverySchedule: DeliverySchedule;
   pausedUntil: string | null;
   optedInAt: string;
@@ -133,6 +117,10 @@ export interface Subscription {
   doubleOptInConfirmed: boolean;
   createdAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// Broadcast
+// ---------------------------------------------------------------------------
 
 export interface Broadcast {
   id: string;
@@ -152,6 +140,29 @@ export interface Broadcast {
 export interface BroadcastWithMoment extends Broadcast {
   moment: Pick<Moment, 'title' | 'region' | 'category'>;
 }
+
+// ---------------------------------------------------------------------------
+// MomentIntent
+// ---------------------------------------------------------------------------
+
+export interface MomentIntent {
+  id: string;
+  momentId: string;
+  channel: IntentChannel;
+  action: IntentAction;
+  status: IntentStatus;
+  templateId: string | null;
+  payload: Record<string, unknown> | null;
+  attempts: number;
+  lastAttemptAt: string | null;
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Advisory (MCP analysis result)
+// ---------------------------------------------------------------------------
 
 export interface HarmSignals {
   violence: boolean;
@@ -181,6 +192,10 @@ export interface Advisory {
   createdAt: string;
 }
 
+// ---------------------------------------------------------------------------
+// AuthorityProfile
+// ---------------------------------------------------------------------------
+
 export interface AuthorityProfile {
   id: string;
   userIdentifier: string;
@@ -199,6 +214,10 @@ export interface AuthorityProfile {
   createdAt: string;
   updatedAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// Analytics
+// ---------------------------------------------------------------------------
 
 export interface DashboardMetrics {
   totalMoments: number;
@@ -247,4 +266,21 @@ export interface RegionalStats {
 export interface CategoryStats {
   category: Category;
   momentCount: number;
+}
+
+export interface BudgetOverview {
+  total: number;
+  used: number;
+  messageCost: number;
+  messagesSent: number;
+  messagesRemaining: number;
+}
+
+export interface ComplianceResult {
+  isCompliant: boolean;
+  riskScore: number;
+  violationSeverity: 'SAFE' | 'WARN' | 'SUSPEND';
+  violations: string[];
+  requiresApproval: boolean;
+  recommendation: string;
 }

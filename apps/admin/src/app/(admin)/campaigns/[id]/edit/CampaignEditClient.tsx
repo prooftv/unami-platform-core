@@ -12,7 +12,7 @@ import { PageHeader } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
 import { createApiClient } from '@unami/api';
 import { getToken } from '@/lib/auth/token';
-import { Region, Category } from '@unami/shared';
+import { Region, Category } from '@/domain/moments';
 import type { CampaignWithSponsor, Sponsor } from '@unami/api';
 
 const REGIONS = Object.values(Region);

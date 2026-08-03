@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PageHeader, KPIGrid, TableToolbar, TablePagination } from '@unami/ui';
 import type { Subscription, PaginatedResponse } from '@unami/api';
 import type { SubscriberStats } from '@unami/api';
-import { Region, DeliverySchedule } from '@unami/shared';
+import { Region, DeliverySchedule } from '@/domain/moments';
 import { Users, TrendingDown, UserCheck, Calendar } from 'lucide-react';
 
 const SCHEDULE_VARIANT: Record<string, 'outline' | 'secondary' | 'default'> = {

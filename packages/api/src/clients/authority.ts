@@ -1,6 +1,6 @@
 import { apiFetch, type ApiConfig } from '../http';
 import type { AuthorityProfile, PaginatedResponse } from '../types/index';
-import type { AuthorityLevel, AuthorityScope, ApprovalMode } from '@unami/shared';
+import type { AuthorityLevel, AuthorityScope, ApprovalMode } from '../types/index';
 
 export interface AuthorityAuditEntry {
   id: string;

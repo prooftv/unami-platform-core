@@ -12,7 +12,7 @@ import type { MomentWithSponsor, PaginatedResponse, AdminSession } from '@unami/
 import { createApiClient } from '@unami/api';
 import { getToken } from '@/lib/auth/token';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
-import { MomentStatus } from '@unami/shared';
+import { MomentStatus } from '@/domain/moments';
 import { PlusCircle, XCircle } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {

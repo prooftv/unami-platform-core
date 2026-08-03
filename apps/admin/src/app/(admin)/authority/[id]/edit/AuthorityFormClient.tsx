@@ -12,7 +12,7 @@ import { PageHeader } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
 import { createApiClient } from '@unami/api';
 import { getToken } from '@/lib/auth/token';
-import { AuthorityScope, ApprovalMode } from '@unami/shared';
+import { AuthorityScope, ApprovalMode } from '@/domain/moments';
 import type { AuthorityProfile, AuthorityAuditEntry } from '@unami/api';
 
 const SCOPES = Object.values(AuthorityScope);

@@ -12,7 +12,7 @@ import { PageHeader } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
 import { createApiClient } from '@unami/api';
 import { getToken } from '@/lib/auth/token';
-import { SponsorTier } from '@unami/shared';
+import { SponsorTier } from '@/domain/moments';
 import type { Sponsor } from '@unami/api';
 
 const TIERS = Object.values(SponsorTier);

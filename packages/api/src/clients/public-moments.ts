@@ -1,6 +1,6 @@
 import { apiFetch, type ApiConfig } from '../http';
 import type { PaginatedResponse } from '../types/index';
-import type { Region, Category } from '@unami/shared';
+import type { Region, Category } from '../types/index';
 
 // Shape returned by the Edge Function (raw DB columns, snake_case)
 interface RawPublicMoment {

@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PageHeader, KPIGrid, TableToolbar, TablePagination } from '@unami/ui';
 import type { Sponsor, PaginatedResponse } from '@unami/api';
 import type { SponsorStats } from '@unami/api';
-import { SponsorTier } from '@unami/shared';
+import { SponsorTier } from '@/domain/moments';
 import { Tag, Users, Star, Award, PlusCircle } from 'lucide-react';
 
 const TIER_VARIANT: Record<string, 'secondary' | 'outline' | 'default'> = {

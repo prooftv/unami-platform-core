@@ -1,6 +1,6 @@
 import { apiFetch, type ApiConfig } from '../http';
 import type { CampaignWithSponsor, PaginatedResponse } from '../types/index';
-import type { CampaignStatus, Region, Category } from '@unami/shared';
+import type { CampaignStatus, Region, Category } from '../types/index';
 
 export interface CampaignBudgetEntry {
   campaignId: string;

@@ -1,6 +1,6 @@
 import { apiFetch, type ApiConfig } from '../http';
 import type { Subscription, PaginatedResponse } from '../types/index';
-import type { Region, DeliverySchedule } from '@unami/shared';
+import type { Region, DeliverySchedule } from '../types/index';
 
 export interface SubscriberStats {
   total: number;

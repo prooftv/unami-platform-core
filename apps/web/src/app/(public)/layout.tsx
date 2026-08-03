@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { Region, Category } from '@unami/shared';
+import { Region, Category } from '@/domain/moments';
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (

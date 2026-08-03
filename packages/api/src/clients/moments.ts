@@ -1,15 +1,41 @@
 import { apiFetch, type ApiConfig } from '../http';
-import type { Moment, MomentWithSponsor, PaginatedResponse } from '../types/index';
-import type {
-  CreateMomentInput,
-  UpdateMomentInput,
-  ListMomentsInput,
-  ScheduleMomentInput,
-} from '@unami/shared';
+import type { Moment, MomentWithSponsor, PaginatedResponse, MomentStatus, Region, Category, UrgencyLevel } from '../types/index';
+
+export interface CreateMomentInput {
+  title: string;
+  content: string;
+  region: Region;
+  category: Category;
+  language?: string;
+  sponsorId?: string | null;
+  isSponsored?: boolean;
+  pwaLink?: string | null;
+  mediaUrls?: string[];
+  scheduledAt?: string | null;
+  urgencyLevel?: UrgencyLevel;
+  publishToPwa?: boolean;
+  publishToWhatsapp?: boolean;
+}
+
+export type UpdateMomentInput = Partial<CreateMomentInput>;
+
+export interface ListMomentsInput {
+  page?: number;
+  limit?: number;
+  status?: MomentStatus;
+  region?: Region;
+  category?: Category;
+  source?: string;
+  search?: string;
+}
+
+export interface ScheduleMomentInput {
+  scheduledAt: string;
+}
 
 export function createMomentsClient(config: ApiConfig) {
   return {
-    list(params?: Partial<ListMomentsInput>): Promise<PaginatedResponse<MomentWithSponsor>> {
+    list(params?: ListMomentsInput): Promise<PaginatedResponse<MomentWithSponsor>> {
       const qs = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
       return apiFetch(config, `/moments${qs}`);
     },

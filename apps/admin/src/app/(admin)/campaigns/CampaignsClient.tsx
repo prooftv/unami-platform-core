@@ -13,7 +13,7 @@ import { getToken } from '@/lib/auth/token';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import type { CampaignWithSponsor, PaginatedResponse } from '@unami/api';
 import type { CampaignBudgetEntry } from '@unami/api';
-import { CampaignStatus } from '@unami/shared';
+import { CampaignStatus } from '@/domain/moments';
 import { Briefcase, Target, DollarSign, CheckCircle, PlusCircle } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
