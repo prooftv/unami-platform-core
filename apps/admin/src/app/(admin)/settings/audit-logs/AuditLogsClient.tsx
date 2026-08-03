@@ -5,11 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { PageHeader, TablePagination } from '@moments/ui';
 import { ArrowLeft } from 'lucide-react';
-import type { AuditLogEntry } from '@moments/api';
-import type { PaginatedResponse } from '@moments/api';
+import type { AuditLogEntry, PaginatedResponse } from '@moments/api';
 
-const RESOURCE_TYPES = ['moment', 'campaign', 'sponsor', 'subscription', 'authority_profile', 'feature_flag', 'system_setting', 'broadcast', 'message', 'comment'];
+const RESOURCE_TYPES = [
+  'moment', 'campaign', 'sponsor', 'subscription', 'authority_profile',
+  'feature_flag', 'system_setting', 'broadcast', 'message', 'comment',
+];
 
 interface Props {
   initialData: PaginatedResponse<AuditLogEntry> | null;
@@ -20,7 +23,7 @@ interface Props {
 export function AuditLogsClient({ initialData, currentPage, currentResourceType }: Props) {
   const router = useRouter();
   const total = initialData?.pagination.total ?? 0;
-  const totalPages = Math.ceil(total / (initialData?.pagination.limit ?? 20));
+  const limit = initialData?.pagination.limit ?? 20;
 
   function buildUrl(overrides: { page?: number; resourceType?: string }) {
     const params = new URLSearchParams();
@@ -34,23 +37,26 @@ export function AuditLogsClient({ initialData, currentPage, currentResourceType 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <PageHeader
+        title="Audit Log"
+        description="Admin action history — all write operations across the platform"
+        actions={
           <Button variant="outline" size="sm" onClick={() => router.push('/settings')}>
             <ArrowLeft className="h-4 w-4 mr-2" />Back
           </Button>
-          <div>
-            <h1 className="text-lg font-semibold">Audit Log</h1>
-            <p className="text-sm text-muted-foreground">Admin action history — all write operations across the platform</p>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
-      <Select value={currentResourceType || 'all'} onValueChange={(v) => router.push(buildUrl({ resourceType: v, page: 1 }))}>
+      <Select
+        value={currentResourceType || 'all'}
+        onValueChange={(v) => router.push(buildUrl({ resourceType: v, page: 1 }))}
+      >
         <SelectTrigger className="h-8 w-48"><SelectValue placeholder="All resource types" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All types</SelectItem>
-          {RESOURCE_TYPES.map((rt) => <SelectItem key={rt} value={rt}>{rt.replace('_', ' ')}</SelectItem>)}
+          {RESOURCE_TYPES.map((rt) => (
+            <SelectItem key={rt} value={rt}>{rt.replace('_', ' ')}</SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
@@ -73,23 +79,21 @@ export function AuditLogsClient({ initialData, currentPage, currentResourceType 
             <TableRow key={entry.id}>
               <TableCell><Badge variant="outline">{entry.action}</Badge></TableCell>
               <TableCell><span className="text-sm">{entry.resourceType.replace('_', ' ')}</span></TableCell>
-              <TableCell><span className="font-mono text-xs text-muted-foreground">{entry.resourceId.slice(0, 8)}…</span></TableCell>
-              <TableCell><span className="font-mono text-xs text-muted-foreground">{entry.userId.slice(0, 8)}…</span></TableCell>
+              <TableCell><span className="font-mono text-xs text-muted-foreground">{entry.resourceId.slice(0, 8)}&hellip;</span></TableCell>
+              <TableCell><span className="font-mono text-xs text-muted-foreground">{entry.userId.slice(0, 8)}&hellip;</span></TableCell>
               <TableCell><span className="text-xs text-muted-foreground">{new Date(entry.createdAt).toLocaleString()}</span></TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{total} total</span>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => router.push(buildUrl({ page: currentPage - 1 }))}>Previous</Button>
-            <span>Page {currentPage} of {totalPages}</span>
-            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => router.push(buildUrl({ page: currentPage + 1 }))}>Next</Button>
-          </div>
-        </div>
+      {total > limit && (
+        <TablePagination
+          page={currentPage}
+          pageSize={limit}
+          total={total}
+          onPageChange={(p) => router.push(buildUrl({ page: p }))}
+        />
       )}
     </div>
   );

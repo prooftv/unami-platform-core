@@ -34,9 +34,19 @@ Phase 16 work: rename `@moments/*` → `@unami/*`, extract Moments domain from `
 - `apps/web` — not yet built, Phase 14
 
 ## Component rules (apps/admin)
-- Use shadcn primitives from `src/components/ui/` directly
-- Retained from `@moments/ui`: `AnalyticsCard`, `LineChart`, `BarChart`, `PieChart`, `AreaChart`
-- Retired (do not use): `PageHeader`, `DataTable`, `KPIGrid`, `MetricCard`, `ActivityFeed`, `FormSection`, `FieldGroup`, `SubmitBar`, `ContentLayout`, `StatusBadge`, `QuickActions`, `TableToolbar`, `TablePagination`, `FilterSelect`
+- Use shadcn primitives from `src/components/ui/` for low-level elements (Input, Select, Label, Textarea, Dialog, etc.)
+- Use `@moments/ui` shared primitives for all structural patterns:
+  - `PageHeader` — every module list and detail page header (title + description + actions)
+  - `KPIGrid` + `MetricCard` — every KPI card row (pass `items` prop for data-driven usage)
+  - `TablePagination` — every paginated table footer
+  - `TableToolbar` — every search + filter toolbar
+  - `BulkActionBar` — every table with bulk selection
+  - `DataTable` — when column definitions are static and selection is needed
+  - `EmptyState`, `ErrorState` — empty and error states
+  - `PageSkeleton`, `TableSkeleton` — loading states (via loading.tsx)
+  - `AnalyticsCard`, `LineChart`, `BarChart`, `PieChart`, `AreaChart` — charts and analytics
+  - `ActivityFeed`, `QuickActions` — dashboard feed and action widgets
+- Do NOT use from `@moments/ui`: `AppShell`, `Sidebar`, `Header`, `MobileNav` — admin uses its own shadcn shell
 - Badge variants: `default | secondary | destructive | outline` only — no `warning`, `success`, `info`
 - `data-active={isActive || undefined}` — never `data-active={isActive}`
 

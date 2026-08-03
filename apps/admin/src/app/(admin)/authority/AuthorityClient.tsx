@@ -1,13 +1,14 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { PageHeader, KPIGrid, TablePagination } from '@moments/ui';
 import type { AuthorityProfile, PaginatedResponse } from '@moments/api';
 import type { AuthorityAuditEntry, AuthorityStats } from '@moments/api';
 import { Network, Users, Zap, Shield, PlusCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 const STATUS_VARIANT: Record<string, 'default' | 'destructive' | 'secondary'> = {
   active: 'default', suspended: 'destructive', expired: 'secondary',
@@ -23,11 +24,16 @@ interface Props {
   auditLog: PaginatedResponse<AuthorityAuditEntry> | null;
   stats: AuthorityStats | null;
   session: { role: string };
+  currentPage?: number;
 }
 
-export function AuthorityClient({ profiles, auditLog, stats, session }: Props) {
+export function AuthorityClient({ profiles, auditLog, stats, session, currentPage = 1 }: Props) {
   const router = useRouter();
-  const kpis = [
+
+  const total = profiles?.pagination.total ?? 0;
+  const limit = profiles?.pagination.limit ?? 20;
+
+  const kpiItems = [
     { title: 'Total Profiles', value: stats?.total ?? '—', description: 'All authorities', icon: Network },
     { title: 'Active', value: stats?.active ?? '—', description: 'Currently active', icon: Users },
     { title: 'Actions Today', value: stats?.actionsToday ?? '—', description: 'Today', icon: Zap },
@@ -36,36 +42,22 @@ export function AuthorityClient({ profiles, auditLog, stats, session }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Authority Profiles</h1>
-          <p className="text-sm text-muted-foreground">Trusted community members with elevated publishing privileges — authority levels 1–5</p>
-        </div>
-        {session.role === 'superadmin' && (
-          <Button size="sm" onClick={() => router.push('/authority/new')}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New Profile
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Authority Profiles"
+        description="Trusted community members with elevated publishing privileges — authority levels 1–5"
+        actions={
+          session.role === 'superadmin' ? (
+            <Button size="sm" onClick={() => router.push('/authority/new')}>
+              <PlusCircle className="h-4 w-4 mr-2" />New Profile
+            </Button>
+          ) : undefined
+        }
+      />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {kpis.map(({ title, value, description, icon: Icon }) => (
-          <Card key={title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-              <CardTitle className="text-xs font-medium text-muted-foreground">{title}</CardTitle>
-              <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="px-4 pb-3">
-              <p className="text-xl font-semibold">{value}</p>
-              <p className="text-xs text-muted-foreground">{description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <KPIGrid items={kpiItems} columns={4} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-8 space-y-4">
           <Table>
             <TableHeader>
               <TableRow>
@@ -100,6 +92,15 @@ export function AuthorityClient({ profiles, auditLog, stats, session }: Props) {
               ))}
             </TableBody>
           </Table>
+
+          {total > limit && (
+            <TablePagination
+              page={currentPage}
+              pageSize={limit}
+              total={total}
+              onPageChange={(p) => router.push(`/authority?page=${p}`)}
+            />
+          )}
         </div>
 
         <div className="lg:col-span-4">
@@ -113,7 +114,7 @@ export function AuthorityClient({ profiles, auditLog, stats, session }: Props) {
                   <Shield className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
                   <div>
                     <p className="font-medium">{e.actionType}</p>
-                    <p className="text-muted-foreground">Level {e.authorityLevel} · {e.scope} · blast radius {e.blastRadiusApplied}</p>
+                    <p className="text-muted-foreground">Level {e.authorityLevel} &middot; {e.scope} &middot; blast radius {e.blastRadiusApplied}</p>
                     <p className="text-muted-foreground">{new Date(e.performedAt).toLocaleDateString()}</p>
                   </div>
                 </div>

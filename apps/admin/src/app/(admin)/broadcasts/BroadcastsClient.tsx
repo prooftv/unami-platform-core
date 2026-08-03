@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { PageHeader, TablePagination } from '@moments/ui';
 import type { BroadcastWithMoment, PaginatedResponse } from '@moments/api';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
@@ -19,14 +19,13 @@ export function BroadcastsClient({ initialData, currentPage }: Props) {
   const router = useRouter();
   const total = initialData?.pagination.total ?? 0;
   const limit = initialData?.pagination.limit ?? 20;
-  const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Broadcasts</h1>
-        <p className="text-sm text-muted-foreground">WhatsApp delivery history — recipient reach, success rates, and failed sends</p>
-      </div>
+      <PageHeader
+        title="Broadcasts"
+        description="WhatsApp delivery history — recipient reach, success rates, and failed sends"
+      />
 
       <Table>
         <TableHeader>
@@ -49,7 +48,7 @@ export function BroadcastsClient({ initialData, currentPage }: Props) {
               <TableRow key={b.id} className="cursor-pointer" onClick={() => router.push(`/broadcasts/${b.id}`)}>
                 <TableCell>
                   <p className="font-medium text-sm">{b.moment.title}</p>
-                  <p className="text-xs text-muted-foreground">{b.moment.region} · {b.moment.category}</p>
+                  <p className="text-xs text-muted-foreground">{b.moment.region} &middot; {b.moment.category}</p>
                 </TableCell>
                 <TableCell><Badge variant={STATUS_VARIANT[b.status]}>{b.status}</Badge></TableCell>
                 <TableCell><span className="text-sm">{b.recipientCount.toLocaleString()}</span></TableCell>
@@ -66,15 +65,13 @@ export function BroadcastsClient({ initialData, currentPage }: Props) {
         </TableBody>
       </Table>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{total} total</span>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => router.push(`/broadcasts?page=${currentPage - 1}`)}>Previous</Button>
-            <span>Page {currentPage} of {totalPages}</span>
-            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => router.push(`/broadcasts?page=${currentPage + 1}`)}>Next</Button>
-          </div>
-        </div>
+      {total > limit && (
+        <TablePagination
+          page={currentPage}
+          pageSize={limit}
+          total={total}
+          onPageChange={(p) => router.push(`/broadcasts?page=${p}`)}
+        />
       )}
     </div>
   );

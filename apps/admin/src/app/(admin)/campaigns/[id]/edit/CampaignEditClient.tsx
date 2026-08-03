@@ -9,18 +9,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft } from 'lucide-react';
 import { createApiClient } from '@moments/api';
-import { createClient } from '@/lib/supabase/client';
+import { getToken } from '@/lib/auth/token';
 import { Region, Category } from '@moments/shared';
 import type { CampaignWithSponsor, Sponsor } from '@moments/api';
 
 const REGIONS = Object.values(Region);
 const CATEGORIES = Object.values(Category);
-
-async function getToken(): Promise<string> {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? '';
-}
 
 interface Props {
   campaign: CampaignWithSponsor;

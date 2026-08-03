@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { PageHeader, KPIGrid, TableToolbar, TablePagination, BulkActionBar } from '@moments/ui';
+import { createApiClient } from '@moments/api';
+import { getToken } from '@/lib/auth/token';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
 import type { CampaignWithSponsor, PaginatedResponse } from '@moments/api';
 import type { CampaignBudgetEntry } from '@moments/api';
 import { CampaignStatus } from '@moments/shared';
@@ -29,21 +32,61 @@ export function CampaignsClient({ initialData, budgetOverview, currentPage, sess
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [bulkPending, setBulkPending] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
-  const rows = (initialData?.data ?? []).filter((c) => {
+  const allRows = initialData?.data ?? [];
+  const rows = allRows.filter((c) => {
     const matchSearch = !search || c.title.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || statusFilter === 'all' || c.status === statusFilter;
     return matchSearch && matchStatus;
   });
 
+  // Only pending_review campaigns can be bulk-approved
+  const approvable = allRows.filter((c) => c.status === 'pending_review');
+
+  const total = initialData?.pagination.total ?? 0;
+  const limit = initialData?.pagination.limit ?? 20;
   const active = budgetOverview.filter((c) => c.status === 'active');
   const totalBudget = budgetOverview.reduce((s, c) => s + c.budget, 0);
   const totalSpent = budgetOverview.reduce((s, c) => s + c.spent, 0);
-  const total = initialData?.pagination.total ?? 0;
-  const limit = initialData?.pagination.limit ?? 20;
-  const totalPages = Math.ceil(total / limit);
 
-  const kpis = [
+  const canCreate = session.role === 'superadmin' || session.role === 'content_admin';
+  const canApprove = session.role === 'superadmin';
+
+  const { selected, toggle, toggleAll, clear, selectedCount } =
+    useBulkSelection<CampaignWithSponsor>((c) => c.id);
+
+  const approvableSelected = Array.from(selected).filter((id) =>
+    approvable.some((c) => c.id === id)
+  );
+
+  function getApi(token: string) {
+    return createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
+  }
+
+  async function bulkApprove() {
+    if (approvableSelected.length === 0) return;
+    setBulkPending(true);
+    setFeedback(null);
+    try {
+      const token = await getToken();
+      const api = getApi(token);
+      const results = await Promise.allSettled(approvableSelected.map((id) => api.campaigns.approve(id)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      setFeedback(
+        failed === 0
+          ? `${approvableSelected.length} campaign${approvableSelected.length > 1 ? 's' : ''} approved`
+          : `${approvableSelected.length - failed} approved, ${failed} failed`,
+      );
+      clear();
+      router.refresh();
+    } finally {
+      setBulkPending(false);
+    }
+  }
+
+  const kpiItems = [
     { title: 'Total Campaigns', value: total || '—', description: 'All campaigns', icon: Briefcase },
     { title: 'Active', value: active.length, description: 'Currently running', icon: Target },
     { title: 'Total Budget', value: totalBudget > 0 ? `R${totalBudget.toLocaleString()}` : '—', description: 'Allocated', icon: DollarSign },
@@ -52,33 +95,19 @@ export function CampaignsClient({ initialData, budgetOverview, currentPage, sess
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Campaigns</h1>
-          <p className="text-sm text-muted-foreground">Sponsored broadcast campaigns — from pending review through to active delivery</p>
-        </div>
-        {(session.role === 'superadmin' || session.role === 'content_admin') && (
-          <Button size="sm" onClick={() => router.push('/campaigns/new')}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New Campaign
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Campaigns"
+        description="Sponsored broadcast campaigns — from pending review through to active delivery"
+        actions={
+          canCreate ? (
+            <Button size="sm" onClick={() => router.push('/campaigns/new')}>
+              <PlusCircle className="h-4 w-4 mr-2" />New Campaign
+            </Button>
+          ) : undefined
+        }
+      />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {kpis.map(({ title, value, description, icon: Icon }) => (
-          <Card key={title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-              <CardTitle className="text-xs font-medium text-muted-foreground">{title}</CardTitle>
-              <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="px-4 pb-3">
-              <p className="text-xl font-semibold">{value}</p>
-              <p className="text-xs text-muted-foreground">{description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <KPIGrid items={kpiItems} columns={4} />
 
       {active.length > 0 && (
         <Card>
@@ -102,20 +131,44 @@ export function CampaignsClient({ initialData, budgetOverview, currentPage, sess
         </Card>
       )}
 
-      <div className="flex items-center gap-2">
-        <Input placeholder="Search campaigns..." value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 w-56" />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-8 w-40"><SelectValue placeholder="All statuses" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            {Object.values(CampaignStatus).map((s) => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
+      {feedback && <p className="text-sm text-muted-foreground">{feedback}</p>}
+
+      <TableToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search campaigns..."
+        filters={
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-8 w-40"><SelectValue placeholder="All statuses" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {Object.values(CampaignStatus).map((s) => (
+                <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
 
       <Table>
         <TableHeader>
           <TableRow>
+            {canApprove && (
+              <TableHead className="w-10 pr-0">
+                <input
+                  type="checkbox"
+                  checked={approvable.length > 0 && approvable.every((c) => selected.has(c.id))}
+                  ref={(el) => {
+                    if (el) el.indeterminate =
+                      approvable.some((c) => selected.has(c.id)) &&
+                      !approvable.every((c) => selected.has(c.id));
+                  }}
+                  onChange={() => toggleAll(approvable)}
+                  className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+                  aria-label="Select all pending"
+                />
+              </TableHead>
+            )}
             <TableHead>Campaign</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Budget</TableHead>
@@ -127,33 +180,71 @@ export function CampaignsClient({ initialData, budgetOverview, currentPage, sess
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No campaigns yet.</TableCell>
+              <TableCell colSpan={canApprove ? 7 : 6} className="text-center text-muted-foreground py-8">No campaigns yet.</TableCell>
             </TableRow>
-          ) : rows.map((c) => (
-            <TableRow key={c.id} className="cursor-pointer" onClick={() => router.push(`/campaigns/${c.id}`)}>
-              <TableCell>
-                <p className="font-medium text-sm">{c.title}</p>
-                <p className="text-xs text-muted-foreground">{c.sponsor?.displayName ?? '—'}</p>
-              </TableCell>
-              <TableCell><Badge variant={STATUS_VARIANT[c.status]}>{c.status.replace('_', ' ')}</Badge></TableCell>
-              <TableCell><span className="text-sm">R{c.budget.toLocaleString()}</span></TableCell>
-              <TableCell><Badge variant="secondary">{c.category}</Badge></TableCell>
-              <TableCell><span className="text-xs text-muted-foreground">{c.targetRegions.join(', ') || '—'}</span></TableCell>
-              <TableCell><span className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleDateString()}</span></TableCell>
-            </TableRow>
-          ))}
+          ) : rows.map((c) => {
+            const isApprovable = c.status === 'pending_review';
+            const isSelected = selected.has(c.id);
+            return (
+              <TableRow
+                key={c.id}
+                className={`cursor-pointer ${isSelected ? 'bg-muted/60' : ''}`}
+                onClick={() => router.push(`/campaigns/${c.id}`)}
+              >
+                {canApprove && (
+                  <TableCell className="w-10 pr-0">
+                    {isApprovable ? (
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => { e.stopPropagation(); toggle(c.id); }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+                        aria-label="Select row"
+                      />
+                    ) : (
+                      <span className="block h-4 w-4" />
+                    )}
+                  </TableCell>
+                )}
+                <TableCell>
+                  <p className="font-medium text-sm">{c.title}</p>
+                  <p className="text-xs text-muted-foreground">{c.sponsor?.displayName ?? '—'}</p>
+                </TableCell>
+                <TableCell><Badge variant={STATUS_VARIANT[c.status]}>{c.status.replace('_', ' ')}</Badge></TableCell>
+                <TableCell><span className="text-sm">R{c.budget.toLocaleString()}</span></TableCell>
+                <TableCell><Badge variant="secondary">{c.category}</Badge></TableCell>
+                <TableCell><span className="text-xs text-muted-foreground">{c.targetRegions.join(', ') || '—'}</span></TableCell>
+                <TableCell><span className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleDateString()}</span></TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{total} total</span>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => router.push(`/campaigns?page=${currentPage - 1}`)}>Previous</Button>
-            <span>Page {currentPage} of {totalPages}</span>
-            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => router.push(`/campaigns?page=${currentPage + 1}`)}>Next</Button>
-          </div>
-        </div>
+      {total > limit && (
+        <TablePagination
+          page={currentPage}
+          pageSize={limit}
+          total={total}
+          onPageChange={(p) => router.push(`/campaigns?page=${p}`)}
+        />
+      )}
+
+      {canApprove && (
+        <BulkActionBar
+          selectedCount={approvableSelected.length}
+          entityLabel="campaign"
+          onClear={clear}
+          actions={[
+            {
+              label: bulkPending ? 'Approving...' : 'Approve selected',
+              icon: <CheckCircle className="h-3.5 w-3.5" />,
+              onClick: bulkApprove,
+              disabled: bulkPending,
+            },
+          ]}
+        />
       )}
     </div>
   );
