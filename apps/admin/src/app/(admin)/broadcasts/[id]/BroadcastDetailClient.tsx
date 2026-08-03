@@ -45,11 +45,7 @@ export function BroadcastDetailClient({ broadcast, session }: Props) {
     try {
       const token = await getToken();
       const api = createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/retry-batches`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
-      );
-      const data = await res.json();
+      const data = await api.broadcasts.retry();
       setRetryResult(`Retry complete — ${data.retried ?? 0} batches retried, ${data.skipped ?? 0} skipped`);
       router.refresh();
     } catch (e) {

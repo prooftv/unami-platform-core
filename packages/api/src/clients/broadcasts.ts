@@ -15,5 +15,9 @@ export function createBroadcastsClient(config: ApiConfig) {
     get(id: string): Promise<Broadcast> {
       return apiFetch(config, `/broadcasts/${id}`);
     },
+
+    retry(): Promise<{ retried: number; skipped: number }> {
+      return apiFetch(config, '/retry-batches', { method: 'POST' });
+    },
   };
 }
