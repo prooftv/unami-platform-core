@@ -7,13 +7,21 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { MomentWithSponsor, PaginatedResponse, AdminSession } from '@moments/api';
+import { createApiClient } from '@moments/api';
+import { createClient } from '@/lib/supabase/client';
 import { MomentStatus } from '@moments/shared';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, XCircle } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
   draft: 'outline', scheduled: 'secondary', broadcasted: 'default', cancelled: 'destructive',
 };
+
+async function getToken() {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? '';
+}
 
 interface Props {
   initialData: PaginatedResponse<MomentWithSponsor> | null;
@@ -26,8 +34,15 @@ interface Props {
 export function MomentsClient({ initialData, session, currentPage, currentStatus, currentSearch }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState(currentSearch);
+  const [bulkActing, setBulkActing] = useState(false);
+  const [bulkFeedback, setBulkFeedback] = useState<string | null>(null);
 
   const canCreate = session.role === 'superadmin' || session.role === 'content_admin';
+  const canBulkCancel = session.role === 'superadmin' || session.role === 'content_admin';
+
+  const cancellable = (initialData?.data ?? []).filter(
+    (m) => m.status === 'draft' || m.status === 'scheduled'
+  );
 
   const total = initialData?.pagination.total ?? 0;
   const limit = initialData?.pagination.limit ?? 20;
@@ -54,6 +69,27 @@ export function MomentsClient({ initialData, session, currentPage, currentStatus
     router.push(buildUrl({ search, page: 1 }));
   }, [search, currentStatus, router]);
 
+  async function cancelAll() {
+    if (cancellable.length === 0) return;
+    if (!confirm(`Cancel all ${cancellable.length} draft/scheduled moments on this page?`)) return;
+    setBulkActing(true);
+    setBulkFeedback(null);
+    try {
+      const token = await getToken();
+      const api = createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
+      const results = await Promise.allSettled(cancellable.map((m) => api.moments.cancel(m.id)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      setBulkFeedback(
+        failed === 0
+          ? `All ${cancellable.length} moments cancelled`
+          : `${cancellable.length - failed} cancelled, ${failed} failed`
+      );
+      router.refresh();
+    } finally {
+      setBulkActing(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -61,13 +97,25 @@ export function MomentsClient({ initialData, session, currentPage, currentStatus
           <h1 className="text-lg font-semibold">Moments</h1>
           <p className="text-sm text-muted-foreground">Draft, schedule, and publish community moments for WhatsApp broadcast</p>
         </div>
-        {canCreate && (
-          <Button size="sm" onClick={() => router.push('/moments/new')}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New Moment
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {canBulkCancel && cancellable.length > 0 && (
+            <Button variant="outline" size="sm" onClick={cancelAll} disabled={bulkActing}>
+              <XCircle className="h-4 w-4 mr-2" />
+              {bulkActing ? 'Cancelling...' : `Cancel drafts (${cancellable.length})`}
+            </Button>
+          )}
+          {canCreate && (
+            <Button size="sm" onClick={() => router.push('/moments/new')}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              New Moment
+            </Button>
+          )}
+        </div>
       </div>
+
+      {bulkFeedback && (
+        <p className="text-sm text-muted-foreground">{bulkFeedback}</p>
+      )}
 
       <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
         <Input
@@ -111,14 +159,14 @@ export function MomentsClient({ initialData, session, currentPage, currentStatus
             <TableRow key={m.id} className="cursor-pointer" onClick={() => router.push(`/moments/${m.id}`)}>
               <TableCell>
                 <p className="font-medium text-sm">{m.title}</p>
-                <p className="text-xs text-muted-foreground">{m.region} · {m.category}</p>
+                <p className="text-xs text-muted-foreground">{m.region} &middot; {m.category}</p>
               </TableCell>
               <TableCell><Badge variant={STATUS_VARIANT[m.status]}>{m.status}</Badge></TableCell>
               <TableCell><Badge variant="outline">{m.urgencyLevel}</Badge></TableCell>
               <TableCell>
                 {m.sponsor
                   ? <span className="text-sm">{m.sponsor.displayName}</span>
-                  : <span className="text-xs text-muted-foreground">—</span>}
+                  : <span className="text-xs text-muted-foreground">&mdash;</span>}
               </TableCell>
               <TableCell>
                 <span className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleDateString()}</span>

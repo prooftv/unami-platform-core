@@ -110,3 +110,17 @@ Max 16 MB. Returns public URL. Records in `media` table. Superadmin-only delete.
 `apps/web/public/sw.js` registered via Next.js Script (afterInteractive).
 Strategy: cache-first for static assets (.js/.css/images), network-first for navigation
 with offline fallback to `/offline` page. API calls and cross-origin requests bypass the cache.
+
+## D-023: No n8n — all automation is Supabase-native
+External workflow tools (n8n, Zapier, Make) are not used. All automation lives inside the platform:
+- WhatsApp auto-replies (HELP/STATUS/MYAUTHORITY): new route handlers in `supabase/functions/webhook/index.ts`
+- Advisory AI confidence scoring: dedicated Edge Function calling an AI API (OpenAI/Anthropic)
+- Scheduled broadcast triggers: `pg_cron` extension inside Postgres
+This preserves D-003 (Edge Functions are the only DB layer) and eliminates an external dependency
+with its own hosting, auth surface, and failure modes.
+
+## D-024: Bulk actions — client-side fan-out, no new edge function endpoints
+Bulk operations (approve-all moderation messages, cancel selected moments) are implemented
+as client-side `Promise.allSettled` loops over existing single-ID endpoints.
+No new bulk endpoint is added to any Edge Function. This matches the pattern already used
+in `broadcast/index.ts` for batch sends. Partial failures are surfaced per-item in the UI.
