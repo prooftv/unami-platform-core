@@ -51,12 +51,15 @@ The shadcn/ui dashboard (arhamkhnz/next-shadcn-admin-dashboard) is the canonical
 No further shell redesigns. Moments adapts to the shell — the shell does not adapt to Moments.
 `(admin)/layout.tsx` is the single auth gate and shell owner for all admin routes.
 
-## D-012: Component policy — shadcn primitives directly
-Admin modules use shadcn components from `src/components/ui/` directly.
-Wrapper components (`PageHeader`, `DataTable`, `KPIGrid`, `MetricCard`, `ActivityFeed`,
-`FormSection`, `ContentLayout`, `StatusBadge`, `QuickActions`) are retired.
-`@moments/ui` chart components (`AnalyticsCard`, `LineChart`, `BarChart`, `PieChart`, `AreaChart`)
-are retained as legitimate shared assets.
+## D-012: Component policy — shared primitives are the standard
+Admin modules use `@moments/ui` shared primitives for all structural patterns:
+`PageHeader`, `KPIGrid`, `MetricCard`, `TableToolbar`, `TablePagination`, `BulkActionBar`,
+`DataTable`, `EmptyState`, `ErrorState`, `PageSkeleton`, `TableSkeleton`, `StatusBadge`,
+`AnalyticsCard`, `LineChart`, `BarChart`, `PieChart`, `AreaChart`, `ActivityFeed`, `QuickActions`.
+Shadcn primitives from `src/components/ui/` are used for low-level elements only:
+`Input`, `Select`, `Label`, `Textarea`, `Dialog`, `Button`, `Badge`, `Card`, etc.
+Do NOT use from `@moments/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav` —
+the admin shell owns those directly.
 
 ## D-013: Product phases over technical fixes
 From Phase 10 onward, work is organised by product workflow, not by technical component.
@@ -110,3 +113,17 @@ Max 16 MB. Returns public URL. Records in `media` table. Superadmin-only delete.
 `apps/web/public/sw.js` registered via Next.js Script (afterInteractive).
 Strategy: cache-first for static assets (.js/.css/images), network-first for navigation
 with offline fallback to `/offline` page. API calls and cross-origin requests bypass the cache.
+
+## D-023: n8n is deferred, not eliminated
+n8n is the eventual automation layer for scheduled broadcast triggers, intent execution,
+HELP/STATUS/STOP auto-replies, and weekly digest generation.
+It is deferred to the final phase — not removed from the roadmap.
+When HELP/STATUS/MYAUTHORITY reply handlers are built, they will be Supabase-native Edge Functions
+first, with n8n as the orchestration layer when it is connected.
+
+## D-024: Bulk actions — client-side fan-out over existing endpoints
+Bulk operations (approve, reject, cancel, delete) are implemented as client-side `Promise.allSettled`
+fan-out over existing single-ID Edge Function endpoints.
+No new bulk endpoints are added to Edge Functions.
+The `BulkActionBar` component in `packages/ui` surfaces results — partial failures are shown,
+not silently swallowed. Audit logs are written per-operation by the existing endpoint handlers.

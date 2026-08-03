@@ -114,9 +114,13 @@ All response types flow from `packages/shared` types — no duplication.
 - `/settings` — feature flags, system settings, session info
 
 **Component policy:**
-- shadcn primitives from `src/components/ui/` directly
-- `@moments/ui` chart components retained: `AnalyticsCard`, `LineChart`, `BarChart`, `PieChart`, `AreaChart`
-- All wrapper components retired: `PageHeader`, `DataTable`, `KPIGrid`, `MetricCard`, `ActivityFeed`, `FormSection`, `ContentLayout`, `StatusBadge`, `QuickActions`
+- `@moments/ui` shared primitives for all structural patterns: `PageHeader`, `KPIGrid`, `MetricCard`,
+  `TableToolbar`, `TablePagination`, `BulkActionBar`, `DataTable`, `EmptyState`, `ErrorState`,
+  `PageSkeleton`, `TableSkeleton`, `StatusBadge`, `AnalyticsCard`, `LineChart`, `BarChart`,
+  `PieChart`, `AreaChart`, `ActivityFeed`, `QuickActions`
+- shadcn primitives from `src/components/ui/` for low-level elements: `Input`, `Select`, `Label`,
+  `Textarea`, `Dialog`, `Button`, `Badge`, `Card`, etc.
+- Do NOT use from `@moments/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav`
 
 ---
 
@@ -135,10 +139,15 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 
 ## Current Phase
 
-**Current Phase:** Phase 16.5 — Admin Completion — Complete
+**Current Phase:** Phase 16 — Platform Expansion (in progress)
 
-All admin frontend gaps closed. Sponsor selector wired in moment create/edit forms (data integrity fix). Campaign edit form added. Broadcast detail page with retry button. Advisory detail with full signal breakdown. Authority per-profile audit log. Media management page with upload/delete. Media API client added to `packages/api`.
-Next: Phase 16 — Platform Expansion (package rename, second application).
+Phase 16.5 (Admin Completion) is complete. All admin modules have full CRUD. Shared UI layer
+standardised — all module clients migrated to `@moments/ui` primitives. Bulk actions wired for
+Moderation, Moments, Campaigns, Media via `useBulkSelection` + `BulkActionBar` + `Promise.allSettled`
+fan-out. `getToken` shared util extracted. `loading.tsx` route skeletons added for all 10 modules.
+
+Next: Phase 16 — package rename `@moments/*` → `@unami/*`, extract Moments domain from
+`packages/shared`, scaffold second application.
 
 ---
 

@@ -9,12 +9,12 @@ Read this first when resuming work or starting a new session.
 
 | Field | Value |
 |---|---|
-| Version | `v0.8.0-admin-complete` |
-| Phase | Phase 16.5 — Admin Completion (Complete) |
+| Version | `v0.9.0-platform-standardised` |
+| Phase | Phase 16 — Platform Expansion (in progress) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | pending |
+| Last commit | `d6ddbce` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -32,7 +32,7 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 | `packages/ui` | ✅ Complete | 100% |
 | `packages/api` | ✅ Complete | 100% |
 | `apps/admin` shell + dashboard | ✅ Complete | 100% |
-| `apps/web` public PWA | ✅ Complete | 100% |
+| `apps/web` public PWA | ⚠️ Not started | 0% |
 
 ---
 
@@ -145,14 +145,31 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 
 | Task | Status |
 |---|---|
-| Moment create form — sponsor selector wired to `sponsorId` (data integrity fix) | ✅ |
-| Moment edit form — sponsor selector wired to `sponsorId` (data integrity fix) | ✅ |
+| Moment create/edit form — sponsor selector wired to `sponsorId` | ✅ |
 | Campaign edit form (`/campaigns/[id]/edit`) | ✅ |
 | Broadcast detail page (`/broadcasts/[id]`) with retry button | ✅ |
 | Advisory detail page (`/moderation/advisories/[id]`) — full signal breakdown | ✅ |
 | Authority per-profile audit log on edit page | ✅ |
 | Media management page (`/media`) — upload, list, delete | ✅ |
 | Media API client (`packages/api/src/clients/media.ts`) | ✅ |
+
+### Phase 16.6 — Shared UI Standardisation ✅
+**Goal:** All admin modules use shared primitives. No inline reimplementation of structural patterns.
+
+| Task | Status |
+|---|---|
+| `packages/ui` — `StatusBadge` variants corrected (D-014) | ✅ |
+| `packages/ui` — `MetricCard` `success` variant fixed, `compact` prop added | ✅ |
+| `packages/ui` — `KPIGrid` `items` prop added (data-driven usage) | ✅ |
+| `packages/ui` — `TablePagination` `variant` prop added (text/icon) | ✅ |
+| `packages/ui` — `DataTable` checkbox selection props added (backwards compatible) | ✅ |
+| `packages/ui` — `LoadingStates` replaced with `TableSkeleton`, `KPICardsSkeleton`, `PageSkeleton` | ✅ |
+| `packages/ui` — `BulkActionBar` new component | ✅ |
+| `apps/admin` — `useBulkSelection` hook | ✅ |
+| `apps/admin` — `getToken` shared util (`lib/auth/token.ts`) | ✅ |
+| `apps/admin` — `loading.tsx` route skeletons for all 10 modules | ✅ |
+| All module clients migrated to `PageHeader`, `KPIGrid`, `TableToolbar`, `TablePagination` | ✅ |
+| Bulk actions wired — Moderation, Moments, Campaigns, Media | ✅ |
 
 ---
 
@@ -188,10 +205,13 @@ Fix bugs only. All new work is product workflow completion.
 |---|---|---|
 | `GET /broadcasts` endpoint missing — broadcasts page renders empty | ~~P0 Bug~~ | ✅ Fixed |
 | Broadcast retry logic absent — failed batches are permanent | ~~P1~~ | ✅ Fixed |
-| Advisory confidence hardcoded `0.5` — n8n not connected | P2 | Phase 16 |
+| Advisory confidence hardcoded `0.5` — n8n not connected | P2 | Phase 16 (n8n deferred, D-023) |
 | `rate_limits` table exists but no enforcement | ~~P2~~ | ✅ Fixed |
 | `moment_stats` populated but never surfaced in UI | ~~P3~~ | ✅ Fixed |
 | `sponsorId` hardcoded null in moment create/edit forms | ~~P1 Data bug~~ | ✅ Fixed |
+| WhatsApp secrets unset in Supabase | P0 Ops | Operational — requires manual config |
+| HELP/STATUS/MYAUTHORITY webhook reply handlers not built | P1 | Phase 16 |
+| Advisory AI confidence scoring Edge Function not built | P2 | Phase 16 |
 
 ---
 
