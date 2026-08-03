@@ -1,37 +1,47 @@
 # Moments Product Vision
 
-This document locks in the product architecture and roadmap for Moments.
-It exists to prevent engineering-first drift. Read it before starting any phase.
+This document locks in the product architecture, data ownership model, and roadmap.
+It exists to prevent engineering-first drift.
+Read it before starting any phase. Do not contradict it.
 
 ---
 
 ## What Moments Is
 
-Moments is a community information platform with three surfaces:
+Moments is a community information platform with three surfaces and one operational backend.
 
 ```
-Sanity CMS                    Supabase
-Editorial Workspace           Operational Database
-        │                           │
-        │ publishes                 │ broadcasts
-        ▼                           ▼
-┌───────────────────────────────────────────┐
-│              apps/web (PWA)               │
-│         Public community experience       │
-└───────────────────────────────────────────┘
-                    │
-                    │ subscribes via WhatsApp
-                    ▼
-             WhatsApp delivery
-             (final channel)
-```
+┌─────────────────────────────────────────────────────────────┐
+│                      SANITY CMS                             │
+│                   Editorial Workspace                       │
+│  Homepage · Stories · Sponsors · Help · About · Privacy     │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ editorial content
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     apps/web (PWA)                          │
+│              Public community experience                    │
+│         Two data sources. One Next.js application.          │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ subscribes via WhatsApp
+                           ▼
+                  WhatsApp delivery channel
+                  (activated in Phase 17D)
 
-And one operational surface:
-
-```
-apps/admin
-Moments Admin Dashboard
-(manages broadcasts, subscribers, moderation, campaigns, sponsors)
+┌─────────────────────────────────────────────────────────────┐
+│                      SUPABASE                               │
+│                  Operational Database                       │
+│  Moments · Broadcasts · Subscribers · Moderation            │
+│  Analytics · Campaigns · Sponsors · Authority               │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ operational data
+                           ▼
+                     Edge Functions
+                           │
+                     packages/api
+                           │
+                      apps/admin
+                  (Moments admin dashboard)
 ```
 
 ---
@@ -39,15 +49,17 @@ Moments Admin Dashboard
 ## Responsibility Split
 
 ### Sanity CMS owns
-- Homepage composition (hero, featured stories, layout)
-- Editorial content (long-form stories, announcements, help articles)
+- Homepage composition — hero, featured stories, layout
+- Editorial content — long-form stories, announcements
 - Sponsor pages and campaign landing pages
-- About, Privacy, Help, Authority pages
+- About, Help, Privacy, Terms pages
+- Authority editorial profiles
 - SEO metadata, Open Graph, structured data
 - Media assets for editorial content
 - Navigation structure and featured categories
 
 ### Supabase owns
+- Moments — creation, scheduling, broadcasting
 - Broadcasts and delivery pipeline
 - Subscriber management and preferences
 - Moderation queue and advisory signals
@@ -55,132 +67,111 @@ Moments Admin Dashboard
 - Analytics and engagement data
 - Compliance and rate limiting
 - WhatsApp message processing
+- Campaigns and sponsor commercial data
 
 ### apps/web (PWA) consumes both
 - Editorial content from Sanity via GROQ queries
 - Operational moments from Supabase via `packages/api` → Edge Functions
 - These are two separate data sources. Neither replaces the other.
+- Same Next.js application. Same layout. Same design system.
 
 ### apps/admin manages
 - Moments creation, scheduling, broadcasting
 - Subscriber and moderation workflows
 - Sponsor and campaign management
 - System settings and feature flags
+- Authority profile management
 
 ### WhatsApp is the delivery channel
-- Not the product. Not the next milestone.
+- Not the product. Not the first milestone.
 - Subscribers opt in via WhatsApp deep link on the PWA
 - Broadcasts are delivered via WhatsApp Cloud API
-- Reply handlers (HELP/STATUS/MYAUTHORITY) are built last — after the public product exists
+- Reply handlers (HELP/STATUS/MYAUTHORITY) are built in Phase 17D — after the public product exists
 
 ---
 
-## Architecture Rules for This Vision
+## Architecture Rules
 
-1. Sanity is added to `apps/web` only. It never touches `packages/`, `apps/admin`, or Edge Functions.
+1. Sanity is added to `apps/web` only. Never `packages/`, `apps/admin`, or Edge Functions.
 2. Supabase remains the operational store. Sanity does not replace it.
-3. `apps/web` queries Sanity directly via `@sanity/client` — no Edge Function proxy needed for public read.
+3. `apps/web` queries Sanity directly via `@sanity/client` — no Edge Function proxy.
 4. The Sanity dataset is read-only from `apps/web`. All writes happen in Sanity Studio.
 5. Sanity Studio is a separate deployment — not inside this monorepo.
-6. The PWA data flow becomes:
+6. Moment feed, detail, region, and category pages remain Supabase-driven — unchanged.
+7. ISR + on-demand revalidation for all Sanity-driven pages.
+8. The PWA data flow:
    - Editorial pages → Sanity GROQ
    - Moment feed, detail, region, category → Supabase via `packages/api`
-   - Both sources render in the same Next.js app, same layout, same design system.
 
 ---
 
-## Roadmap
+## Why This Order
 
-### ✅ Platform v1.0 — Complete
-- `@unami/ui`, `@unami/shared`, `@unami/api` — application-agnostic
-- 15 Edge Functions, 26 tables
-- `apps/admin` — all modules, full CRUD
-- `apps/web` — scaffold with Supabase-driven feed, detail, regions, categories, search, subscribe
+The wrong order:
+```
+WhatsApp → PWA → CMS
+```
+Testing a broadcast against a product that doesn't exist.
 
----
-
-### Phase 17A — Public PWA Completion
-**Goal:** `apps/web` becomes the actual Moments community experience, not a scaffold.
-
-What this means:
-- Homepage with hero, featured moments, category navigation — editorial layout
-- Moment feed with proper card design, urgency indicators, sponsor attribution
-- Moment detail with full content, media, share, related moments
-- Category and region pages with editorial headers
-- Search with real-time results
-- Subscribe page with clear WhatsApp opt-in flow
-- About, Help, Privacy static pages
-- Sponsor directory page
-- Authority profile public pages
-- PWA install prompt, offline page, manifest
-
-**Data source:** Supabase via existing `packages/api` public client.
-No Sanity yet. Get the experience right first.
+The right order:
+```
+PWA → CMS → UX Polish → WhatsApp → Analytics → Hardening → Launch
+```
+Every broadcast has somewhere meaningful to go.
+Every subscriber lands on a complete product.
+WhatsApp is tested against the finished experience.
 
 ---
 
-### Phase 17B — Sanity CMS Setup
-**Goal:** Sanity project created, schema defined, Studio deployed.
+## Phase 17 — Moments Product Completion
 
-What this means:
-- Sanity project created (separate from this monorepo)
-- Schema defined for: `homePage`, `featuredStory`, `sponsorPage`, `authorityPage`, `helpArticle`, `aboutPage`, `privacyPage`
-- Sanity Studio deployed (Sanity-hosted or Vercel)
-- `@sanity/client` added to `apps/web` only
-- Environment variables: `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`
-- No content yet — schema and connection only
+### 17A — Public Experience (PWA) ✅
+Build the actual public product. Not a placeholder. The real Moments experience.
+Homepage, feed, story pages, categories, search, regional browsing, PWA, offline, install prompt, SEO.
 
----
+### 17B — Sanity CMS Integration ⏳
+Introduce Sanity as the editorial layer.
+Schema, Studio, GROQ queries, `@sanity/client` in `apps/web`. No content yet — connection only.
 
-### Phase 17C — Connect PWA to Sanity
-**Goal:** Editorial pages in `apps/web` are driven by Sanity. Operational pages remain Supabase.
+### 17C — Public UX Polish ⏳
+Connect editorial pages to Sanity. Make the product feel premium.
+Animations, loading states, transitions, accessibility, typography, responsive behaviour,
+empty states, error states, image optimisation, Open Graph, Lighthouse.
 
-What this means:
-- Homepage hero and featured stories → Sanity
-- About, Help, Privacy pages → Sanity
-- Sponsor pages → Sanity
-- Authority public profiles → Sanity (or hybrid: Sanity for bio/editorial, Supabase for stats)
-- Moment feed, detail, region, category → still Supabase (unchanged)
-- ISR (Incremental Static Regeneration) for Sanity-driven pages
-- On-demand revalidation webhook from Sanity → Next.js `/api/revalidate`
+### 17D — WhatsApp Production ⏳
+Activate the delivery channel. Production credentials, reply handlers, end-to-end testing.
+HELP · STATUS · MYAUTHORITY · opt-in · opt-out · broadcast verification · compliance.
 
----
+### 17E — Analytics ⏳
+Understand how people use the product. Only meaningful once users exist.
+Page analytics, subscriber funnels, broadcast funnels, regional analytics, sponsor analytics.
 
-### Phase 17D — WhatsApp Production
-**Goal:** End-to-end broadcast delivery working in production.
-
-What this means:
-- WhatsApp Cloud API credentials configured in Supabase secrets
-- HELP reply handler (Edge Function)
-- STATUS reply handler (Edge Function)
-- MYAUTHORITY reply handler (Edge Function)
-- Live webhook end-to-end test with real subscriber
-- Broadcast delivery confirmed
-
-**This phase is intentionally last.** Testing WhatsApp against a complete product
-is more valuable than testing it against a scaffold.
+### 17F — Production Hardening ⏳
+Harden everything before launch.
+Caching, rate limits, monitoring, security headers, performance budget, load testing, Lighthouse ≥ 90.
 
 ---
 
-### Phase 18 — Moments Launch
-**Goal:** Moments is publicly available and production-ready.
+## Phase 18 — Moments Launch
 
-- Domain configured
-- Vercel deployments for `apps/web` and `apps/admin`
-- Supabase project on paid plan
-- Sanity project on appropriate plan
-- WhatsApp Business Account verified
-- First real broadcast sent
+Domain, Vercel deployments, Supabase paid plan, Sanity plan, WhatsApp Business Account verified,
+first real broadcast sent.
 
 ---
 
-## What Does Not Change
+## Ecosystem Roadmap (Post-Moments)
 
-- Platform packages (`packages/ui`, `packages/shared`, `packages/api`) — frozen
-- Edge Functions — no changes unless Phase 17D requires them
-- `apps/admin` — no changes unless a bug is found
-- Database schema — no changes unless Phase 17D requires a new table
-- Domain ownership rules (D-027) — Moments domain stays in `apps/`
+Only after Moments is genuinely production-ready does the next application begin.
+Each application builds its own shell, navigation, and domain on top of the shared platform.
+None of them modify `packages/`.
+
+| Phase | Application | Description |
+|---|---|---|
+| 19 | Umkhandlu | Traditional authority and community governance platform |
+| 20 | ITPMS | Municipal ICT project management |
+| 21 | Schools Portal | Educational institution administration and communication |
+| 22 | BeatsChain | Music creator ecosystem — profiles, ISRC, marketplace |
+| 23 | Spree Operations | Commercial storefronts and merchant operations |
 
 ---
 
@@ -188,9 +179,9 @@ is more valuable than testing it against a scaffold.
 
 Before adding anything to `apps/web`, ask:
 
-1. Is this editorial content? → Sanity
+1. Is this editorial content? → Sanity (Phase 17B+)
 2. Is this operational data? → Supabase via `packages/api`
 3. Is this a platform capability? → It already exists in `packages/`
-4. Is this Moments-specific UI? → `apps/web/src/components/` or `apps/web/src/domain/`
+4. Is this Moments-specific UI? → `apps/web/src/components/`
 
-If the answer is "I'm not sure," stop and ask before writing.
+If the answer is "I'm not sure" — stop and ask before writing.

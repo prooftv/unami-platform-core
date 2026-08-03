@@ -2,7 +2,8 @@
 
 ## Project
 Unami Platform Core v1.0 — a multi-application platform. Moments is the first product built on it.
-The platform layer is complete and application-agnostic. Active work is Moments product completion.
+The platform layer is complete and application-agnostic.
+Active work is **Moments product completion** — not platform engineering.
 
 ## Repository
 https://github.com/prooftv/unami-platform-core
@@ -12,11 +13,11 @@ https://github.com/prooftv/unami-platform-core
 - Backend: Supabase Edge Functions (Deno)
 - Database: PostgreSQL via Supabase (26 tables, fully migrated)
 - Auth: Supabase Auth (JWT, RS256) + `@supabase/ssr` for Next.js
-- Messaging: Meta WhatsApp Cloud API
+- CMS: Sanity (Phase 17B — `apps/web` only)
+- Messaging: Meta WhatsApp Cloud API (Phase 17D)
 - Validation: Zod (shared between frontend and Edge Functions)
 - State: Zustand (vanilla store, SSR-safe)
 - Monorepo: Turborepo + pnpm workspaces
-- Admin shell: shadcn/ui dashboard (arhamkhnz/next-shadcn-admin-dashboard)
 
 ---
 
@@ -29,19 +30,12 @@ The platform owns infrastructure. Applications own experience.
 - `@unami/shared` — platform contracts: RBAC, Language, Pagination, Utilities, Formatting, Auth validators
 - `@unami/api` — typed HTTP clients for Edge Functions
 
-**Application layer** (`apps/`) — each application owns its shell, navigation, dashboard, domain, and workflows:
+**Application layer** (`apps/`) — each application owns its shell, navigation, domain, and workflows:
 - `apps/admin` — Moments admin. Owns its sidebar, header, dashboard widgets, and `domain/moments/`
 - `apps/web` — Moments public PWA. Owns its layout, public routing, and `domain/moments.ts`
 
-**The test:** If Moments were deleted entirely, `packages/shared`, `packages/ui`, and `packages/api` must compile without modification. As of v1.0, this is true.
-
-**What does NOT belong in `packages/ui`:**
-- Sidebar navigation
-- Dashboard widgets
-- Application-specific layouts
-- Any component that references a product domain
-
-Each application builds its own shell. The platform provides the primitives to build with.
+**The test:** If Moments were deleted entirely, `packages/shared`, `packages/ui`, and `packages/api`
+must compile without modification. As of v1.0, this is true.
 
 ---
 
@@ -49,12 +43,12 @@ Each application builds its own shell. The platform provides the primitives to b
 
 | Layer | Package | Status | Rule |
 |---|---|---|---|
-| Design system + primitives | `packages/ui` | ✅ Complete | No Supabase, no auth, no domain knowledge |
-| Platform contracts | `packages/shared` | ✅ Complete | No React, no Next.js, no Supabase, no domain |
-| API clients | `packages/api` | ✅ Complete | Typed HTTP only — domain types inlined as string literals |
-| Edge Functions | `supabase/functions/` | ✅ Complete | Only layer that touches the database |
+| Design system + primitives | `packages/ui` | ✅ Frozen | No Supabase, no auth, no domain knowledge |
+| Platform contracts | `packages/shared` | ✅ Frozen | No React, no Next.js, no Supabase, no domain |
+| API clients | `packages/api` | ✅ Frozen | Typed HTTP only — domain types inlined as string literals |
+| Edge Functions | `supabase/functions/` | ✅ Frozen | Only layer that touches the database |
 | Moments admin | `apps/admin` | ✅ Complete | Owns Moments domain, shell, all modules |
-| Moments public PWA | `apps/web` | ✅ Complete | Owns public routing, no auth, no Supabase client |
+| Moments public PWA | `apps/web` | 🔨 Active | Phase 17A complete — 17B next |
 
 ---
 
@@ -85,11 +79,48 @@ apps/admin or apps/web
       → Supabase DB (service role key, RLS enforced)
 ```
 
+`apps/web` also queries Sanity directly (Phase 17B+):
+```
+apps/web
+  → @sanity/client (GROQ queries)
+    → Sanity CDN (read-only, public dataset)
+```
+
 No application code calls Supabase directly. No exceptions.
+Sanity is read-only from `apps/web`. All Sanity writes happen in Sanity Studio.
 
 ---
 
-## Edge Functions (15 — Complete)
+## Two-Source Model (apps/web)
+
+```
+                SANITY CMS
+                     │
+      Editorial Content (Phase 17B+)
+      Homepage · Stories · Sponsors
+      Help · About · Privacy · Authority
+                     │
+          ┌──────────▼──────────┐
+          │    apps/web (PWA)   │
+          └──────────┬──────────┘
+                     │
+      Operational Content (Supabase)
+      Moments · Feed · Detail
+      Region · Category · Search
+                     │
+              packages/api
+                     │
+            supabase/functions
+                     │
+                  Supabase DB
+```
+
+These are two separate data sources in one Next.js application.
+Neither replaces the other. The design system and layout are shared.
+
+---
+
+## Edge Functions (15 — Complete, Frozen)
 
 | Function | Routes | Auth |
 |---|---|---|
@@ -125,10 +156,7 @@ No import from `apps/admin/domain`. The API package has no domain dependency.
 ## Moments Admin (`apps/admin`)
 
 **Shell:** `(admin)/layout.tsx` owns the full shell — auth guard, sidebar, header. All routes inherit automatically.
-The admin shell belongs to Moments. It is not extracted into `packages/ui`.
-
 **Domain:** `apps/admin/src/domain/moments/` — all Moments-specific enums, constants, types, validators, helpers.
-
 **Routes:** `/dashboard`, `/moments`, `/broadcasts`, `/subscribers`, `/moderation`, `/authority`, `/sponsors`, `/campaigns`, `/media`, `/settings`
 
 **Component policy:**
@@ -136,38 +164,29 @@ The admin shell belongs to Moments. It is not extracted into `packages/ui`.
   `TableToolbar`, `TablePagination`, `BulkActionBar`, `DataTable`, `EmptyState`, `ErrorState`,
   `PageSkeleton`, `TableSkeleton`, `StatusBadge`, `AnalyticsCard`, `LineChart`, `BarChart`,
   `PieChart`, `AreaChart`, `ActivityFeed`, `QuickActions`
-- shadcn primitives from `src/components/ui/` for low-level elements: `Input`, `Select`, `Label`,
-  `Textarea`, `Dialog`, `Button`, `Badge`, `Card`, etc.
-- Do NOT use from `@unami/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav` — those are Phase 3 stubs
-
-**Page layout standard (D-026):**
-
-| Page type | Max width | Header | Structure |
-|---|---|---|---|
-| List | unconstrained | `PageHeader` (title, description, create button) | KPIGrid → TableToolbar → Table → TablePagination → BulkActionBar |
-| Form (create/edit) | `max-w-2xl` | `PageHeader` (title, description, back in actions) | Cards per field group → submit row |
-| Detail (view) | `max-w-3xl` | `PageHeader` (title, description, action buttons) | 2-col card grid → content card → history/table cards |
-
-- `PageHeader` on every page — no inline `<h1>` or `<ArrowLeft>` beside headings
-- Each form section in its own `Card` — no bare `<div>` with `<p className="text-sm font-medium">` labels
-- `getToken` always from `@/lib/auth/token` — never copy-pasted
-- Error: `text-destructive` — Success: `text-muted-foreground` — never raw colour classes
+- shadcn primitives from `src/components/ui/` for low-level elements
+- Do NOT use from `@unami/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav` — Phase 3 stubs
 
 ---
 
 ## Moments Public PWA (`apps/web`)
 
-**Shell:** `(public)/layout.tsx` — sticky nav header + footer with region/category links. No auth.
+**Shell:** `(public)/layout.tsx` — sticky nav, mobile drawer, theme toggle, structured footer.
 **Domain:** `apps/web/src/domain/moments.ts` — Region/Category const objects for routing only.
 
-**Routes:** `/` (feed), `/moments/[id]`, `/region/[region]`, `/category/[category]`, `/search`, `/subscribe`
+**Routes (Phase 17A complete):**
+`/` (homepage), `/feed`, `/moments/[id]`, `/region/[region]`, `/category/[category]`,
+`/search`, `/subscribe`, `/about`, `/help`, `/privacy`, `/terms`,
+`/sponsors`, `/campaigns`, `/authority`, `/offline`, `/_not-found`
 
-**Data access:** `getPublicApiClient()` — anon key, calls `/moments/public` endpoints only.
-No auth, no Supabase client, no `@supabase/ssr`.
+**Data access:**
+- `getPublicApiClient()` — anon key, calls `/moments/public` endpoints
+- `@sanity/client` — GROQ queries to Sanity CDN (Phase 17B+)
+- No auth, no Supabase client, no `@supabase/ssr`
 
 ---
 
-## Database (26 Tables — Complete)
+## Database (26 Tables — Complete, Frozen)
 
 Core content: `moments`, `sponsors`, `campaigns`
 Publishing pipeline: `moment_intents`, `broadcasts`, `broadcast_batches`
@@ -182,17 +201,15 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 
 ## Current Phase
 
-**Phase 17A — Public PWA Completion**
+**Phase 17B — Sanity CMS Integration**
 
-Platform is v1.0 and frozen. `apps/web` is being built into the full Moments community
-experience. Data source is Supabase via existing public API. Sanity CMS is Phase 17B.
+Phase 17A (public PWA shell and information architecture) is complete.
+Next: introduce Sanity as the editorial layer for `apps/web`.
 
-Roadmap:
-- 17A: Complete `apps/web` as the Moments public product (Supabase-driven)
-- 17B: Sanity project setup, schema, Studio deployed
-- 17C: Connect `apps/web` editorial pages to Sanity
-- 17D: WhatsApp production credentials + reply handlers
-- 18: Launch
+Sanity owns editorial content. Supabase owns operational data.
+These are complementary, not competing.
+
+Full roadmap: 17A ✅ → 17B → 17C → 17D → 17E → 17F → 18 (Launch)
 
 ---
 
@@ -206,5 +223,5 @@ Roadmap:
 
 ## What Is Active
 
-- Phase 17A: `apps/web` — homepage, feed, detail, subscribe, static pages, PWA polish
-- Phase 17B (next): Sanity project + schema + Studio
+- Phase 17B: Sanity project setup, schema, Studio, `@sanity/client` in `apps/web`
+- Phase 17C (next): Connect editorial pages to Sanity, UX polish, ISR, Open Graph

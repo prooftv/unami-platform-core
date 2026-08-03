@@ -149,6 +149,30 @@ for public routing (Region, Category). It does not import from `apps/admin`.
 The rule: if deleting Moments entirely, `packages/shared`, `packages/ui`, and `packages/api`
 must still compile without modification. As of Phase 16, this is true.
 
+## D-028: Product-first ordering — PWA before WhatsApp
+The correct build order for Moments is: PWA → CMS → UX Polish → WhatsApp → Analytics → Hardening → Launch.
+WhatsApp is the delivery channel, not the product. Testing a broadcast against a product that doesn't
+exist produces no useful signal. WhatsApp production integration (Phase 17D) is intentionally deferred
+until the public product is complete and polished.
+
+The wrong order (WhatsApp → PWA → CMS) was engineering-first drift. D-028 locks in the correct order.
+
+## D-029: Two-source model — Sanity and Supabase are complementary
+`apps/web` queries two separate data sources in one Next.js application:
+- Sanity (via `@sanity/client` GROQ) — editorial content: homepage, stories, sponsors, help, about, privacy
+- Supabase (via `packages/api` → Edge Functions) — operational content: moments, feed, detail, region, category
+
+Sanity does not replace Supabase. Supabase does not replace Sanity.
+The moment feed, detail, region, and category pages are always Supabase-driven.
+The homepage hero, featured stories, and static pages are always Sanity-driven (from Phase 17B).
+Neither source crosses into the other's domain.
+
+## D-030: Ecosystem expansion is post-Moments only
+No other application (Umkhandlu, ITPMS, Schools Portal, BeatsChain, Spree) is scaffolded
+until Moments has completed Phase 18 (Launch). Each future application builds its own shell,
+navigation, and domain on top of `@unami/ui`, `@unami/shared`, `@unami/api`.
+None of them modify `packages/`. The platform serves them — they do not reshape it.
+
 **List pages:**
 - `PageHeader` (title, description, primary action button)
 - `KPIGrid` if the module has metrics

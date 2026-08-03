@@ -8,11 +8,17 @@
 - Never touch `/workspaces/moments-v2` — reference only
 
 ## Before writing any code
-1. Read `PROJECT_STATUS.md` for current phase and next task
-2. Read `docs/context/architecture.md` for layer boundaries and known issues
-3. Read `docs/context/security-model.md` for auth and RBAC rules
-4. Read `docs/context/decisions.md` for all architectural decisions
-5. Check `docs/DATABASE_SCHEMA.md` before any schema changes
+1. Read `PROJECT_STATUS.md` — current phase, last commit, what is done and what is next
+2. Read `docs/context/product-vision.md` — the product architecture and why the order matters
+3. Read `docs/context/architecture.md` — layer boundaries, data flow, current phase
+4. Read `docs/context/decisions.md` — decisions that must not be reversed
+5. Read `docs/context/security-model.md` — auth and RBAC rules
+6. Check `docs/DATABASE_SCHEMA.md` before any schema changes
+
+## What this repository is now
+The platform infrastructure is complete. This is product work — not platform engineering.
+The public product defines everything. Build from the outside inward.
+Do not begin a new phase until the previous phase is complete and documented.
 
 ## Platform is frozen at v1.0
 - Do not restructure `packages/`
@@ -24,22 +30,34 @@
 - Fix bugs only — no speculative improvements to infrastructure
 
 ## Current priority
-Phase 17A — Public PWA Completion.
-The platform is v1.0 and frozen. The next objective is to complete the public-facing Moments
-product. Build `apps/web` into the primary community experience using Supabase for operational
-data now, Sanity CMS for editorial content in Phase 17B/17C.
+Phase 17B — Sanity CMS Integration.
+
+Sanity is the editorial layer for `apps/web`. It does not replace Supabase.
+Supabase owns operational data. Sanity owns editorial content.
+
 Do not modify platform packages, Edge Functions, or `apps/admin` unless a bug requires it.
-WhatsApp production integration is intentionally deferred to Phase 17D — after the public product exists.
-Do not scaffold other applications (Umkhandlu, Spree, BeatsChain, etc.) — that is future work.
+Do not scaffold other applications (Umkhandlu, ITPMS, BeatsChain, etc.) — that is post-Phase 18 work.
+
+## Phase 17 — Moments Product Completion
+Six sub-phases. Each builds on the last. Do not skip ahead.
+
+- **17A** ✅ Public Experience (PWA) — shell, homepage, all pages, navigation, theme
+- **17B** ⏳ Sanity CMS Integration — schema, Studio, GROQ queries, `@sanity/client` in `apps/web`
+- **17C** Sanity connection + UX Polish — editorial pages wired, ISR, loading states, Open Graph, Lighthouse
+- **17D** WhatsApp Production — credentials, reply handlers, end-to-end testing
+- **17E** Analytics — page views, subscriber funnels, broadcast funnels
+- **17F** Production Hardening — caching, monitoring, security headers, load testing
 
 ## Sanity CMS rules (Phase 17B onward)
 - Sanity is added to `apps/web` only — never `packages/`, `apps/admin`, or Edge Functions
-- Sanity owns editorial content: homepage, stories, sponsor pages, help, about, privacy
-- Supabase owns operational data: broadcasts, subscribers, moderation, analytics
+- Sanity owns editorial content: homepage, stories, sponsor pages, help, about, privacy, authority profiles
+- Supabase owns operational data: moments, broadcasts, subscribers, moderation, analytics
 - `apps/web` queries Sanity directly via `@sanity/client` — no Edge Function proxy
 - Sanity Studio is a separate deployment — not inside this monorepo
 - ISR + on-demand revalidation for all Sanity-driven pages
-- The moment feed, detail, region, and category pages remain Supabase-driven — unchanged
+- Moment feed, detail, region, and category pages remain Supabase-driven — never move to Sanity
+- Sanity client lives in `apps/web/src/lib/sanity/client.ts`
+- GROQ queries live in `apps/web/src/lib/sanity/queries.ts`
 
 ## Layer rules
 - `packages/ui` — no Supabase, no auth, no domain knowledge, no app-specific components
@@ -47,7 +65,7 @@ Do not scaffold other applications (Umkhandlu, Spree, BeatsChain, etc.) — that
 - `packages/api` — typed HTTP clients only, domain types inlined as string literals
 - `supabase/functions/` — only layer that touches the database
 - `apps/admin` — owns Moments domain (`src/domain/moments/`), shell, and all admin modules
-- `apps/web` — owns public routing, no auth, no Supabase client
+- `apps/web` — owns public routing, no auth, no Supabase client, Sanity client from Phase 17B
 
 ## Domain ownership rule (D-027)
 - Moments domain lives in `apps/admin/src/domain/moments/` and `apps/web/src/domain/moments.ts`
@@ -141,3 +159,14 @@ Every detail/view page must follow this exact structure:
 - Never add placeholder comments in place of real values
 - The `SUPABASE_ACCESS_TOKEN` value is stored in `.env.example` — never replace it with a placeholder
 - If a tool or workflow would modify `.env.example`, stop and do not proceed
+
+## Ecosystem roadmap (post-Moments)
+Only after Phase 18 (Moments Launch) is complete does the next application begin.
+Each application builds its own shell, navigation, and domain on top of `@unami/ui`, `@unami/shared`, `@unami/api`.
+None of them modify `packages/`.
+
+- Phase 19 — Umkhandlu (traditional authority governance)
+- Phase 20 — ITPMS (municipal ICT project management)
+- Phase 21 — Schools Portal
+- Phase 22 — BeatsChain (music creator ecosystem)
+- Phase 23 — Spree Operations Dashboard
