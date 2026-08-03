@@ -1,11 +1,12 @@
 import { Badge } from "../primitives/Badge";
 
+// D-014: only default | secondary | destructive | outline are valid shadcn variants
 const STATUS_VARIANTS = {
-  active: "success",
+  active: "default",
   inactive: "secondary",
-  pending: "warning",
+  pending: "secondary",
   error: "destructive",
-  info: "info",
+  info: "outline",
   draft: "outline",
 } as const;
 

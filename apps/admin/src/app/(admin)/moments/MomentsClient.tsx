@@ -1,15 +1,19 @@
 'use client';
 
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { BulkActionBar } from '@moments/ui';
 import type { MomentWithSponsor, PaginatedResponse, AdminSession } from '@moments/api';
+import { createApiClient } from '@moments/api';
+import { getToken } from '@/lib/auth/token';
+import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { MomentStatus } from '@moments/shared';
-import { PlusCircle } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { PlusCircle, XCircle } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
   draft: 'outline', scheduled: 'secondary', broadcasted: 'default', cancelled: 'destructive',
@@ -26,8 +30,21 @@ interface Props {
 export function MomentsClient({ initialData, session, currentPage, currentStatus, currentSearch }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState(currentSearch);
+  const [bulkPending, setBulkPending] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const rows = initialData?.data ?? [];
+  // Only draft/scheduled are cancellable — broadcasted is immutable (D-006)
+  const cancellableRows = rows.filter((m) => m.status === 'draft' || m.status === 'scheduled');
+
+  const { selected, toggle, toggleAll, clear, selectedCount } = useBulkSelection<MomentWithSponsor>((m) => m.id);
+  // Constrain selection to only cancellable rows
+  const cancellableSelected = Array.from(selected).filter((id) =>
+    cancellableRows.some((m) => m.id === id)
+  );
 
   const canCreate = session.role === 'superadmin' || session.role === 'content_admin';
+  const canBulkCancel = session.role === 'superadmin' || session.role === 'content_admin';
 
   const total = initialData?.pagination.total ?? 0;
   const limit = initialData?.pagination.limit ?? 20;
@@ -46,13 +63,36 @@ export function MomentsClient({ initialData, session, currentPage, currentStatus
   }
 
   const handleStatusChange = useCallback((value: string) => {
+    clear();
     router.push(buildUrl({ status: value, page: 1 }));
   }, [currentSearch, router]);
 
   const handleSearchSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    clear();
     router.push(buildUrl({ search, page: 1 }));
   }, [search, currentStatus, router]);
+
+  async function bulkCancel() {
+    if (cancellableSelected.length === 0) return;
+    setBulkPending(true);
+    setFeedback(null);
+    try {
+      const token = await getToken();
+      const api = createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
+      const results = await Promise.allSettled(cancellableSelected.map((id) => api.moments.cancel(id)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      setFeedback(
+        failed === 0
+          ? `${cancellableSelected.length} moment${cancellableSelected.length > 1 ? 's' : ''} cancelled`
+          : `${cancellableSelected.length - failed} cancelled, ${failed} failed`
+      );
+      clear();
+      router.refresh();
+    } finally {
+      setBulkPending(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -68,6 +108,8 @@ export function MomentsClient({ initialData, session, currentPage, currentStatus
           </Button>
         )}
       </div>
+
+      {feedback && <p className="text-sm text-muted-foreground">{feedback}</p>}
 
       <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
         <Input
@@ -93,6 +135,20 @@ export function MomentsClient({ initialData, session, currentPage, currentStatus
       <Table>
         <TableHeader>
           <TableRow>
+            {canBulkCancel && (
+              <TableHead className="w-10 pr-0">
+                <input
+                  type="checkbox"
+                  checked={cancellableRows.length > 0 && cancellableRows.every((m) => selected.has(m.id))}
+                  ref={(el) => {
+                    if (el) el.indeterminate = cancellableRows.some((m) => selected.has(m.id)) && !cancellableRows.every((m) => selected.has(m.id));
+                  }}
+                  onChange={() => toggleAll(cancellableRows)}
+                  className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+                  aria-label="Select all cancellable"
+                />
+              </TableHead>
+            )}
             <TableHead>Title</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Urgency</TableHead>
@@ -101,30 +157,55 @@ export function MomentsClient({ initialData, session, currentPage, currentStatus
           </TableRow>
         </TableHeader>
         <TableBody>
-          {(initialData?.data ?? []).length === 0 ? (
+          {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={canBulkCancel ? 6 : 5} className="text-center text-muted-foreground py-8">
                 No moments found.
               </TableCell>
             </TableRow>
-          ) : (initialData?.data ?? []).map((m) => (
-            <TableRow key={m.id} className="cursor-pointer" onClick={() => router.push(`/moments/${m.id}`)}>
-              <TableCell>
-                <p className="font-medium text-sm">{m.title}</p>
-                <p className="text-xs text-muted-foreground">{m.region} · {m.category}</p>
-              </TableCell>
-              <TableCell><Badge variant={STATUS_VARIANT[m.status]}>{m.status}</Badge></TableCell>
-              <TableCell><Badge variant="outline">{m.urgencyLevel}</Badge></TableCell>
-              <TableCell>
-                {m.sponsor
-                  ? <span className="text-sm">{m.sponsor.displayName}</span>
-                  : <span className="text-xs text-muted-foreground">—</span>}
-              </TableCell>
-              <TableCell>
-                <span className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleDateString()}</span>
-              </TableCell>
-            </TableRow>
-          ))}
+          ) : rows.map((m) => {
+            const isCancellable = m.status === 'draft' || m.status === 'scheduled';
+            const isSelected = selected.has(m.id);
+            return (
+              <TableRow
+                key={m.id}
+                className={`cursor-pointer ${isSelected ? 'bg-muted/60' : ''}`}
+                onClick={() => router.push(`/moments/${m.id}`)}
+              >
+                {canBulkCancel && (
+                  <TableCell className="w-10 pr-0">
+                    {isCancellable ? (
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => { e.stopPropagation(); toggle(m.id); }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+                        aria-label="Select row"
+                      />
+                    ) : (
+                      // broadcasted/cancelled — not selectable, show empty cell
+                      <span className="block h-4 w-4" />
+                    )}
+                  </TableCell>
+                )}
+                <TableCell>
+                  <p className="font-medium text-sm">{m.title}</p>
+                  <p className="text-xs text-muted-foreground">{m.region} &middot; {m.category}</p>
+                </TableCell>
+                <TableCell><Badge variant={STATUS_VARIANT[m.status]}>{m.status}</Badge></TableCell>
+                <TableCell><Badge variant="outline">{m.urgencyLevel}</Badge></TableCell>
+                <TableCell>
+                  {m.sponsor
+                    ? <span className="text-sm">{m.sponsor.displayName}</span>
+                    : <span className="text-xs text-muted-foreground">&mdash;</span>}
+                </TableCell>
+                <TableCell>
+                  <span className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleDateString()}</span>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
 
@@ -137,6 +218,23 @@ export function MomentsClient({ initialData, session, currentPage, currentStatus
             <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => router.push(buildUrl({ page: currentPage + 1 }))}>Next</Button>
           </div>
         </div>
+      )}
+
+      {canBulkCancel && (
+        <BulkActionBar
+          selectedCount={cancellableSelected.length}
+          entityLabel="moment"
+          onClear={clear}
+          actions={[
+            {
+              label: bulkPending ? 'Cancelling...' : 'Cancel selected',
+              icon: <XCircle className="h-3.5 w-3.5" />,
+              onClick: bulkCancel,
+              disabled: bulkPending,
+              variant: 'destructive',
+            },
+          ]}
+        />
       )}
     </div>
   );
