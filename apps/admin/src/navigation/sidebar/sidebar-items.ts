@@ -1,5 +1,6 @@
 import {
   Briefcase,
+  ImageIcon,
   LayoutDashboard,
   Megaphone,
   Network,
@@ -74,6 +75,7 @@ export const sidebarItems: NavGroup[] = [
       { id: "authority", title: "Authority", url: "/authority", icon: Network },
       { id: "community-profiles", title: "Community Profiles", url: "/community-profiles", icon: UserCircle },
       { id: "sponsors", title: "Sponsors", url: "/sponsors", icon: Tag },
+      { id: "media", title: "Media", url: "/media", icon: ImageIcon },
     ],
   },
   {

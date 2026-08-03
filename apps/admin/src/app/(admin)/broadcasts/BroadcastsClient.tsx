@@ -46,7 +46,7 @@ export function BroadcastsClient({ initialData, currentPage }: Props) {
           ) : (initialData?.data ?? []).map((b) => {
             const rate = b.recipientCount > 0 ? Math.round((b.successCount / b.recipientCount) * 100) : 0;
             return (
-              <TableRow key={b.id}>
+              <TableRow key={b.id} className="cursor-pointer" onClick={() => router.push(`/broadcasts/${b.id}`)}>
                 <TableCell>
                   <p className="font-medium text-sm">{b.moment.title}</p>
                   <p className="text-xs text-muted-foreground">{b.moment.region} · {b.moment.category}</p>

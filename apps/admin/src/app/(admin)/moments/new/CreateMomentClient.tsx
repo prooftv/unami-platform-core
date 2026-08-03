@@ -3,16 +3,20 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Region, Category, Language, UrgencyLevel } from '@moments/shared';
 import { createApiClient } from '@moments/api';
 import { createClient } from '@/lib/supabase/client';
+import type { Sponsor } from '@moments/api';
 
 const REGIONS = Object.values(Region);
 const CATEGORIES = Object.values(Category);
 const LANGUAGES = Object.values(Language);
 const URGENCY_LEVELS = Object.values(UrgencyLevel);
-
-const fieldClass = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 async function getToken(): Promise<string> {
   const supabase = createClient();
@@ -20,7 +24,9 @@ async function getToken(): Promise<string> {
   return session?.access_token ?? '';
 }
 
-export function CreateMomentClient() {
+interface Props { sponsors: Sponsor[]; }
+
+export function CreateMomentClient({ sponsors }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +41,7 @@ export function CreateMomentClient() {
     publishToPwa: true,
     publishToWhatsapp: false,
     isSponsored: false,
+    sponsorId: '',
     pwaLink: '',
     scheduledAt: '',
   });
@@ -43,8 +50,16 @@ export function CreateMomentClient() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  function handleSponsoredToggle(checked: boolean) {
+    setForm((prev) => ({ ...prev, isSponsored: checked, sponsorId: checked ? prev.sponsorId : '' }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (form.isSponsored && !form.sponsorId) {
+      setError('Select a sponsor for sponsored content');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -60,12 +75,13 @@ export function CreateMomentClient() {
         publishToPwa: form.publishToPwa,
         publishToWhatsapp: form.publishToWhatsapp,
         isSponsored: form.isSponsored,
+        sponsorId: form.isSponsored && form.sponsorId ? form.sponsorId : null,
         pwaLink: form.pwaLink || null,
-        scheduledAt: form.scheduledAt || null,
-        sponsorId: null,
+        scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : null,
         mediaUrls: [],
       });
       router.push('/moments');
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create moment');
     } finally {
@@ -81,83 +97,103 @@ export function CreateMomentClient() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Content */}
         <div className="space-y-4">
-          <div>
-            <p className="text-sm font-medium mb-1">Content</p>
-            <p className="text-xs text-muted-foreground mb-3">The message that will be sent to subscribers</p>
+          <p className="text-sm font-medium">Content</p>
+          <div className="space-y-1">
+            <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
+            <Input id="title" value={form.title} onChange={(e) => set('title', e.target.value)} required minLength={3} maxLength={200} placeholder="Enter a clear, descriptive title" />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium">Title <span className="text-destructive">*</span></label>
-            <input value={form.title} onChange={(e) => set('title', e.target.value)} required minLength={3} maxLength={200} placeholder="Enter a clear, descriptive title" className={fieldClass} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium">Content <span className="text-destructive">*</span></label>
-            <textarea value={form.content} onChange={(e) => set('content', e.target.value)} required minLength={10} maxLength={2000} rows={5} placeholder="Write the moment content (max 2000 characters)" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none" />
+            <Label htmlFor="content">Content <span className="text-destructive">*</span></Label>
+            <Textarea id="content" value={form.content} onChange={(e) => set('content', e.target.value)} required minLength={10} maxLength={2000} rows={5} className="resize-none" placeholder="Write the moment content (max 2000 characters)" />
             <p className="text-xs text-muted-foreground text-right">{form.content.length}/2000</p>
           </div>
         </div>
 
+        {/* Classification */}
         <div className="space-y-4">
-          <div>
-            <p className="text-sm font-medium mb-1">Classification</p>
-            <p className="text-xs text-muted-foreground mb-3">Region, category and urgency targeting</p>
-          </div>
+          <p className="text-sm font-medium">Classification</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-medium">Region <span className="text-destructive">*</span></label>
-              <select value={form.region} onChange={(e) => set('region', e.target.value)} className={fieldClass}>
-                {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
+              <Label>Region <span className="text-destructive">*</span></Label>
+              <Select value={form.region} onValueChange={(v) => set('region', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{REGIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium">Category <span className="text-destructive">*</span></label>
-              <select value={form.category} onChange={(e) => set('category', e.target.value)} className={fieldClass}>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <Label>Category <span className="text-destructive">*</span></Label>
+              <Select value={form.category} onValueChange={(v) => set('category', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium">Language <span className="text-destructive">*</span></label>
-              <select value={form.language} onChange={(e) => set('language', e.target.value)} className={fieldClass}>
-                {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
-              </select>
+              <Label>Language</Label>
+              <Select value={form.language} onValueChange={(v) => set('language', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{LANGUAGES.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium">Urgency <span className="text-destructive">*</span></label>
-              <select value={form.urgencyLevel} onChange={(e) => set('urgencyLevel', e.target.value)} className={fieldClass}>
-                {URGENCY_LEVELS.map((u) => <option key={u} value={u}>{u}</option>)}
-              </select>
+              <Label>Urgency</Label>
+              <Select value={form.urgencyLevel} onValueChange={(v) => set('urgencyLevel', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{URGENCY_LEVELS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
           </div>
         </div>
 
+        {/* Publishing */}
         <div className="space-y-4">
-          <div>
-            <p className="text-sm font-medium mb-1">Publishing</p>
-            <p className="text-xs text-muted-foreground mb-3">Where and when this moment will be published</p>
+          <p className="text-sm font-medium">Publishing</p>
+          <div className="space-y-1">
+            <Label htmlFor="pwaLink">PWA Link</Label>
+            <Input id="pwaLink" value={form.pwaLink} onChange={(e) => set('pwaLink', e.target.value)} type="url" placeholder="https://..." />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium">PWA Link</label>
-            <p className="text-xs text-muted-foreground">Optional deep link to a PWA page</p>
-            <input value={form.pwaLink} onChange={(e) => set('pwaLink', e.target.value)} type="url" placeholder="https://..." className={fieldClass} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium">Schedule</label>
+            <Label htmlFor="scheduledAt">Schedule</Label>
             <p className="text-xs text-muted-foreground">Leave empty to save as draft</p>
-            <input value={form.scheduledAt} onChange={(e) => set('scheduledAt', e.target.value)} type="datetime-local" className={fieldClass} />
+            <Input id="scheduledAt" value={form.scheduledAt} onChange={(e) => set('scheduledAt', e.target.value)} type="datetime-local" />
           </div>
           <div className="flex flex-col gap-3">
-            {[
-              { field: 'publishToPwa', label: 'Publish to PWA', checked: form.publishToPwa },
-              { field: 'publishToWhatsapp', label: 'Publish to WhatsApp', checked: form.publishToWhatsapp },
-              { field: 'isSponsored', label: 'Sponsored content', checked: form.isSponsored },
-            ].map(({ field, label, checked }) => (
-              <label key={field} className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="checkbox" checked={checked} onChange={(e) => set(field, e.target.checked)} className="rounded border-input" />
-                {label}
-              </label>
+            {([
+              { field: 'publishToPwa', label: 'Publish to PWA', value: form.publishToPwa },
+              { field: 'publishToWhatsapp', label: 'Publish to WhatsApp', value: form.publishToWhatsapp },
+            ] as const).map(({ field, label, value }) => (
+              <div key={field} className="flex items-center gap-2">
+                <Switch id={field} checked={value} onCheckedChange={(v) => set(field, v)} />
+                <Label htmlFor={field}>{label}</Label>
+              </div>
             ))}
+            <div className="flex items-center gap-2">
+              <Switch id="isSponsored" checked={form.isSponsored} onCheckedChange={handleSponsoredToggle} />
+              <Label htmlFor="isSponsored">Sponsored content</Label>
+            </div>
           </div>
         </div>
+
+        {/* Sponsor — only shown when isSponsored is on */}
+        {form.isSponsored && (
+          <div className="space-y-4 rounded-md border border-border p-4">
+            <p className="text-sm font-medium">Sponsor Attribution</p>
+            <div className="space-y-1">
+              <Label>Sponsor <span className="text-destructive">*</span></Label>
+              <Select value={form.sponsorId} onValueChange={(v) => set('sponsorId', v)}>
+                <SelectTrigger><SelectValue placeholder="Select a sponsor" /></SelectTrigger>
+                <SelectContent>
+                  {sponsors.length === 0
+                    ? <SelectItem value="" disabled>No active sponsors</SelectItem>
+                    : sponsors.map((s) => <SelectItem key={s.id} value={s.id}>{s.displayName} ({s.tier})</SelectItem>)
+                  }
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Required for sponsored moments — links revenue attribution and compliance records</p>
+            </div>
+          </div>
+        )}
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 

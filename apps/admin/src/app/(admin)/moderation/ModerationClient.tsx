@@ -98,7 +98,7 @@ export function ModerationClient({ messages, advisories, stats, session }: Props
           </CardHeader>
           <CardContent className="space-y-2">
             {advisories!.data.map((a) => (
-              <div key={a.id} className="flex items-start justify-between text-sm border-b border-border pb-2 last:border-0 last:pb-0">
+              <div key={a.id} className="flex items-start justify-between text-sm border-b border-border pb-2 last:border-0 last:pb-0 cursor-pointer hover:bg-accent/50 rounded px-1 -mx-1 transition-colors" onClick={() => router.push(`/moderation/advisories/${a.id}`)}>
                 <div className="space-y-0.5">
                   <p className="font-medium">{a.advisoryType} — confidence {(a.confidence * 100).toFixed(0)}%</p>
                   <p className="text-xs text-muted-foreground">Urgency: {a.urgencyLevel}</p>

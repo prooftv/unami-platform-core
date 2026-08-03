@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft } from 'lucide-react';
 import { createApiClient } from '@moments/api';
 import { createClient } from '@/lib/supabase/client';
 import { AuthorityScope, ApprovalMode } from '@moments/shared';
 import type { AuthorityProfile } from '@moments/api';
+import type { AuthorityAuditEntry } from '@moments/api';
 
 async function getToken(): Promise<string> {
   const supabase = createClient();
@@ -23,9 +26,10 @@ const APPROVAL_MODES = Object.values(ApprovalMode);
 
 interface Props {
   profile: AuthorityProfile | null;
+  auditLog?: AuthorityAuditEntry[];
 }
 
-export function AuthorityFormClient({ profile }: Props) {
+export function AuthorityFormClient({ profile, auditLog = [] }: Props) {
   const router = useRouter();
   const isEdit = !!profile;
 
@@ -195,6 +199,34 @@ export function AuthorityFormClient({ profile }: Props) {
             <Button variant="outline" size="sm" onClick={() => setShowSuspend(false)}>Cancel</Button>
           </div>
         </div>
+      )}
+
+      {isEdit && auditLog.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-sm">Audit Log</CardTitle></CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Blast Radius</TableHead>
+                  <TableHead>Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {auditLog.map((e) => (
+                  <TableRow key={e.id}>
+                    <TableCell><span className="text-sm font-medium">{e.actionType}</span></TableCell>
+                    <TableCell><span className="text-sm">Level {e.authorityLevel}</span></TableCell>
+                    <TableCell><span className="text-sm">{e.blastRadiusApplied.toLocaleString()}</span></TableCell>
+                    <TableCell><span className="text-xs text-muted-foreground">{new Date(e.performedAt).toLocaleString()}</span></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

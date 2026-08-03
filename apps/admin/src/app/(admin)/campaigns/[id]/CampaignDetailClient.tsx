@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import { createApiClient } from '@moments/api';
 import { createClient } from '@/lib/supabase/client';
 import type { CampaignWithSponsor, AdminSession } from '@moments/api';
@@ -76,6 +76,11 @@ export function CampaignDetailClient({ campaign, transactions, session }: Props)
           </div>
         </div>
         <div className="flex gap-2">
+          {(isSuperadmin || session.role === 'content_admin') && campaign.status !== 'completed' && campaign.status !== 'cancelled' && (
+            <Button variant="outline" size="sm" onClick={() => router.push(`/campaigns/${campaign.id}/edit`)}>
+              <Pencil className="h-4 w-4 mr-2" />Edit
+            </Button>
+          )}
           {canApprove && <Button size="sm" onClick={() => doAction('approve')} disabled={acting}>Approve</Button>}
           {canPause && <Button size="sm" variant="secondary" onClick={() => doAction('pause')} disabled={acting}>Pause</Button>}
           {canCancel && <Button size="sm" variant="destructive" onClick={() => doAction('cancel')} disabled={acting}>Cancel</Button>}

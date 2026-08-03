@@ -135,9 +135,9 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 
 ## Current Phase
 
-**Current Phase:** Phase 15 — Automation & Production — Complete
+**Current Phase:** Phase 16.5 — Admin Completion — Complete
 
-Rate limiting enforced on webhook, moments POST, broadcast. Retry-batches function added. Media upload/storage function added. Service worker added to `apps/web`. Community Profiles admin module added.
+All admin frontend gaps closed. Sponsor selector wired in moment create/edit forms (data integrity fix). Campaign edit form added. Broadcast detail page with retry button. Advisory detail with full signal breakdown. Authority per-profile audit log. Media management page with upload/delete. Media API client added to `packages/api`.
 Next: Phase 16 — Platform Expansion (package rename, second application).
 
 ---

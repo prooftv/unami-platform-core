@@ -21,5 +21,7 @@ export default async function EditMomentPage({ params }: { params: Promise<{ id:
     redirect(`/moments/${id}`);
   }
 
-  return <EditMomentClient moment={moment} />;
+  const sponsors = await api.sponsors.list({ limit: 100, active: true }).catch(() => null);
+
+  return <EditMomentClient moment={moment} sponsors={sponsors?.data ?? []} />;
 }

@@ -11,8 +11,14 @@ export default async function EditAuthorityPage({ params }: { params: Promise<{ 
   const api = await getApiClient();
   if (!api) redirect('/dashboard');
 
-  const profile = await api.authority.get(id).catch(() => null);
+  const [profile, auditLog] = await Promise.all([
+    api.authority.get(id).catch(() => null),
+    api.authority.auditLog({ limit: 20 }).catch(() => null),
+  ]);
   if (!profile) notFound();
 
-  return <AuthorityFormClient profile={profile} />;
+  // Filter audit entries for this specific profile
+  const profileAudit = (auditLog?.data ?? []).filter((e) => e.authorityId === id);
+
+  return <AuthorityFormClient profile={profile} auditLog={profileAudit} />;
 }

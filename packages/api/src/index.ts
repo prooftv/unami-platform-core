@@ -11,6 +11,7 @@ export type { CampaignBudgetEntry, BudgetTransaction, CreateCampaignInput, Updat
 export type { IntentStats } from './clients/analytics';
 export type { FeatureFlag, SystemSetting, AuditLogEntry, ErrorLogEntry } from './clients/settings';
 export type { UserProfile } from './clients/user-profiles';
+export type { MediaRecord, UploadMediaResult } from './clients/media';
 
 import { createPublicMomentsClient } from './clients/public-moments';
 import { createMomentsClient } from './clients/moments';
@@ -24,6 +25,7 @@ import { createCampaignsClient } from './clients/campaigns';
 import { createAnalyticsClient } from './clients/analytics';
 import { createSettingsClient } from './clients/settings';
 import { createUserProfilesClient } from './clients/user-profiles';
+import { createMediaClient } from './clients/media';
 
 export interface ApiClientConfig {
   baseUrl: string;
@@ -52,6 +54,7 @@ export function createApiClient(config: ApiClientConfig) {
     analytics:    createAnalyticsClient(config),
     settings:     createSettingsClient(config),
     userProfiles: createUserProfilesClient(config),
+    media:        createMediaClient(config),
   };
 }
 

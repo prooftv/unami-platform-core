@@ -23,7 +23,7 @@
 
 ## Current priority
 Phase 16 — Platform Expansion.
-Phase 15 (Automation & Production) is complete.
+Phase 16.5 (Admin Completion) is complete. All admin modules have full CRUD.
 Phase 16 work: rename `@moments/*` → `@unami/*`, extract Moments domain from `packages/shared`, scaffold second application.
 
 ## Layer rules
