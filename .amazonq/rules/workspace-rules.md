@@ -36,7 +36,7 @@ Phase 16 work: rename complete (`@moments/*` → `@unami/*`). Next: extract Mome
 ## Component rules (apps/admin)
 - Use shadcn primitives from `src/components/ui/` for low-level elements (Input, Select, Label, Textarea, Dialog, etc.)
 - Use `@unami/ui` shared primitives for all structural patterns:
-  - `PageHeader` — every module list and detail page header (title + description + actions)
+  - `PageHeader` — every page without exception: list pages, form pages, detail pages
   - `KPIGrid` + `MetricCard` — every KPI card row (pass `items` prop for data-driven usage)
   - `TablePagination` — every paginated table footer
   - `TableToolbar` — every search + filter toolbar
@@ -49,6 +49,52 @@ Phase 16 work: rename complete (`@moments/*` → `@unami/*`). Next: extract Mome
 - Do NOT use from `@unami/ui`: `AppShell`, `Sidebar`, `Header`, `MobileNav` — admin uses its own shadcn shell
 - Badge variants: `default | secondary | destructive | outline` only — no `warning`, `success`, `info`
 - `data-active={isActive || undefined}` — never `data-active={isActive}`
+
+## Form page layout rules (apps/admin)
+Every create/edit form page must follow this exact structure — no exceptions:
+
+```
+<PageHeader title="..." description="..." actions={<back button>} />
+<div className="max-w-2xl space-y-6">
+  <Card>
+    <CardHeader><CardTitle>Section Name</CardTitle></CardHeader>
+    <CardContent className="space-y-4">...fields...</CardContent>
+  </Card>
+  {/* repeat Card per logical section */}
+  <div className="flex justify-end gap-2">
+    <Button variant="outline">Cancel</Button>
+    <Button type="submit">Save</Button>
+  </div>
+</div>
+```
+
+- `PageHeader` carries the page title, description, and back navigation — never inline `<h1>` or `<ArrowLeft>` beside a heading
+- Each logical group of fields lives in its own `Card` — never bare `<div>` sections with `<p className="text-sm font-medium">` labels
+- `max-w-2xl` for all forms — never `max-w-xl` or `max-w-lg`
+- Back navigation goes in `PageHeader` actions — never beside the title as a sibling element
+- Error messages: `<p className="text-sm text-destructive">{error}</p>` — never raw colour classes like `text-red-500`
+- Success feedback: `<p className="text-sm text-muted-foreground">{feedback}</p>` — never `text-green-600` or any raw colour
+- `getToken` always imported from `@/lib/auth/token` — never copy-pasted inline
+
+## Detail page layout rules (apps/admin)
+Every detail/view page must follow this exact structure:
+
+```
+<PageHeader title="..." description="..." actions={<action buttons>} />
+<div className="max-w-3xl space-y-6">
+  <div className="grid grid-cols-2 gap-4">
+    <Card>...</Card>
+    <Card>...</Card>
+  </div>
+  <Card>...</Card>  {/* main content */}
+  <Card>...</Card>  {/* tables, history, etc */}
+</div>
+```
+
+- `max-w-3xl` for all detail pages — never `max-w-2xl` or unconstrained
+- Action buttons (Edit, Broadcast, Cancel, Approve) go in `PageHeader` actions — never inline beside the title
+- Status badges go inside the first Card, not in the header
+- Feedback/error messages appear directly below `PageHeader`, above the card grid
 
 ## Auth pattern (apps/admin)
 - `(admin)/layout.tsx` is the single auth gate — do not add `if (!session) redirect()` in page files

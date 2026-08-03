@@ -38,9 +38,9 @@ All work in `/workspaces/unami-platform-core`.
 All pushes to `origin` → `https://github.com/prooftv/unami-platform-core`.
 The `moments-v2` directory is reference only — never edit it.
 
-## D-009: Package scope rename deferred
-Current scope is `@moments/*`. Will rename to `@unami/*` before second application onboards.
-Do not rename during active Moments development.
+## D-009: Package scope rename — complete
+Package scope renamed from `@moments/*` to `@unami/*` in Phase 16.
+All packages, apps, and imports updated. pnpm-lock.yaml regenerated.
 
 ## D-010: WhatsApp always returns 200
 The webhook Edge Function always returns HTTP 200 to Meta.
@@ -128,7 +128,38 @@ No new bulk endpoints are added to Edge Functions.
 The `BulkActionBar` component in `packages/ui` surfaces results — partial failures are shown,
 not silently swallowed. Audit logs are written per-operation by the existing endpoint handlers.
 
-## D-025: Shell Framework — infrastructure only, composition per application
+## D-026: Page layout — consistent structure across all admin pages
+
+**List pages:**
+- `PageHeader` (title, description, primary action button)
+- `KPIGrid` if the module has metrics
+- `TableToolbar` for search + filters
+- Table body
+- `TablePagination` footer
+- `BulkActionBar` if bulk actions exist
+
+**Form pages (create / edit):**
+- `PageHeader` (title, description, back button in actions)
+- `<div className="max-w-2xl space-y-6">`
+- One `Card` per logical field group (Content, Classification, Publishing, etc.)
+- Submit row: `<div className="flex justify-end gap-2">` with Cancel + Save buttons
+- `max-w-2xl` — never `max-w-xl` or unconstrained
+- Back navigation in `PageHeader` actions — never an `<ArrowLeft>` button beside the `<h1>`
+- Error: `<p className="text-sm text-destructive">` — never raw colour classes
+- Success feedback: `<p className="text-sm text-muted-foreground">` — never `text-green-600`
+- `getToken` imported from `@/lib/auth/token` — never copy-pasted
+
+**Detail pages (view / read):**
+- `PageHeader` (title, description, action buttons: Edit / Broadcast / Approve / Cancel)
+- `<div className="max-w-3xl space-y-6">`
+- `grid grid-cols-2 gap-4` for status + metadata cards
+- `Card` for main content
+- `Card` for tables (history, transactions, audit log)
+- `max-w-3xl` — never `max-w-2xl` or unconstrained
+- Action buttons in `PageHeader` actions — never inline beside the title
+- Status badges inside the first Card — not in the header
+
+This pattern applies to every page in `apps/admin` and every future application built on the platform.
 `packages/ui/src/shell/` will become a generic shell framework providing infrastructure primitives:
 `ShellProvider`, `ShellSidebar`, `ShellHeader`, `ShellContent`, `ShellFooter`,
 `ShellBreadcrumbs`, `ShellSearch`, `ShellCommandPalette`, `ShellPreferences`,

@@ -28,8 +28,8 @@ https://github.com/prooftv/unami-platform-core
 | Shared primitives | `packages/shared` | ✅ Complete | No React, no Next.js, no Supabase |
 | API contracts | `packages/api` | ✅ Complete | Frontend never calls Supabase directly |
 | Edge Functions | `supabase/functions/` | ✅ Complete | Only layer that touches the database |
-| Admin app | `apps/admin` | ✅ Shell complete, product workflows in progress | Consumes packages, never reimplements platform |
-| Public PWA | `apps/web` | ✅ Complete | Consumes same packages, public read via anon key |
+| Admin app | `apps/admin` | ✅ Complete | Consumes packages, never reimplements platform |
+| Public PWA | `apps/web` | ⏳ Not started | Phase 14 |
 
 ---
 
@@ -122,6 +122,19 @@ All response types flow from `packages/shared` types — no duplication.
   `Textarea`, `Dialog`, `Button`, `Badge`, `Card`, etc.
 - Do NOT use from `@unami/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav`
 
+**Page layout standard (D-026):**
+
+| Page type | Max width | Header | Structure |
+|---|---|---|---|
+| List | unconstrained | `PageHeader` (title, description, create button) | KPIGrid → TableToolbar → Table → TablePagination → BulkActionBar |
+| Form (create/edit) | `max-w-2xl` | `PageHeader` (title, description, back in actions) | Cards per field group → submit row |
+| Detail (view) | `max-w-3xl` | `PageHeader` (title, description, action buttons) | 2-col card grid → content card → history/table cards |
+
+- `PageHeader` on every page — no inline `<h1>` or `<ArrowLeft>` beside headings
+- Each form section in its own `Card` — no bare `<div>` with `<p className="text-sm font-medium">` labels
+- `getToken` always from `@/lib/auth/token` — never copy-pasted
+- Error: `text-destructive` — Success: `text-muted-foreground` — never raw colour classes
+
 ---
 
 ## Database (26 Tables — Complete)
@@ -141,13 +154,8 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 
 **Current Phase:** Phase 16 — Platform Expansion (in progress)
 
-Phase 16.5 (Admin Completion) is complete. All admin modules have full CRUD. Shared UI layer
-standardised — all module clients migrated to `@unami/ui` primitives. Bulk actions wired for
-Moderation, Moments, Campaigns, Media via `useBulkSelection` + `BulkActionBar` + `Promise.allSettled`
-fan-out. `getToken` shared util extracted. `loading.tsx` route skeletons added for all 10 modules.
-
-Next: Phase 16 — package rename `@moments/*` → `@unami/*`, extract Moments domain from
-`packages/shared`, scaffold second application.
+Package rename `@moments/*` → `@unami/*` complete. Shared UI layer standardised (D-026).
+Next: extract Moments domain from `packages/shared`, scaffold second application.
 
 ---
 
@@ -160,6 +168,7 @@ Next: Phase 16 — package rename `@moments/*` → `@unami/*`, extract Moments d
 
 ## What Is Active
 
-- Product workflow completion in `apps/admin`
-- Bug fix: broadcasts list endpoint
-- Future: `apps/web` public PWA
+- Phase 16: extract Moments domain from `packages/shared`, scaffold second application
+- Phase 17: Shell Framework Extraction (planned)
+- Form/detail page layout standardisation across all admin modules (D-026)
+- Future: `apps/web` public PWA (Phase 14)
