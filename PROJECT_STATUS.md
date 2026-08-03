@@ -14,7 +14,7 @@ Read this first when resuming work or starting a new session.
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | post-phase-16.5 session fixes |
+| Last commit | pending |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -188,9 +188,7 @@ Fix bugs only. All new work is product workflow completion.
 |---|---|---|
 | `GET /broadcasts` endpoint missing — broadcasts page renders empty | ~~P0 Bug~~ | ✅ Fixed |
 | Broadcast retry logic absent — failed batches are permanent | ~~P1~~ | ✅ Fixed |
-| Advisory confidence hardcoded `0.5` — AI scoring not connected | P2 | Phase 16 (Supabase-native, D-023) |
-| WhatsApp secrets empty in Supabase — production messaging blocked | P1 | Ops: set WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WEBHOOK_VERIFY_TOKEN, WEBHOOK_HMAC_SECRET |
-| HELP/STATUS/MYAUTHORITY auto-replies not implemented | P2 | Phase 16 (new webhook route handlers, D-023) |
+| Advisory confidence hardcoded `0.5` — n8n not connected | P2 | Phase 16 |
 | `rate_limits` table exists but no enforcement | ~~P2~~ | ✅ Fixed |
 | `moment_stats` populated but never surfaced in UI | ~~P3~~ | ✅ Fixed |
 | `sponsorId` hardcoded null in moment create/edit forms | ~~P1 Data bug~~ | ✅ Fixed |
@@ -203,9 +201,6 @@ Fix bugs only. All new work is product workflow completion.
 |---|---|---|
 | Moments-domain logic in shared package | `packages/shared/src/` | Refactor to `apps/moments/domain` when second app onboards |
 | Package scope `@moments/*` | All packages | Rename to `@unami/*` before Phase 16 |
-| HELP/STATUS/MYAUTHORITY webhook replies | `supabase/functions/webhook/index.ts` | Add route handlers — Supabase-native, no n8n (D-023) |
-| Advisory AI confidence scoring | `supabase/functions/` | New Edge Function calling AI API (D-023) |
-| Scheduled broadcast trigger | Supabase | `pg_cron` job (D-023) |
 
 ---
 

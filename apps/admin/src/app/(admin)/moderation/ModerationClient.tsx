@@ -10,7 +10,7 @@ import type { Message, Advisory, PaginatedResponse, AdminSession } from '@moment
 import type { ModerationStats } from '@moments/api';
 import { createApiClient } from '@moments/api';
 import { createClient } from '@/lib/supabase/client';
-import { ShieldAlert, AlertTriangle, CheckCircle, XCircle, Clock, MessageSquare, ChevronsUp } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, CheckCircle, XCircle, Clock, MessageSquare } from 'lucide-react';
 
 async function getToken() {
   const supabase = createClient();
@@ -28,12 +28,9 @@ interface Props {
 export function ModerationClient({ messages, advisories, stats, session }: Props) {
   const router = useRouter();
   const [acting, setActing] = useState<string | null>(null);
-  const [bulkActing, setBulkActing] = useState(false);
   const [feedback, setFeedback] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
-  const [bulkFeedback, setBulkFeedback] = useState<string | null>(null);
 
   const canAct = session.role !== 'viewer';
-  const pendingMessages = (messages?.data ?? []).filter((m) => m.moderationStatus === 'pending');
 
   async function act(messageId: string, action: 'approve' | 'reject') {
     setActing(messageId);
@@ -52,32 +49,11 @@ export function ModerationClient({ messages, advisories, stats, session }: Props
     }
   }
 
-  async function approveAll() {
-    if (pendingMessages.length === 0) return;
-    if (!confirm(`Approve all ${pendingMessages.length} pending messages?`)) return;
-    setBulkActing(true);
-    setBulkFeedback(null);
-    try {
-      const token = await getToken();
-      const api = createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
-      const results = await Promise.allSettled(pendingMessages.map((m) => api.moderation.approve(m.id)));
-      const failed = results.filter((r) => r.status === 'rejected').length;
-      setBulkFeedback(
-        failed === 0
-          ? `All ${pendingMessages.length} messages approved`
-          : `${pendingMessages.length - failed} approved, ${failed} failed`
-      );
-      router.refresh();
-    } finally {
-      setBulkActing(false);
-    }
-  }
-
   const kpis = [
-    { title: 'Pending', value: stats?.pendingMessages ?? '\u2014', description: 'Awaiting review', icon: ShieldAlert },
-    { title: 'Escalated', value: stats?.escalatedAdvisories ?? '\u2014', description: 'High confidence flags', icon: AlertTriangle },
-    { title: 'Approved Today', value: stats?.approvedToday ?? '\u2014', description: 'Approved today', icon: CheckCircle },
-    { title: 'Oldest Pending', value: stats?.oldestPendingAge != null ? `${stats.oldestPendingAge}m` : '\u2014', description: 'Minutes ago', icon: Clock },
+    { title: 'Pending', value: stats?.pendingMessages ?? '—', description: 'Awaiting review', icon: ShieldAlert },
+    { title: 'Escalated', value: stats?.escalatedAdvisories ?? '—', description: 'High confidence flags', icon: AlertTriangle },
+    { title: 'Approved Today', value: stats?.approvedToday ?? '—', description: 'Approved today', icon: CheckCircle },
+    { title: 'Oldest Pending', value: stats?.oldestPendingAge != null ? `${stats.oldestPendingAge}m` : '—', description: 'Minutes ago', icon: Clock },
   ];
 
   return (
@@ -87,18 +63,10 @@ export function ModerationClient({ messages, advisories, stats, session }: Props
           <h1 className="text-lg font-semibold">Moderation</h1>
           <p className="text-sm text-muted-foreground">Inbound WhatsApp messages and AI advisory flags awaiting community review</p>
         </div>
-        <div className="flex items-center gap-2">
-          {canAct && pendingMessages.length > 0 && (
-            <Button variant="outline" size="sm" onClick={approveAll} disabled={bulkActing}>
-              <ChevronsUp className="h-4 w-4 mr-2" />
-              {bulkActing ? 'Approving...' : `Approve all (${pendingMessages.length})`}
-            </Button>
-          )}
-          <Button variant="outline" size="sm" onClick={() => router.push('/moderation/comments')}>
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Comments
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={() => router.push('/moderation/comments')}>
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Comments
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -116,10 +84,6 @@ export function ModerationClient({ messages, advisories, stats, session }: Props
         ))}
       </div>
 
-      {bulkFeedback && (
-        <p className="text-sm text-muted-foreground">{bulkFeedback}</p>
-      )}
-
       {feedback && (
         <p className={`text-sm ${feedback.ok ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}>{feedback.msg}</p>
       )}
@@ -136,7 +100,7 @@ export function ModerationClient({ messages, advisories, stats, session }: Props
             {advisories!.data.map((a) => (
               <div key={a.id} className="flex items-start justify-between text-sm border-b border-border pb-2 last:border-0 last:pb-0 cursor-pointer hover:bg-accent/50 rounded px-1 -mx-1 transition-colors" onClick={() => router.push(`/moderation/advisories/${a.id}`)}>
                 <div className="space-y-0.5">
-                  <p className="font-medium">{a.advisoryType} &mdash; confidence {(a.confidence * 100).toFixed(0)}%</p>
+                  <p className="font-medium">{a.advisoryType} — confidence {(a.confidence * 100).toFixed(0)}%</p>
                   <p className="text-xs text-muted-foreground">Urgency: {a.urgencyLevel}</p>
                 </div>
                 <Badge variant="destructive">Escalated</Badge>
@@ -172,10 +136,10 @@ export function ModerationClient({ messages, advisories, stats, session }: Props
                 {canAct && (
                   <TableCell>
                     <div className="flex gap-1">
-                      <button onClick={(e) => { e.stopPropagation(); act(m.id, 'approve'); }} disabled={acting === m.id || bulkActing} className="inline-flex items-center gap-1 rounded-md border border-green-600 px-2 py-1 text-xs text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors">
+                      <button onClick={(e) => { e.stopPropagation(); act(m.id, 'approve'); }} disabled={acting === m.id} className="inline-flex items-center gap-1 rounded-md border border-green-600 px-2 py-1 text-xs text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors">
                         <CheckCircle className="h-3 w-3" /> Approve
                       </button>
-                      <button onClick={(e) => { e.stopPropagation(); act(m.id, 'reject'); }} disabled={acting === m.id || bulkActing} className="inline-flex items-center gap-1 rounded-md border border-destructive px-2 py-1 text-xs text-destructive hover:bg-red-50 disabled:opacity-50 transition-colors">
+                      <button onClick={(e) => { e.stopPropagation(); act(m.id, 'reject'); }} disabled={acting === m.id} className="inline-flex items-center gap-1 rounded-md border border-destructive px-2 py-1 text-xs text-destructive hover:bg-red-50 disabled:opacity-50 transition-colors">
                         <XCircle className="h-3 w-3" /> Reject
                       </button>
                     </div>

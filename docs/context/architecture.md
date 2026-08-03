@@ -138,16 +138,6 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 **Current Phase:** Phase 16.5 — Admin Completion — Complete
 
 All admin frontend gaps closed. Sponsor selector wired in moment create/edit forms (data integrity fix). Campaign edit form added. Broadcast detail page with retry button. Advisory detail with full signal breakdown. Authority per-profile audit log. Media management page with upload/delete. Media API client added to `packages/api`.
-
-**Session fixes applied (post Phase 16.5):**
-- `service_role` granted SELECT/INSERT/UPDATE on all 26 tables via `001_grant_service_role_privileges.sql` — this was silently breaking all Edge Function DB queries
-- 4 Edge Functions deployed that were missing: `broadcasts`, `retry-batches`, `media`, `user-profiles`
-- `packages/api/src/clients/auth.ts` `me()` path corrected from `/auth/me` to `/auth`
-- `apps/admin/src/lib/auth/operator.ts` debug `console.error` removed
-- Superadmin `info@unamifoundation.org` confirmed working end-to-end
-- D-023 recorded: no n8n — all automation Supabase-native (Edge Functions + pg_cron)
-- D-024 recorded: bulk actions via client-side fan-out over existing single-ID endpoints
-
 Next: Phase 16 — Platform Expansion (package rename, second application).
 
 ---

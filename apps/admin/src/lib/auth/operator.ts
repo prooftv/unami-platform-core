@@ -43,7 +43,9 @@ export async function getOperatorSession(): Promise<OperatorSession | null> {
       role: authSession.role,
       authority_id: authSession.authority_id,
     };
-  } catch {
+  } catch (e) {
+    // Log the actual error so we can diagnose — do not silently swallow
+    console.error('[getOperatorSession] auth edge function call failed:', e);
     return null;
   }
 }
