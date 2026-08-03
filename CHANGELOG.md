@@ -375,3 +375,73 @@ All Phase 7 work was verified against the architecture rules before implementati
 - `supabase/functions/settings` — only layer touching `system_settings` and `feature_flags` tables directly. Writes audit log on every mutation.
 - `packages/shared` — not modified.
 - `000_initial_schema.sql` — not modified.
+
+---
+
+## [Phase 17A] — Public PWA Shell and Information Architecture
+
+**Commit:** `1200046`
+**Branch:** `main`
+**Status:** Complete — build passing, 16 routes, TypeScript clean
+
+### Goal
+Transform `apps/web` from a minimal scaffold into the complete public Moments community experience. Data source: Supabase via existing public API. No Sanity.
+
+### Files Created
+
+| File | Description |
+|---|---|
+| `apps/web/src/components/ThemeToggle.tsx` | Client theme toggle — reads/writes `dark` class, persists to localStorage |
+| `apps/web/src/components/MobileNav.tsx` | Mobile navigation drawer with backdrop, Escape key, aria-modal |
+| `apps/web/src/app/(public)/layout.tsx` | Full responsive layout — desktop nav, mobile drawer, theme toggle, structured footer |
+| `apps/web/src/app/(public)/page.tsx` | Homepage — 9 sections: urgent strip, hero, featured, latest, categories, sponsored, community notices, authority updates, subscribe CTA |
+| `apps/web/src/app/(public)/feed/page.tsx` | Dedicated feed page — all broadcasted moments, paginated |
+| `apps/web/src/app/(public)/about/page.tsx` | About page — static, Sanity-ready in Phase 17C |
+| `apps/web/src/app/(public)/help/page.tsx` | Help page — WhatsApp commands reference, static |
+| `apps/web/src/app/(public)/privacy/page.tsx` | Privacy policy — POPIA compliant, static |
+| `apps/web/src/app/(public)/terms/page.tsx` | Terms of service — static |
+| `apps/web/src/app/(public)/sponsors/page.tsx` | Sponsors directory — shell, data in Phase 17C |
+| `apps/web/src/app/(public)/campaigns/page.tsx` | Campaigns — shell, data in Phase 17C |
+| `apps/web/src/app/(public)/authority/page.tsx` | Authority — shell with level descriptions, data in Phase 17C |
+| `apps/web/src/app/not-found.tsx` | Global 404 page |
+
+### Files Modified
+
+| File | Change |
+|---|---|
+| `apps/web/src/app/layout.tsx` | Added inline theme initialisation script to prevent FOUC |
+
+### Route Map
+
+| Route | Type | Data Source |
+|---|---|---|
+| `/` | Dynamic | Supabase — moments list (3 parallel queries) |
+| `/feed` | Dynamic | Supabase — moments list |
+| `/moments/[id]` | Dynamic | Supabase — moment detail |
+| `/category/[category]` | Dynamic | Supabase — filtered list |
+| `/region/[region]` | Dynamic | Supabase — filtered list |
+| `/search` | Dynamic | Supabase — search |
+| `/subscribe` | Static | — |
+| `/about` | Static | Sanity in Phase 17C |
+| `/help` | Static | Sanity in Phase 17C |
+| `/privacy` | Static | Sanity in Phase 17C |
+| `/terms` | Static | Sanity in Phase 17C |
+| `/sponsors` | Static | Sanity + Supabase in Phase 17C |
+| `/campaigns` | Static | Supabase in Phase 17C |
+| `/authority` | Static | Supabase in Phase 17C |
+| `/offline` | Static | — |
+| `/_not-found` | Static | — |
+
+### Architecture Compliance
+- `packages/ui`, `packages/shared`, `packages/api` — not modified
+- `apps/admin` — not modified
+- Edge Functions — not modified
+- All new components are in `apps/web` only
+- No Supabase client in components — all data fetching in server page components
+- Theme toggle is pure DOM + localStorage — no server state
+
+### Remaining for Phase 17B
+- Sanity project creation and schema design
+- `@sanity/client` added to `apps/web`
+- Content model: `homePage`, `featuredStory`, `sponsorPage`, `helpArticle`, `aboutPage`
+- Sanity Studio deployment

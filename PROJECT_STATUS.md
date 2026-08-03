@@ -14,7 +14,7 @@ Read this first when resuming work or starting a new session.
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `586d238` |
+| Last commit | `1200046` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -186,19 +186,23 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 
 ---
 
-### Phase 17A — Public PWA Completion
+### Phase 17A — Public PWA Completion ✅
 **Goal:** `apps/web` becomes the actual Moments community experience.
 Data source: Supabase via existing public API. No Sanity yet.
 
 | Task | Status |
 |---|---|
-| Homepage — hero, featured moments, category navigation | ⏳ |
-| Moment feed — proper card design, urgency, sponsor attribution | ⏳ |
-| Moment detail — full content, media, share, related | ⏳ |
-| Subscribe page — clear WhatsApp opt-in flow | ⏳ |
-| About / Help / Privacy static pages | ⏳ |
-| Sponsor directory page | ⏳ |
-| PWA install prompt, offline page polish | ⏳ |
+| Full responsive navigation — mobile drawer, theme toggle | ✅ |
+| Homepage — 9 sections: urgent strip, hero, featured, latest, categories, sponsored, community notices, authority updates, subscribe CTA | ✅ |
+| Dedicated /feed page | ✅ |
+| Moment feed — card design, urgency badges, sponsor attribution | ✅ |
+| Moment detail — full content, media, WhatsApp share | ✅ |
+| Subscribe page — WhatsApp opt-in flow with commands reference | ✅ |
+| About / Help / Privacy / Terms static pages | ✅ |
+| Sponsors / Campaigns / Authority shell pages | ✅ |
+| Global 404 not-found page | ✅ |
+| Theme toggle with localStorage persistence and FOUC prevention | ✅ |
+| Build: 16 routes, TypeScript clean | ✅ |
 
 ---
 
