@@ -73,35 +73,56 @@ Commercial storefronts and operations dashboards. Product management, order work
 
 ```
 unami-platform-core/
-├── apps/                        # Future application implementations
+├── apps/
+│   ├── admin/          Next.js — Moments admin (complete)
+│   └── web/            Next.js — Moments public PWA (not yet started)
 ├── packages/
-│   ├── ui/                      # Reusable design system and components
-│   ├── platform/                # Application infrastructure
-│   ├── api/                     # Typed API clients
-│   ├── domain/                  # Business models and rules
-│   ├── db/                      # Persistence layer
-│   └── shared/                  # Cross-cutting types, enums, validators
-├── supabase/                    # Backend functions and migrations
+│   ├── ui/             @moments/ui — design system, shell framework, component library
+│   ├── shared/         @moments/shared — enums, types, validators, constants
+│   └── api/            @moments/api — typed API clients
+├── supabase/
+│   ├── functions/      15 Edge Functions
+│   └── migrations/     000_initial_schema.sql (baseline, immutable)
+├── docs/
+│   ├── DATABASE_SCHEMA.md
+│   ├── SCHEMA_MAPPING.md
+│   └── context/        architecture.md, decisions.md, security-model.md
 ├── pnpm-workspace.yaml
 ├── turbo.json
 └── package.json
 ```
 
+**Note on package scope:** All packages are currently scoped `@moments/*`. This will be renamed to `@unami/*` before the second application onboards (Phase 16).
+
 ---
 
 # Package Responsibilities
 
-## packages/ui
+## packages/ui — `@moments/ui` ✅
 
-Pure presentation layer. The dashboard identity system and component library for the entire ecosystem.
+Three distinct layers:
 
-Contains:
-- Dashboard shell and layouts
-- Navigation systems
-- Theme engine and style presets
-- Typography and font system
-- Reusable components (forms, tables, charts, modals)
-- Preference system (theme mode, sidebar variant, content layout)
+**1. UI Primitives**
+Low-level building blocks: `Button`, `Card`, `Badge`, `Table`, `Input`, `Dialog`, `Drawer`, `Popover`.
+These are shadcn/ui components — generic, unstyled, composable.
+
+**2. Application Shell Framework** *(Phase 17 — in design)*
+Generic shell infrastructure that every application can compose around:
+`ShellProvider`, `ShellSidebar`, `ShellHeader`, `ShellContent`, `ShellSearch`,
+`ShellCommandPalette`, `ShellPreferences`, `ShellUserMenu`, `ShellMobileNavigation`.
+
+Critically: **no navigation, no branding, no product references.**
+Each application composes its own sidebar and header on top of these primitives.
+Moments builds `AppSidebar`. Umkhandlu builds `UmkhandluSidebar`. Same shell. Different composition.
+
+The current `packages/ui/src/shell/` files are Phase 3 placeholders — unfinished, not for consumption.
+The real shell framework is extracted from `apps/admin` in Phase 17.
+
+**3. Shared Structural Components**
+Patterns used across all admin and dashboard surfaces:
+`PageHeader`, `KPIGrid`, `MetricCard`, `TableToolbar`, `TablePagination`, `BulkActionBar`,
+`DataTable`, `EmptyState`, `ErrorState`, `PageSkeleton`, `TableSkeleton`, `StatusBadge`,
+`AnalyticsCard`, `LineChart`, `BarChart`, `PieChart`, `AreaChart`, `ActivityFeed`, `QuickActions`.
 
 **Rules:**
 - No business logic
@@ -110,81 +131,28 @@ Contains:
 - No application-specific terminology
 - No domain models
 
-A component built here must be equally usable by Moments, BeatsChain, Umkhandlu, ITPMS, and every future product. If it references a specific application's concepts, it does not belong here.
-
 ---
 
-## packages/platform
-
-Application infrastructure. The operational layer that makes applications work.
-
-Contains:
-- Authentication flows
-- Permission and role systems
-- Application configuration
-- Shared providers
-- API infrastructure
-- Shared utilities
-
-**Rules:**
-- Platform knows how applications operate
-- Platform does not know individual business domains
-- No Moments-specific, BeatsChain-specific, or any product-specific logic
-
----
-
-## packages/domain
-
-Business modelling layer. Shared domain primitives that multiple applications may reference.
-
-Contains:
-- Shared entities and types
-- Cross-application validators
-- Shared enums
-- Shared helpers
-
-Each application defines its own domain packages for product-specific models.
-
-Examples:
-- Moments domain: messages, broadcasts, subscribers
-- BeatsChain domain: artists, tracks, licensing, ISRC records
-- Umkhandlu domain: traditional authorities, communities, governance records
-
----
-
-## packages/api
-
-Typed communication layer.
-
-**Rule:** Applications never directly call backend endpoints. All communication flows through typed API clients defined here. This enforces a contract boundary between frontend and backend that survives refactoring.
-
----
-
-## packages/db
-
-Persistence abstraction.
-
-Responsible for:
-- Database types generated from Supabase schema
-- Repository patterns
-- Data access abstractions
-
-**Rule:** Business logic does not live here. This layer moves data. Domain logic decides what to do with it.
-
----
-
-## packages/shared
+## packages/shared — `@moments/shared` ✅
 
 Cross-cutting primitives used across all packages and applications.
 
-Contains:
-- Enums
-- Constants
-- Types
-- Validators (Zod schemas)
-- Helpers
+Contains: enums, constants, types, Zod validators, helpers.
 
-**Status:** Complete as of Phase 2.
+**Rules:** No React, no Next.js, no Supabase.
+
+**Note:** Currently contains Moments-domain enums. These will be extracted to `apps/admin/domain` in Phase 16.
+
+---
+
+## packages/api — `@moments/api` ✅
+
+Typed communication layer. Applications never call backend endpoints directly.
+All data flows through typed clients defined here → Edge Functions → database.
+
+Two factories:
+- `createApiClient` — authenticated, used by `apps/admin`
+- `createPublicApiClient` — anon key, used by `apps/web` (public read only)
 
 ---
 
@@ -237,45 +205,45 @@ These rules are non-negotiable. They exist because previous builds violated them
 
 8. **Avoid premature abstraction.** Only extract into platform when two or more applications demonstrably benefit. Do not abstract speculatively.
 
-9. **No duplicated dashboards.** The dashboard shell is built once in `packages/ui`. Applications consume it.
+9. **No duplicated shells.** The shell framework is built once in `packages/ui/src/shell/`. Applications compose their own navigation and branding on top — they do not reimplement the shell infrastructure.
 
 10. **Backwards compatibility is a first-class concern.** Platform packages are consumed by multiple applications. Breaking changes require explicit versioning and migration paths.
 
 ---
 
-# Current Migration Status
+# Platform Status
 
-**Phase 1 — Repository Foundation** ✅
-Monorepo structure, workspace configuration, Turborepo pipeline, TypeScript baseline.
+| Layer | Status |
+|---|---|
+| Database — 26 tables | ✅ Complete |
+| Edge Functions — 15 functions | ✅ Complete |
+| `packages/shared` | ✅ Complete |
+| `packages/ui` — primitives + structural components | ✅ Complete |
+| `packages/api` — typed clients | ✅ Complete |
+| `apps/admin` — Moments admin, all modules, full CRUD | ✅ Complete |
+| `apps/web` — Moments public PWA | ⏳ Not started (Phase 14) |
+| Shell Framework — `Shell*` primitives in `packages/ui` | ⏳ Phase 17 |
 
-**Phase 2 — Shared Package** ✅
-`packages/shared` complete. Contains:
-- enums
-- constants
-- types
-- validators
-- helpers
+## Roadmap
 
-**Phase 3 — UI Foundation** 🔄 In progress
+**Phase 16 — Platform Expansion** *(next)*
+- Rename `@moments/*` → `@unami/*`
+- Extract Moments domain from `packages/shared`
+- Scaffold second application
 
-Migrated from `dashboard-platform-export`:
-- Theme engine (`ThemeMode`, `ThemePreset`, `ResolvedThemeMode`)
-- Preference system (`PreferenceValueMap`, persistence config, defaults)
-- Layout types and DOM appliers
-- Font registry (17 fonts via next/font/google)
-- Style presets (brutalist, soft-pop, tangerine)
-- Zustand preferences store (vanilla, SSR-safe)
-- `PreferencesStoreProvider` and `usePreferencesStore`
+**Phase 17 — Shell Framework Extraction**
+- Extract generic `Shell*` primitives from `apps/admin` into `packages/ui/src/shell/`
+- `apps/admin` migrates to consume `Shell*` primitives
+- Future apps inherit a polished, finished shell infrastructure — not a product
 
-**Phase 3 — Next:**
-- Dashboard shell (`packages/ui/shell`)
-- Navigation system
-- Reusable component library (`packages/ui/components`)
+**Phase 14 — Public PWA** *(after shell framework)*
+- `apps/web` — Moments public feed, moment detail, subscribe flow
+- Consumes `packages/ui` and `packages/api`
+- No auth, no Supabase client
 
-**Phase 4 — Planned:**
-- `packages/platform` — authentication and permissions infrastructure
-- `packages/api` — typed API client layer
-- `packages/db` — Supabase persistence abstractions
+**Last phase — Automation**
+- n8n integration for scheduled broadcasts, intent execution, digest generation
+- HELP/STATUS/MYAUTHORITY webhook reply handlers (Supabase-native Edge Functions first)
 
 ---
 
@@ -294,9 +262,11 @@ This section exists specifically for AI coding assistants working inside this re
 
 - Never place reusable logic inside `apps/`
 - Never create duplicate components — check existing packages first
-- Never reference Moments, BeatsChain, or any specific application inside `packages/ui`, `packages/platform`, or `packages/shared`
+- Never reference Moments, BeatsChain, or any specific application inside `packages/ui`, `packages/shared`
 - Never add Supabase imports to `packages/ui`
 - Never add business logic to React components
+- Never consume `packages/ui/src/shell/` — those are Phase 3 placeholders, not the shell framework
+- The shell framework (`Shell*` primitives) does not exist yet — do not invent it prematurely
 - Prefer extending existing foundations over creating isolated solutions
 - Preserve backwards compatibility — other applications depend on these packages
 
