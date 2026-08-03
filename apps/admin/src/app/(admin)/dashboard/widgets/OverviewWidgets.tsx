@@ -9,7 +9,7 @@ import type {
   MomentWithSponsor,
   BroadcastWithMoment,
   ModerationStats,
-} from '@moments/api';
+} from '@unami/api';
 import {
   Radio,
   Megaphone,

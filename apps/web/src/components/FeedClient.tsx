@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { PublicMoment } from '@moments/api';
-import type { PaginatedResponse } from '@moments/api';
+import type { PublicMoment } from '@unami/api';
+import type { PaginatedResponse } from '@unami/api';
 const URGENCY_LABEL: Record<string, string> = {
   urgent: '🔴 Urgent',
   high: '🟠 High',

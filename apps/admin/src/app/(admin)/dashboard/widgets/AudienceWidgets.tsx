@@ -7,8 +7,8 @@ import {
   MetricCard,
   AreaChart,
   BarChart,
-} from '@moments/ui';
-import type { SubscriberStats, DailyStats } from '@moments/api';
+} from '@unami/ui';
+import type { SubscriberStats, DailyStats } from '@unami/api';
 import { Users, TrendingDown, MapPin, Tag } from 'lucide-react';
 
 export function SubscriberGrowthWidget({ dailyStats }: { dailyStats: DailyStats[] }) {

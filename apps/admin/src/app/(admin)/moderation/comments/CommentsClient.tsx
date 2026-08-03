@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CheckCircle, XCircle } from 'lucide-react';
-import { createApiClient } from '@moments/api';
+import { createApiClient } from '@unami/api';
 import { createClient } from '@/lib/supabase/client';
-import type { AdminSession } from '@moments/api';
-import type { Comment } from '@moments/api';
-import type { PaginatedResponse } from '@moments/api';
-import { ModerationStatus } from '@moments/shared';
+import type { AdminSession } from '@unami/api';
+import type { Comment } from '@unami/api';
+import type { PaginatedResponse } from '@unami/api';
+import { ModerationStatus } from '@unami/shared';
 
 async function getToken(): Promise<string> {
   const supabase = createClient();

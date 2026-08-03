@@ -12,7 +12,7 @@ import type {
   AuthorityStats,
   SponsorStats,
   IntentStats,
-} from '@moments/api';
+} from '@unami/api';
 
 // ── Operations ────────────────────────────────────────────────────────────────
 

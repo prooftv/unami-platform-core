@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Pencil } from 'lucide-react';
-import { createApiClient } from '@moments/api';
+import { createApiClient } from '@unami/api';
 import { createClient } from '@/lib/supabase/client';
-import type { CampaignWithSponsor, AdminSession } from '@moments/api';
-import type { BudgetTransaction } from '@moments/api';
+import type { CampaignWithSponsor, AdminSession } from '@unami/api';
+import type { BudgetTransaction } from '@unami/api';
 
 async function getToken(): Promise<string> {
   const supabase = createClient();

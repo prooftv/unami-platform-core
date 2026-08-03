@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import type { PublicMoment, PaginatedResponse } from '@moments/api';
+import type { PublicMoment, PaginatedResponse } from '@unami/api';
 import { FeedClient } from '@/components/FeedClient';
 
 interface Props {

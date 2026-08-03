@@ -24,7 +24,7 @@
 ## Current priority
 Phase 16 — Platform Expansion.
 Phase 16.5 (Admin Completion) is complete. All admin modules have full CRUD.
-Phase 16 work: rename `@moments/*` → `@unami/*`, extract Moments domain from `packages/shared`, scaffold second application.
+Phase 16 work: rename complete (`@moments/*` → `@unami/*`). Next: extract Moments domain from `packages/shared`, scaffold second application.
 
 ## Layer rules
 - `packages/ui` — no Supabase, no auth, no app-specific logic
@@ -35,7 +35,7 @@ Phase 16 work: rename `@moments/*` → `@unami/*`, extract Moments domain from `
 
 ## Component rules (apps/admin)
 - Use shadcn primitives from `src/components/ui/` for low-level elements (Input, Select, Label, Textarea, Dialog, etc.)
-- Use `@moments/ui` shared primitives for all structural patterns:
+- Use `@unami/ui` shared primitives for all structural patterns:
   - `PageHeader` — every module list and detail page header (title + description + actions)
   - `KPIGrid` + `MetricCard` — every KPI card row (pass `items` prop for data-driven usage)
   - `TablePagination` — every paginated table footer
@@ -46,7 +46,7 @@ Phase 16 work: rename `@moments/*` → `@unami/*`, extract Moments domain from `
   - `PageSkeleton`, `TableSkeleton` — loading states (via loading.tsx)
   - `AnalyticsCard`, `LineChart`, `BarChart`, `PieChart`, `AreaChart` — charts and analytics
   - `ActivityFeed`, `QuickActions` — dashboard feed and action widgets
-- Do NOT use from `@moments/ui`: `AppShell`, `Sidebar`, `Header`, `MobileNav` — admin uses its own shadcn shell
+- Do NOT use from `@unami/ui`: `AppShell`, `Sidebar`, `Header`, `MobileNav` — admin uses its own shadcn shell
 - Badge variants: `default | secondary | destructive | outline` only — no `warning`, `success`, `info`
 - `data-active={isActive || undefined}` — never `data-active={isActive}`
 

@@ -3,8 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PageHeader, TablePagination } from '@moments/ui';
-import type { BroadcastWithMoment, PaginatedResponse } from '@moments/api';
+import { PageHeader, TablePagination } from '@unami/ui';
+import type { BroadcastWithMoment, PaginatedResponse } from '@unami/api';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
   pending: 'outline', processing: 'secondary', completed: 'default', failed: 'destructive',

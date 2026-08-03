@@ -7,13 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PageHeader, KPIGrid, TableToolbar, TablePagination, BulkActionBar } from '@moments/ui';
-import { createApiClient } from '@moments/api';
+import { PageHeader, KPIGrid, TableToolbar, TablePagination, BulkActionBar } from '@unami/ui';
+import { createApiClient } from '@unami/api';
 import { getToken } from '@/lib/auth/token';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
-import type { CampaignWithSponsor, PaginatedResponse } from '@moments/api';
-import type { CampaignBudgetEntry } from '@moments/api';
-import { CampaignStatus } from '@moments/shared';
+import type { CampaignWithSponsor, PaginatedResponse } from '@unami/api';
+import type { CampaignBudgetEntry } from '@unami/api';
+import { CampaignStatus } from '@unami/shared';
 import { Briefcase, Target, DollarSign, CheckCircle, PlusCircle } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {

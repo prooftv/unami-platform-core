@@ -1,6 +1,6 @@
 import { getApiClient } from '@/lib/api/client';
-import type { DashboardMetrics, MomentWithSponsor, BroadcastWithMoment } from '@moments/api';
-import type { ModerationStats } from '@moments/api';
+import type { DashboardMetrics, MomentWithSponsor, BroadcastWithMoment } from '@unami/api';
+import type { ModerationStats } from '@unami/api';
 
 // ── Dashboard Metrics ─────────────────────────────────────────────────────────
 

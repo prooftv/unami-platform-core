@@ -23,7 +23,7 @@ It is not a Moments release. It is the platform that Moments — and every futur
 - `pnpm` workspace with `pnpm-workspace.yaml`
 - Root `tsconfig.json` with strict TypeScript baseline
 - `turbo.json` build pipeline
-- Workspace packages: `@moments/ui`, `@moments/shared`, `@moments/api`, `@moments/admin`, `@moments/web`
+- Workspace packages: `@unami/ui`, `@unami/shared`, `@unami/api`, `@unami/admin`, `@moments/web`
 - `apps/admin` and `apps/web` scaffolded as Next.js 16 applications
 - `dashboard-platform-export/` and `moments-v2-bootstrap/` preserved as architectural reference sources
 
@@ -31,7 +31,7 @@ It is not a Moments release. It is the platform that Moments — and every futur
 
 ### Phase 2 — Shared Foundation
 
-**Package:** `packages/shared` (`@moments/shared`)
+**Package:** `packages/shared` (`@unami/shared`)
 
 Established the cross-cutting primitive layer. Framework-agnostic. Zero React, zero Next.js, zero Supabase.
 
@@ -50,7 +50,7 @@ Contains:
 
 ### Phase 3 — UI Platform Foundation
 
-**Package:** `packages/ui` (`@moments/ui`)
+**Package:** `packages/ui` (`@unami/ui`)
 
 Established the reusable presentation layer. No Supabase. No authentication. No application-specific terminology.
 
@@ -162,7 +162,7 @@ Performed before tagging v0.1.0-platform-foundation.
 | Check | Result |
 |---|---|
 | `packages/ui` imports Supabase | ✅ Clean |
-| `packages/ui` imports `@moments/api` | ✅ Clean |
+| `packages/ui` imports `@unami/api` | ✅ Clean |
 | `packages/ui` imports `apps/*` | ✅ Clean |
 | `packages/ui` imports `next/*` | ✅ Clean |
 | `packages/shared` imports React | ✅ Clean |
@@ -271,7 +271,7 @@ This milestone elevates the Moments admin from a data-wired dashboard into a ful
 - **Pagination wired** across all 5 list modules — previously all `onPageChange` callbacks were no-ops:
   - `MomentsPage`, `SubscribersPage`, `SponsorsPage`, `CampaignsPage`, `BroadcastsPage` — all accept `searchParams: Promise<{ page?: string }>`, pass `page` to API, pass `currentPage` to client
   - All client components (`MomentsClient`, `SubscribersClient`, `SponsorsClient`, `CampaignsClient`, `BroadcastsClient`) — `handlePageChange` calls `router.push` with updated `?page=N`
-- All raw `<select>` filter elements replaced with `FilterSelect` from `@moments/ui`
+- All raw `<select>` filter elements replaced with `FilterSelect` from `@unami/ui`
 
 ---
 

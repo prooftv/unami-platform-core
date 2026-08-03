@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@moments/shared', '@moments/api', '@moments/ui'],
+  transpilePackages: ['@unami/shared', '@unami/api', '@unami/ui'],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },

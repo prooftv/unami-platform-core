@@ -6,9 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
-import { createApiClient } from '@moments/api';
+import { createApiClient } from '@unami/api';
 import { createClient } from '@/lib/supabase/client';
-import type { Broadcast, AdminSession } from '@moments/api';
+import type { Broadcast, AdminSession } from '@unami/api';
 
 async function getToken(): Promise<string> {
   const supabase = createClient();

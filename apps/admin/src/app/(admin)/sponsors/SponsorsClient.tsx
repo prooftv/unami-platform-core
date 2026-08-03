@@ -6,10 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PageHeader, KPIGrid, TableToolbar, TablePagination } from '@moments/ui';
-import type { Sponsor, PaginatedResponse } from '@moments/api';
-import type { SponsorStats } from '@moments/api';
-import { SponsorTier } from '@moments/shared';
+import { PageHeader, KPIGrid, TableToolbar, TablePagination } from '@unami/ui';
+import type { Sponsor, PaginatedResponse } from '@unami/api';
+import type { SponsorStats } from '@unami/api';
+import { SponsorTier } from '@unami/shared';
 import { Tag, Users, Star, Award, PlusCircle } from 'lucide-react';
 
 const TIER_VARIANT: Record<string, 'secondary' | 'outline' | 'default'> = {

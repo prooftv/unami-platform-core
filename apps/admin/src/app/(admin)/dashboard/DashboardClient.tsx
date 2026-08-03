@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { Badge } from '@/components/ui/badge';
-import type { AdminSession } from '@moments/api';
+import type { AdminSession } from '@unami/api';
 import { RefreshCw } from 'lucide-react';
 import { DashboardTabs, type DashboardSection } from './DashboardTabs';
 import {

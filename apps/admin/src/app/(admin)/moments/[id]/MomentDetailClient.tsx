@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Send, Pencil } from 'lucide-react';
-import { createApiClient } from '@moments/api';
+import { createApiClient } from '@unami/api';
 import { createClient } from '@/lib/supabase/client';
-import type { MomentWithSponsor, AdminSession, BroadcastWithMoment } from '@moments/api';
+import type { MomentWithSponsor, AdminSession, BroadcastWithMoment } from '@unami/api';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
   draft: 'outline', scheduled: 'secondary', broadcasted: 'default', cancelled: 'destructive',

@@ -9,12 +9,12 @@ Read this first when resuming work or starting a new session.
 
 | Field | Value |
 |---|---|
-| Version | `v0.9.0-platform-standardised` |
+| Version | `v1.0.0-unami-platform` |
 | Phase | Phase 16 — Platform Expansion (in progress) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `d6ddbce` |
+| Last commit | pending |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -178,7 +178,7 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 
 | Task | Status |
 |---|---|
-| Rename `@moments/*` → `@unami/*` across all packages and apps | ⏳ |
+| Rename `@moments/*` → `@unami/*` across all packages and apps | ✅ |
 | Extract Moments domain enums from `packages/shared` into `apps/admin/domain` | ⏳ |
 | Spree Operations Dashboard scaffold (`apps/spree`) | ⏳ |
 | BeatsChain domain package scaffold (`packages/domain/beatschain`) | ⏳ |
@@ -255,7 +255,7 @@ Fix bugs only. All new work is product workflow completion.
 | Item | Location | Resolution |
 |---|---|---|
 | Moments-domain logic in shared package | `packages/shared/src/` | Refactor to `apps/moments/domain` when second app onboards |
-| Package scope `@moments/*` | All packages | Rename to `@unami/*` before Phase 16 |
+| Package scope `@moments/*` | All packages | ✅ Renamed to `@unami/*` in Phase 16 |
 | Phase 3 shell placeholders | `packages/ui/src/shell/` | `AppShell`, `Sidebar`, `Header`, `MobileNav` are unfinished stubs. Do not consume. Replace with `Shell*` framework in Phase 17 (D-025) |
 
 ---
@@ -268,9 +268,9 @@ unami-platform-core/
 │   ├── admin/          Next.js 16 — Moments admin (complete — all modules, full CRUD)
 │   └── web/            Next.js 16 — Moments public PWA (complete)
 ├── packages/
-│   ├── ui/             @moments/ui — design system, charts, theme engine (complete)
-│   ├── shared/         @moments/shared — enums, types, validators, constants (complete)
-│   └── api/            @moments/api — typed API clients (complete)
+│   ├── ui/             @unami/ui — design system, charts, theme engine (complete)
+│   ├── shared/         @unami/shared — enums, types, validators, constants (complete)
+│   └── api/            @unami/api — typed API clients (complete)
 ├── supabase/
 │   ├── functions/      15 Edge Functions (complete)
 │   └── migrations/

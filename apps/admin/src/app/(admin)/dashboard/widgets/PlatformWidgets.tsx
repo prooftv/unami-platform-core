@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { DashboardMetrics } from '@moments/api';
+import type { DashboardMetrics } from '@unami/api';
 import { Database, HardDrive, Zap, Send, Wifi, Flag, AlertTriangle } from 'lucide-react';
 
 export function SystemHealthWidget({ metrics }: { metrics: DashboardMetrics | null }) {

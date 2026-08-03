@@ -1,7 +1,7 @@
 import { getOperatorSession } from '@/lib/auth/operator';
 import { getApiClient } from '@/lib/api/client';
 import { MomentsClient } from './MomentsClient';
-import type { MomentStatus } from '@moments/shared';
+import type { MomentStatus } from '@unami/shared';
 
 export default async function MomentsPage({
   searchParams,

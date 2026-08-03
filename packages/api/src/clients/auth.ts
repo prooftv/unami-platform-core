@@ -1,6 +1,6 @@
 import { apiFetch, type ApiConfig } from '../http';
 import type { AuthSession } from '../types/index';
-import type { LoginInput } from '@moments/shared';
+import type { LoginInput } from '@unami/shared';
 
 export function createAuthClient(config: ApiConfig) {
   return {

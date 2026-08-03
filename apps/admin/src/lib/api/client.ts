@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
-import { createApiClient } from '@moments/api';
-import type { ApiClient } from '@moments/api';
+import { createApiClient } from '@unami/api';
+import type { ApiClient } from '@unami/api';
 
 export async function getApiClient(): Promise<ApiClient | null> {
   const supabase = await createClient();

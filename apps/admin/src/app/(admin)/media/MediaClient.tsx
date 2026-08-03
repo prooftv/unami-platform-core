@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PageHeader, KPIGrid, BulkActionBar } from '@moments/ui';
-import { createApiClient } from '@moments/api';
+import { PageHeader, KPIGrid, BulkActionBar } from '@unami/ui';
+import { createApiClient } from '@unami/api';
 import { getToken } from '@/lib/auth/token';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
-import type { MediaRecord, AdminSession } from '@moments/api';
+import type { MediaRecord, AdminSession } from '@unami/api';
 import type { LucideIcon } from 'lucide-react';
 import { Upload, Trash2, ExternalLink, Image, FileAudio, FileVideo, File } from 'lucide-react';
 

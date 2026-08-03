@@ -8,9 +8,9 @@ import {
   KPIGrid,
   MetricCard,
   BarChart,
-} from '@moments/ui';
-import type { ActivityItem } from '@moments/ui';
-import type { ModerationStats, AuthorityAuditEntry, AuthorityStats } from '@moments/api';
+} from '@unami/ui';
+import type { ActivityItem } from '@unami/ui';
+import type { ModerationStats, AuthorityAuditEntry, AuthorityStats } from '@unami/api';
 import { ShieldCheck, Scale, AlertTriangle, Users } from 'lucide-react';
 
 export function GovernanceModerationWidget({ stats }: { stats: ModerationStats | null }) {

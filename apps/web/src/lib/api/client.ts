@@ -1,5 +1,5 @@
-import { createPublicApiClient } from '@moments/api';
-import type { PublicApiClient } from '@moments/api';
+import { createPublicApiClient } from '@unami/api';
+import type { PublicApiClient } from '@unami/api';
 
 export function getPublicApiClient(): PublicApiClient {
   return createPublicApiClient({

@@ -1,6 +1,6 @@
 import { apiFetch, type ApiConfig } from '../http';
 import type { Sponsor, PaginatedResponse } from '../types/index';
-import type { SponsorTier } from '@moments/shared';
+import type { SponsorTier } from '@unami/shared';
 
 export interface SponsorStats {
   total: number;

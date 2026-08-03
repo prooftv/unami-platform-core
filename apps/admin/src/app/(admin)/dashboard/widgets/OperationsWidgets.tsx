@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import {
   AnalyticsCard,
   LineChart,
-} from '@moments/ui';
-import type { BroadcastWithMoment, IntentStats } from '@moments/api';
+} from '@unami/ui';
+import type { BroadcastWithMoment, IntentStats } from '@unami/api';
 import { Send, AlertTriangle, Cpu } from 'lucide-react';
 
 export function DeliverySuccessWidget({ broadcasts }: { broadcasts: BroadcastWithMoment[] }) {

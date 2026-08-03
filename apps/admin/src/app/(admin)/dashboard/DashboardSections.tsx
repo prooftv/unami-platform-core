@@ -67,7 +67,7 @@ import type {
   SponsorStats,
   RevenueAnalytics,
   IntentStats,
-} from '@moments/api';
+} from '@unami/api';
 
 // ── Shared grid primitives ────────────────────────────────────────────────────
 

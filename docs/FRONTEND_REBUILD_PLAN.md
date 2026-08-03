@@ -71,7 +71,7 @@ Complete map of every existing route. Backend contracts are preserved in all cas
 
 ## Current UI Components in Use (Audit)
 
-These are the `@moments/ui` components currently consumed by module clients.  
+These are the `@unami/ui` components currently consumed by module clients.  
 Each must be evaluated: keep as-is, replace with shadcn primitive, or retire.
 
 | Component | Used In | Decision |

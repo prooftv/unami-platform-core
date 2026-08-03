@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PageHeader, KPIGrid, TableToolbar, TablePagination } from '@moments/ui';
-import type { Subscription, PaginatedResponse } from '@moments/api';
-import type { SubscriberStats } from '@moments/api';
-import { Region, DeliverySchedule } from '@moments/shared';
+import { PageHeader, KPIGrid, TableToolbar, TablePagination } from '@unami/ui';
+import type { Subscription, PaginatedResponse } from '@unami/api';
+import type { SubscriberStats } from '@unami/api';
+import { Region, DeliverySchedule } from '@unami/shared';
 import { Users, TrendingDown, UserCheck, Calendar } from 'lucide-react';
 
 const SCHEDULE_VARIANT: Record<string, 'outline' | 'secondary' | 'default'> = {

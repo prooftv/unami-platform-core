@@ -1,5 +1,5 @@
 {
-  "name": "@moments/admin",
+  "name": "@unami/admin",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",
-    "@moments/api": "workspace:*",
-    "@moments/shared": "workspace:*",
-    "@moments/ui": "workspace:*",
+    "@unami/api": "workspace:*",
+    "@unami/shared": "workspace:*",
+    "@unami/ui": "workspace:*",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.8",
     "@tanstack/react-table": "^8.21.3",

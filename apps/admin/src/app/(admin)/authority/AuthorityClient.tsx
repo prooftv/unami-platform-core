@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PageHeader, KPIGrid, TablePagination } from '@moments/ui';
-import type { AuthorityProfile, PaginatedResponse } from '@moments/api';
-import type { AuthorityAuditEntry, AuthorityStats } from '@moments/api';
+import { PageHeader, KPIGrid, TablePagination } from '@unami/ui';
+import type { AuthorityProfile, PaginatedResponse } from '@unami/api';
+import type { AuthorityAuditEntry, AuthorityStats } from '@unami/api';
 import { Network, Users, Zap, Shield, PlusCircle } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, 'default' | 'destructive' | 'secondary'> = {

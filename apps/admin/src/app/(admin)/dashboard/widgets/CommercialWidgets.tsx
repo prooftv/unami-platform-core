@@ -8,8 +8,8 @@ import {
   MetricCard,
   LineChart,
   BarChart,
-} from '@moments/ui';
-import type { CampaignBudgetEntry, SponsorStats, RevenueAnalytics } from '@moments/api';
+} from '@unami/ui';
+import type { CampaignBudgetEntry, SponsorStats, RevenueAnalytics } from '@unami/api';
 import { DollarSign, Target, Users, TrendingUp } from 'lucide-react';
 
 export function CommercialKPIs({ revenue, sponsorStats, campaigns }: {

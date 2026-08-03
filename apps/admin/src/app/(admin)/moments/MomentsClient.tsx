@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BulkActionBar } from '@moments/ui';
-import type { MomentWithSponsor, PaginatedResponse, AdminSession } from '@moments/api';
-import { createApiClient } from '@moments/api';
+import { BulkActionBar } from '@unami/ui';
+import type { MomentWithSponsor, PaginatedResponse, AdminSession } from '@unami/api';
+import { createApiClient } from '@unami/api';
 import { getToken } from '@/lib/auth/token';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
-import { MomentStatus } from '@moments/shared';
+import { MomentStatus } from '@unami/shared';
 import { PlusCircle, XCircle } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {

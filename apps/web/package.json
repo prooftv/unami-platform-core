@@ -9,9 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@moments/api": "workspace:*",
-    "@moments/shared": "workspace:*",
-    "@moments/ui": "workspace:*",
+    "@unami/api": "workspace:*",
+    "@unami/shared": "workspace:*",
+    "@unami/ui": "workspace:*",
     "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",

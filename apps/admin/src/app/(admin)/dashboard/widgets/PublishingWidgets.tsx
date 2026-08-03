@@ -6,8 +6,8 @@ import {
   AnalyticsCard,
   BarChart,
   PieChart,
-} from '@moments/ui';
-import type { MomentWithSponsor, CategoryStats, RegionalStats } from '@moments/api';
+} from '@unami/ui';
+import type { MomentWithSponsor, CategoryStats, RegionalStats } from '@unami/api';
 import { Radio } from 'lucide-react';
 
 export function ContentSourceWidget({ moments }: { moments: MomentWithSponsor[] }) {

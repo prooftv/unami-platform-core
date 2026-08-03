@@ -8,10 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft } from 'lucide-react';
-import { createApiClient } from '@moments/api';
+import { createApiClient } from '@unami/api';
 import { createClient } from '@/lib/supabase/client';
-import { SponsorTier } from '@moments/shared';
-import type { Sponsor } from '@moments/api';
+import { SponsorTier } from '@unami/shared';
+import type { Sponsor } from '@unami/api';
 
 async function getToken(): Promise<string> {
   const supabase = createClient();

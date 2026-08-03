@@ -52,13 +52,13 @@ No further shell redesigns. Moments adapts to the shell — the shell does not a
 `(admin)/layout.tsx` is the single auth gate and shell owner for all admin routes.
 
 ## D-012: Component policy — shared primitives are the standard
-Admin modules use `@moments/ui` shared primitives for all structural patterns:
+Admin modules use `@unami/ui` shared primitives for all structural patterns:
 `PageHeader`, `KPIGrid`, `MetricCard`, `TableToolbar`, `TablePagination`, `BulkActionBar`,
 `DataTable`, `EmptyState`, `ErrorState`, `PageSkeleton`, `TableSkeleton`, `StatusBadge`,
 `AnalyticsCard`, `LineChart`, `BarChart`, `PieChart`, `AreaChart`, `ActivityFeed`, `QuickActions`.
 Shadcn primitives from `src/components/ui/` are used for low-level elements only:
 `Input`, `Select`, `Label`, `Textarea`, `Dialog`, `Button`, `Badge`, `Card`, etc.
-Do NOT use from `@moments/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav` —
+Do NOT use from `@unami/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav` —
 the admin shell owns those directly.
 
 ## D-013: Product phases over technical fixes
@@ -68,7 +68,7 @@ Phases: 10 Moments Workflow ✅ → 11 Community ✅ → 12 Commercial ✅ → 1
 
 ## D-014: Badge variants — shadcn only
 shadcn `Badge` accepts only: `default | secondary | destructive | outline | ghost | link`.
-Custom variants `warning`, `success`, `info` from `@moments/ui` do not exist.
+Custom variants `warning`, `success`, `info` from `@unami/ui` do not exist.
 Map: `warning` → `secondary`, `success` → `default`, `info` → `outline`.
 
 ## D-015: Sidebar active state — attribute not boolean

@@ -9,10 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft } from 'lucide-react';
-import { Region, Category, Language, UrgencyLevel } from '@moments/shared';
-import { createApiClient } from '@moments/api';
+import { Region, Category, Language, UrgencyLevel } from '@unami/shared';
+import { createApiClient } from '@unami/api';
 import { createClient } from '@/lib/supabase/client';
-import type { MomentWithSponsor, Sponsor } from '@moments/api';
+import type { MomentWithSponsor, Sponsor } from '@unami/api';
 
 const REGIONS = Object.values(Region);
 const CATEGORIES = Object.values(Category);

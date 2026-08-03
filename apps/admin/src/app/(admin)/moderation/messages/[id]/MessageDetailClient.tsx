@@ -6,10 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { createApiClient } from '@moments/api';
+import { createApiClient } from '@unami/api';
 import { createClient } from '@/lib/supabase/client';
-import type { AdminSession } from '@moments/api';
-import type { MessageWithAdvisories } from '@moments/api';
+import type { AdminSession } from '@unami/api';
+import type { MessageWithAdvisories } from '@unami/api';
 
 async function getToken(): Promise<string> {
   const supabase = createClient();

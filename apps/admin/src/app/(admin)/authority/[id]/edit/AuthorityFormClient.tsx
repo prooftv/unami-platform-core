@@ -9,11 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft } from 'lucide-react';
-import { createApiClient } from '@moments/api';
+import { createApiClient } from '@unami/api';
 import { createClient } from '@/lib/supabase/client';
-import { AuthorityScope, ApprovalMode } from '@moments/shared';
-import type { AuthorityProfile } from '@moments/api';
-import type { AuthorityAuditEntry } from '@moments/api';
+import { AuthorityScope, ApprovalMode } from '@unami/shared';
+import type { AuthorityProfile } from '@unami/api';
+import type { AuthorityAuditEntry } from '@unami/api';
 
 async function getToken(): Promise<string> {
   const supabase = createClient();

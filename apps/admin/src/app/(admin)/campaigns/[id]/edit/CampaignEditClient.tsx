@@ -8,10 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft } from 'lucide-react';
-import { createApiClient } from '@moments/api';
+import { createApiClient } from '@unami/api';
 import { getToken } from '@/lib/auth/token';
-import { Region, Category } from '@moments/shared';
-import type { CampaignWithSponsor, Sponsor } from '@moments/api';
+import { Region, Category } from '@unami/shared';
+import type { CampaignWithSponsor, Sponsor } from '@unami/api';
 
 const REGIONS = Object.values(Region);
 const CATEGORIES = Object.values(Category);

@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PageHeader, TablePagination } from '@moments/ui';
+import { PageHeader, TablePagination } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
-import type { ErrorLogEntry, PaginatedResponse } from '@moments/api';
+import type { ErrorLogEntry, PaginatedResponse } from '@unami/api';
 
 const SEVERITY_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
   low: 'outline', medium: 'secondary', high: 'default', critical: 'destructive',

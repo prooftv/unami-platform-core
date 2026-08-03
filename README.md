@@ -77,9 +77,9 @@ unami-platform-core/
 │   ├── admin/          Next.js — Moments admin (complete)
 │   └── web/            Next.js — Moments public PWA (not yet started)
 ├── packages/
-│   ├── ui/             @moments/ui — design system, shell framework, component library
-│   ├── shared/         @moments/shared — enums, types, validators, constants
-│   └── api/            @moments/api — typed API clients
+│   ├── ui/             @unami/ui — design system, shell framework, component library
+│   ├── shared/         @unami/shared — enums, types, validators, constants
+│   └── api/            @unami/api — typed API clients
 ├── supabase/
 │   ├── functions/      15 Edge Functions
 │   └── migrations/     000_initial_schema.sql (baseline, immutable)
@@ -98,7 +98,7 @@ unami-platform-core/
 
 # Package Responsibilities
 
-## packages/ui — `@moments/ui` ✅
+## packages/ui — `@unami/ui` ✅
 
 Three distinct layers:
 
@@ -133,7 +133,7 @@ Patterns used across all admin and dashboard surfaces:
 
 ---
 
-## packages/shared — `@moments/shared` ✅
+## packages/shared — `@unami/shared` ✅
 
 Cross-cutting primitives used across all packages and applications.
 
@@ -145,7 +145,7 @@ Contains: enums, constants, types, Zod validators, helpers.
 
 ---
 
-## packages/api — `@moments/api` ✅
+## packages/api — `@unami/api` ✅
 
 Typed communication layer. Applications never call backend endpoints directly.
 All data flows through typed clients defined here → Edge Functions → database.

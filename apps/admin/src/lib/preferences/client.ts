@@ -6,8 +6,8 @@ import {
   applyThemePreset,
   applyContentLayout,
   applySidebarCollapsible,
-} from '@moments/ui';
-import type { PreferencesState } from '@moments/ui';
+} from '@unami/ui';
+import type { PreferencesState } from '@unami/ui';
 
 function setCookie(key: string, value: string) {
   document.cookie = `${key}=${value}; path=/; max-age=31536000; SameSite=Lax`;

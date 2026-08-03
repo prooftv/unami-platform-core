@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getPublicApiClient } from '@/lib/api/client';
 import { FeedClient } from '@/components/FeedClient';
-import { Region } from '@moments/shared';
+import { Region } from '@unami/shared';
 
 export async function generateMetadata({ params }: { params: Promise<{ region: string }> }): Promise<Metadata> {
   const { region } = await params;

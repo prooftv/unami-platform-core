@@ -19,11 +19,11 @@ export type {
   DailyStats,
   RegionalStats,
   CategoryStats,
-} from '@moments/shared';
+} from '@unami/shared';
 
-import type { Pagination } from '@moments/shared';
+import type { Pagination } from '@unami/shared';
 export type { Pagination };
-export type PaginatedResponse<T> = import('@moments/shared').PaginatedResponse<T>;
+export type PaginatedResponse<T> = import('@unami/shared').PaginatedResponse<T>;
 
 // API response envelope
 export interface ApiResponse<T> {

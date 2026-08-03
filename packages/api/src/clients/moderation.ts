@@ -1,6 +1,6 @@
 import { apiFetch, type ApiConfig } from '../http';
 import type { Message, Advisory, PaginatedResponse } from '../types/index';
-import type { ModerationStatus } from '@moments/shared';
+import type { ModerationStatus } from '@unami/shared';
 
 export interface ModerationStats {
   pendingMessages: number;

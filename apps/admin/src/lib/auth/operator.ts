@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
-import { createApiClient } from '@moments/api';
-import type { AdminSession } from '@moments/api';
+import { createApiClient } from '@unami/api';
+import type { AdminSession } from '@unami/api';
 
 /**
  * The authenticated operator context used throughout the admin application.

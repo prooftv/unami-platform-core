@@ -5,7 +5,7 @@ import type {
   UpdateMomentInput,
   ListMomentsInput,
   ScheduleMomentInput,
-} from '@moments/shared';
+} from '@unami/shared';
 
 export function createMomentsClient(config: ApiConfig) {
   return {

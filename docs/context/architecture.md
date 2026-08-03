@@ -114,13 +114,13 @@ All response types flow from `packages/shared` types — no duplication.
 - `/settings` — feature flags, system settings, session info
 
 **Component policy:**
-- `@moments/ui` shared primitives for all structural patterns: `PageHeader`, `KPIGrid`, `MetricCard`,
+- `@unami/ui` shared primitives for all structural patterns: `PageHeader`, `KPIGrid`, `MetricCard`,
   `TableToolbar`, `TablePagination`, `BulkActionBar`, `DataTable`, `EmptyState`, `ErrorState`,
   `PageSkeleton`, `TableSkeleton`, `StatusBadge`, `AnalyticsCard`, `LineChart`, `BarChart`,
   `PieChart`, `AreaChart`, `ActivityFeed`, `QuickActions`
 - shadcn primitives from `src/components/ui/` for low-level elements: `Input`, `Select`, `Label`,
   `Textarea`, `Dialog`, `Button`, `Badge`, `Card`, etc.
-- Do NOT use from `@moments/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav`
+- Do NOT use from `@unami/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav`
 
 ---
 
@@ -142,7 +142,7 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 **Current Phase:** Phase 16 — Platform Expansion (in progress)
 
 Phase 16.5 (Admin Completion) is complete. All admin modules have full CRUD. Shared UI layer
-standardised — all module clients migrated to `@moments/ui` primitives. Bulk actions wired for
+standardised — all module clients migrated to `@unami/ui` primitives. Bulk actions wired for
 Moderation, Moments, Campaigns, Media via `useBulkSelection` + `BulkActionBar` + `Promise.allSettled`
 fan-out. `getToken` shared util extracted. `loading.tsx` route skeletons added for all 10 modules.
 

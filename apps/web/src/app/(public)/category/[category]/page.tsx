@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getPublicApiClient } from '@/lib/api/client';
 import { FeedClient } from '@/components/FeedClient';
-import { Category } from '@moments/shared';
+import { Category } from '@unami/shared';
 
 export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
   const { category } = await params;

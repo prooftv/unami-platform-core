@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
-import type { Advisory } from '@moments/api';
+import type { Advisory } from '@unami/api';
 
 interface Props { advisory: Advisory; }
 

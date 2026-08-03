@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PageHeader, TablePagination } from '@moments/ui';
+import { PageHeader, TablePagination } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
-import type { AuditLogEntry, PaginatedResponse } from '@moments/api';
+import type { AuditLogEntry, PaginatedResponse } from '@unami/api';
 
 const RESOURCE_TYPES = [
   'moment', 'campaign', 'sponsor', 'subscription', 'authority_profile',

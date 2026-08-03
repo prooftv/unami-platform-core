@@ -43,7 +43,7 @@ Hooks: `useThemeMode`, `useThemePreset`, `useSidebarCollapsible`, `useContentLay
 Async server component. Reads server preferences, wraps children in `PreferencesStoreProvider`. Contains a synchronous inline `<script>` that sets all `data-*` attributes on `document.documentElement` before React hydrates — eliminates flash of unstyled content (FOUC).
 
 **Preset CSS** (`apps/admin/src/app/globals.css`)
-All three preset CSS blocks (Brutalist, Soft Pop, Tangerine) inlined directly. CSS files cannot be imported via `@moments/ui` package alias — inlining is the correct solution.
+All three preset CSS blocks (Brutalist, Soft Pop, Tangerine) inlined directly. CSS files cannot be imported via `@unami/ui` package alias — inlining is the correct solution.
 
 **PreferencesPanel** (`apps/admin/src/app/(admin)/components/PreferencesPanel.tsx`)
 Slide-in panel from right. Theme mode segmented control, preset swatches showing actual `primary.light` colours, content width toggle, sidebar collapse toggle. Closes on Escape or outside click.

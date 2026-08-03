@@ -6,10 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
-import { createApiClient } from '@moments/api';
+import { createApiClient } from '@unami/api';
 import { createClient } from '@/lib/supabase/client';
-import type { Subscription } from '@moments/api';
-import type { SubscriberStats } from '@moments/api';
+import type { Subscription } from '@unami/api';
+import type { SubscriberStats } from '@unami/api';
 
 async function getToken(): Promise<string> {
   const supabase = createClient();

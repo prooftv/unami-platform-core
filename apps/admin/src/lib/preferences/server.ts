@@ -6,8 +6,8 @@ import {
   CONTENT_LAYOUT_VALUES,
   NAVBAR_STYLE_VALUES,
   SIDEBAR_COLLAPSIBLE_VALUES,
-} from '@moments/ui';
-import type { PreferencesState } from '@moments/ui';
+} from '@unami/ui';
+import type { PreferencesState } from '@unami/ui';
 
 function safe<T extends string>(value: string | undefined, allowed: readonly T[]): T | undefined {
   if (!value) return undefined;
