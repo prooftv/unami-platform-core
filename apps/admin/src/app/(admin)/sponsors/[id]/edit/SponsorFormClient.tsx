@@ -7,17 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
 import { createApiClient } from '@unami/api';
-import { createClient } from '@/lib/supabase/client';
+import { getToken } from '@/lib/auth/token';
 import { SponsorTier } from '@unami/shared';
 import type { Sponsor } from '@unami/api';
-
-async function getToken(): Promise<string> {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? '';
-}
 
 const TIERS = Object.values(SponsorTier);
 
@@ -37,7 +33,6 @@ export function SponsorFormClient({ sponsor }: Props) {
     monthlyBudget: String(sponsor?.monthlyBudget ?? 0),
     active: sponsor?.active ?? true,
   });
-
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,63 +78,89 @@ export function SponsorFormClient({ sponsor }: Props) {
   }
 
   return (
-    <div className="max-w-xl space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={() => router.push('/sponsors')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />Back
-        </Button>
-        <h1 className="text-lg font-semibold">{isEdit ? 'Edit Sponsor' : 'New Sponsor'}</h1>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title={isEdit ? 'Edit Sponsor' : 'New Sponsor'}
+        description={isEdit ? `${sponsor!.displayName} · ${sponsor!.tier}` : 'Add a new sponsor to the platform'}
+        actions={
+          <Button variant="outline" size="sm" onClick={() => router.push('/sponsors')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />Back
+          </Button>
+        }
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {!isEdit && (
-          <div className="space-y-1">
-            <Label htmlFor="name">Slug <span className="text-destructive">*</span></Label>
-            <Input id="name" value={form.name} onChange={(e) => set('name', e.target.value)} required placeholder="lowercase-slug" pattern="[a-z0-9-]+" />
-            <p className="text-xs text-muted-foreground">Lowercase letters, numbers, hyphens only. Cannot be changed.</p>
-          </div>
-        )}
-        <div className="space-y-1">
-          <Label htmlFor="displayName">Display Name <span className="text-destructive">*</span></Label>
-          <Input id="displayName" value={form.displayName} onChange={(e) => set('displayName', e.target.value)} required />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label>Tier</Label>
-            <Select value={form.tier} onValueChange={(v) => set('tier', v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{TIERS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="monthlyBudget">Monthly Budget (ZAR)</Label>
-            <Input id="monthlyBudget" type="number" min={0} step={0.01} value={form.monthlyBudget} onChange={(e) => set('monthlyBudget', e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="contactEmail">Contact Email</Label>
-            <Input id="contactEmail" type="email" value={form.contactEmail} onChange={(e) => set('contactEmail', e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="websiteUrl">Website URL</Label>
-            <Input id="websiteUrl" type="url" value={form.websiteUrl} onChange={(e) => set('websiteUrl', e.target.value)} placeholder="https://..." />
-          </div>
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="logoUrl">Logo URL</Label>
-          <Input id="logoUrl" type="url" value={form.logoUrl} onChange={(e) => set('logoUrl', e.target.value)} placeholder="https://..." />
-        </div>
-        {isEdit && (
-          <div className="flex items-center gap-2">
-            <Switch id="active" checked={form.active} onCheckedChange={(v) => set('active', v)} />
-            <Label htmlFor="active">Active</Label>
-          </div>
-        )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+      <form onSubmit={handleSubmit}>
+        <div className="max-w-2xl space-y-6">
+          <Card>
+            <CardHeader><CardTitle>Identity</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              {!isEdit && (
+                <div className="space-y-1">
+                  <Label htmlFor="name">Slug <span className="text-destructive">*</span></Label>
+                  <Input id="name" value={form.name} onChange={(e) => set('name', e.target.value)} required placeholder="lowercase-slug" pattern="[a-z0-9-]+" />
+                  <p className="text-xs text-muted-foreground">Lowercase letters, numbers, hyphens only. Cannot be changed.</p>
+                </div>
+              )}
+              <div className="space-y-1">
+                <Label htmlFor="displayName">Display Name <span className="text-destructive">*</span></Label>
+                <Input id="displayName" value={form.displayName} onChange={(e) => set('displayName', e.target.value)} required />
+              </div>
+            </CardContent>
+          </Card>
 
-        <div className="flex justify-end gap-2 pt-2 border-t">
-          <Button type="button" variant="outline" onClick={() => router.push('/sponsors')}>Cancel</Button>
-          <Button type="submit" disabled={saving}>{saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Sponsor'}</Button>
+          <Card>
+            <CardHeader><CardTitle>Commercial</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label>Tier</Label>
+                <Select value={form.tier} onValueChange={(v) => set('tier', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{TIERS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="monthlyBudget">Monthly Budget (ZAR)</Label>
+                <Input id="monthlyBudget" type="number" min={0} step={0.01} value={form.monthlyBudget} onChange={(e) => set('monthlyBudget', e.target.value)} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>Contact & Links</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="contactEmail">Contact Email</Label>
+                <Input id="contactEmail" type="email" value={form.contactEmail} onChange={(e) => set('contactEmail', e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="websiteUrl">Website URL</Label>
+                <Input id="websiteUrl" type="url" value={form.websiteUrl} onChange={(e) => set('websiteUrl', e.target.value)} placeholder="https://..." />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="logoUrl">Logo URL</Label>
+                <Input id="logoUrl" type="url" value={form.logoUrl} onChange={(e) => set('logoUrl', e.target.value)} placeholder="https://..." />
+              </div>
+            </CardContent>
+          </Card>
+
+          {isEdit && (
+            <Card>
+              <CardHeader><CardTitle>Status</CardTitle></CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Switch id="active" checked={form.active} onCheckedChange={(v) => set('active', v)} />
+                  <Label htmlFor="active">Active</Label>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => router.push('/sponsors')}>Cancel</Button>
+            <Button type="submit" disabled={saving}>{saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Sponsor'}</Button>
+          </div>
         </div>
       </form>
     </div>

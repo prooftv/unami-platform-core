@@ -8,18 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { PageHeader } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
 import { createApiClient } from '@unami/api';
-import { createClient } from '@/lib/supabase/client';
+import { getToken } from '@/lib/auth/token';
 import { AuthorityScope, ApprovalMode } from '@unami/shared';
-import type { AuthorityProfile } from '@unami/api';
-import type { AuthorityAuditEntry } from '@unami/api';
-
-async function getToken(): Promise<string> {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? '';
-}
+import type { AuthorityProfile, AuthorityAuditEntry } from '@unami/api';
 
 const SCOPES = Object.values(AuthorityScope);
 const APPROVAL_MODES = Object.values(ApprovalMode);
@@ -44,7 +38,6 @@ export function AuthorityFormClient({ profile, auditLog = [] }: Props) {
     riskThreshold: String(profile?.riskThreshold ?? 0.7),
     validUntil: profile?.validUntil ? new Date(profile.validUntil).toISOString().slice(0, 16) : '',
   });
-
   const [saving, setSaving] = useState(false);
   const [suspending, setSuspending] = useState(false);
   const [suspendReason, setSuspendReason] = useState('');
@@ -105,128 +98,149 @@ export function AuthorityFormClient({ profile, auditLog = [] }: Props) {
   }
 
   return (
-    <div className="max-w-xl space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={() => router.push('/authority')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />Back
-        </Button>
-        <h1 className="text-lg font-semibold">{isEdit ? 'Edit Authority Profile' : 'New Authority Profile'}</h1>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title={isEdit ? 'Edit Authority Profile' : 'New Authority Profile'}
+        description={isEdit ? `${profile!.roleLabel} · Level ${profile!.authorityLevel}` : 'Register a new authority profile'}
+        actions={
+          <Button variant="outline" size="sm" onClick={() => router.push('/authority')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />Back
+          </Button>
+        }
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {!isEdit && (
-          <div className="space-y-1">
-            <Label htmlFor="userIdentifier">Phone / User Identifier <span className="text-destructive">*</span></Label>
-            <Input id="userIdentifier" value={form.userIdentifier} onChange={(e) => set('userIdentifier', e.target.value)} required placeholder="+27..." />
-          </div>
-        )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label>Authority Level</Label>
-            <Select value={form.authorityLevel} onValueChange={(v) => set('authorityLevel', v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {[1,2,3,4,5].map((l) => <SelectItem key={l} value={String(l)}>Level {l}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="roleLabel">Role Label <span className="text-destructive">*</span></Label>
-            <Input id="roleLabel" value={form.roleLabel} onChange={(e) => set('roleLabel', e.target.value)} required placeholder="Community Leader" />
-          </div>
-          <div className="space-y-1">
-            <Label>Scope</Label>
-            <Select value={form.scope} onValueChange={(v) => set('scope', v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{SCOPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="scopeIdentifier">Scope Identifier</Label>
-            <Input id="scopeIdentifier" value={form.scopeIdentifier} onChange={(e) => set('scopeIdentifier', e.target.value)} placeholder="e.g. KZN" />
-          </div>
-          <div className="space-y-1">
-            <Label>Approval Mode</Label>
-            <Select value={form.approvalMode} onValueChange={(v) => set('approvalMode', v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{APPROVAL_MODES.map((m) => <SelectItem key={m} value={m}>{m.replace('_', ' ')}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="blastRadius">Blast Radius</Label>
-            <Input id="blastRadius" type="number" min={1} max={10000} value={form.blastRadius} onChange={(e) => set('blastRadius', e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="riskThreshold">Risk Threshold (0.1–0.9)</Label>
-            <Input id="riskThreshold" type="number" min={0.1} max={0.9} step={0.1} value={form.riskThreshold} onChange={(e) => set('riskThreshold', e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="validUntil">Valid Until</Label>
-            <Input id="validUntil" type="datetime-local" value={form.validUntil} onChange={(e) => set('validUntil', e.target.value)} />
-          </div>
-        </div>
+      <form onSubmit={handleSubmit}>
+        <div className="max-w-2xl space-y-6">
+          {!isEdit && (
+            <Card>
+              <CardHeader><CardTitle>Identifier</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-1">
+                  <Label htmlFor="userIdentifier">Phone / User Identifier <span className="text-destructive">*</span></Label>
+                  <Input id="userIdentifier" value={form.userIdentifier} onChange={(e) => set('userIdentifier', e.target.value)} required placeholder="+27..." />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+          <Card>
+            <CardHeader><CardTitle>Role</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label>Authority Level</Label>
+                <Select value={form.authorityLevel} onValueChange={(v) => set('authorityLevel', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map((l) => <SelectItem key={l} value={String(l)}>Level {l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="roleLabel">Role Label <span className="text-destructive">*</span></Label>
+                <Input id="roleLabel" value={form.roleLabel} onChange={(e) => set('roleLabel', e.target.value)} required placeholder="Community Leader" />
+              </div>
+              <div className="space-y-1">
+                <Label>Scope</Label>
+                <Select value={form.scope} onValueChange={(v) => set('scope', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{SCOPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="scopeIdentifier">Scope Identifier</Label>
+                <Input id="scopeIdentifier" value={form.scopeIdentifier} onChange={(e) => set('scopeIdentifier', e.target.value)} placeholder="e.g. KZN" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <div className="flex items-center justify-between pt-2 border-t">
-          <div>
-            {isEdit && profile?.status === 'active' && (
-              <Button type="button" variant="destructive" size="sm" onClick={() => setShowSuspend(!showSuspend)}>
-                Suspend Profile
-              </Button>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => router.push('/authority')}>Cancel</Button>
-            <Button type="submit" disabled={saving}>{saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Profile'}</Button>
+          <Card>
+            <CardHeader><CardTitle>Governance</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label>Approval Mode</Label>
+                <Select value={form.approvalMode} onValueChange={(v) => set('approvalMode', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{APPROVAL_MODES.map((m) => <SelectItem key={m} value={m}>{m.replace('_', ' ')}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="blastRadius">Blast Radius</Label>
+                <Input id="blastRadius" type="number" min={1} max={10000} value={form.blastRadius} onChange={(e) => set('blastRadius', e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="riskThreshold">Risk Threshold (0.1–0.9)</Label>
+                <Input id="riskThreshold" type="number" min={0.1} max={0.9} step={0.1} value={form.riskThreshold} onChange={(e) => set('riskThreshold', e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="validUntil">Valid Until</Label>
+                <Input id="validUntil" type="datetime-local" value={form.validUntil} onChange={(e) => set('validUntil', e.target.value)} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex items-center justify-between">
+            <div>
+              {isEdit && profile?.status === 'active' && (
+                <Button type="button" variant="destructive" size="sm" onClick={() => setShowSuspend(!showSuspend)}>
+                  Suspend Profile
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => router.push('/authority')}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Profile'}</Button>
+            </div>
           </div>
         </div>
       </form>
 
       {showSuspend && (
-        <div className="space-y-2 border border-destructive rounded-md p-4">
-          <p className="text-sm font-medium text-destructive">Suspend this authority profile</p>
-          <Input
-            placeholder="Reason for suspension (required)"
-            value={suspendReason}
-            onChange={(e) => setSuspendReason(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <Button variant="destructive" size="sm" onClick={handleSuspend} disabled={suspending}>
-              {suspending ? 'Suspending...' : 'Confirm Suspend'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowSuspend(false)}>Cancel</Button>
-          </div>
+        <div className="max-w-2xl">
+          <Card className="border-destructive">
+            <CardHeader><CardTitle className="text-destructive">Suspend Profile</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <Input placeholder="Reason for suspension (required)" value={suspendReason} onChange={(e) => setSuspendReason(e.target.value)} />
+              <div className="flex gap-2">
+                <Button variant="destructive" size="sm" onClick={handleSuspend} disabled={suspending}>
+                  {suspending ? 'Suspending...' : 'Confirm Suspend'}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowSuspend(false)}>Cancel</Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {isEdit && auditLog.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Audit Log</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Blast Radius</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {auditLog.map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell><span className="text-sm font-medium">{e.actionType}</span></TableCell>
-                    <TableCell><span className="text-sm">Level {e.authorityLevel}</span></TableCell>
-                    <TableCell><span className="text-sm">{e.blastRadiusApplied.toLocaleString()}</span></TableCell>
-                    <TableCell><span className="text-xs text-muted-foreground">{new Date(e.performedAt).toLocaleString()}</span></TableCell>
+        <div className="max-w-2xl">
+          <Card>
+            <CardHeader><CardTitle>Audit Log</CardTitle></CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead>Blast Radius</TableHead>
+                    <TableHead>Date</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {auditLog.map((e) => (
+                    <TableRow key={e.id}>
+                      <TableCell className="text-sm font-medium">{e.actionType}</TableCell>
+                      <TableCell className="text-sm">Level {e.authorityLevel}</TableCell>
+                      <TableCell className="text-sm">{e.blastRadiusApplied.toLocaleString()}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{new Date(e.performedAt).toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

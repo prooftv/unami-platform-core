@@ -7,17 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
 import { createApiClient } from '@unami/api';
-import { createClient } from '@/lib/supabase/client';
+import { getToken } from '@/lib/auth/token';
 import { Region, Category } from '@unami/shared';
 import type { Sponsor } from '@unami/api';
-
-async function getToken(): Promise<string> {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? '';
-}
 
 const REGIONS = Object.values(Region);
 const CATEGORIES = Object.values(Category);
@@ -78,72 +74,89 @@ export function CampaignFormClient({ sponsors }: Props) {
   }
 
   return (
-    <div className="max-w-xl space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={() => router.push('/campaigns')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />Back
-        </Button>
-        <h1 className="text-lg font-semibold">New Campaign</h1>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="New Campaign"
+        description="Create a campaign for sponsor review and approval"
+        actions={
+          <Button variant="outline" size="sm" onClick={() => router.push('/campaigns')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />Back
+          </Button>
+        }
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1">
-          <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
-          <Input id="title" value={form.title} onChange={(e) => set('title', e.target.value)} required />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="content">Content <span className="text-destructive">*</span></Label>
-          <Textarea id="content" value={form.content} onChange={(e) => set('content', e.target.value)} required minLength={10} maxLength={2000} rows={4} className="resize-none" />
-          <p className="text-xs text-muted-foreground text-right">{form.content.length}/2000</p>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label>Category</Label>
-            <Select value={form.category} onValueChange={(v) => set('category', v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label>Sponsor</Label>
-            <Select value={form.sponsorId} onValueChange={(v) => set('sponsorId', v)}>
-              <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">None</SelectItem>
-                {sponsors.map((s) => <SelectItem key={s.id} value={s.id}>{s.displayName}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="budget">Budget (ZAR)</Label>
-            <Input id="budget" type="number" min={0} step={0.01} value={form.budget} onChange={(e) => set('budget', e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="scheduledAt">Schedule</Label>
-            <Input id="scheduledAt" type="datetime-local" value={form.scheduledAt} onChange={(e) => set('scheduledAt', e.target.value)} />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Target Regions <span className="text-destructive">*</span></Label>
-          <div className="flex flex-wrap gap-2">
-            {REGIONS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => toggleRegion(r)}
-                className={`rounded-md border px-2 py-1 text-xs transition-colors ${form.targetRegions.includes(r) ? 'bg-primary text-primary-foreground border-primary' : 'border-input hover:bg-accent'}`}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-        </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+      <form onSubmit={handleSubmit}>
+        <div className="max-w-2xl space-y-6">
+          <Card>
+            <CardHeader><CardTitle>Content</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
+                <Input id="title" value={form.title} onChange={(e) => set('title', e.target.value)} required />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="content">Content <span className="text-destructive">*</span></Label>
+                <Textarea id="content" value={form.content} onChange={(e) => set('content', e.target.value)} required minLength={10} maxLength={2000} rows={4} className="resize-none" />
+                <p className="text-xs text-muted-foreground text-right">{form.content.length}/2000</p>
+              </div>
+            </CardContent>
+          </Card>
 
-        <div className="flex justify-end gap-2 pt-2 border-t">
-          <Button type="button" variant="outline" onClick={() => router.push('/campaigns')}>Cancel</Button>
-          <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Create Campaign'}</Button>
+          <Card>
+            <CardHeader><CardTitle>Classification</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label>Category</Label>
+                <Select value={form.category} onValueChange={(v) => set('category', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label>Sponsor</Label>
+                <Select value={form.sponsorId} onValueChange={(v) => set('sponsorId', v)}>
+                  <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {sponsors.map((s) => <SelectItem key={s.id} value={s.id}>{s.displayName}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="budget">Budget (ZAR)</Label>
+                <Input id="budget" type="number" min={0} step={0.01} value={form.budget} onChange={(e) => set('budget', e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="scheduledAt">Schedule</Label>
+                <Input id="scheduledAt" type="datetime-local" value={form.scheduledAt} onChange={(e) => set('scheduledAt', e.target.value)} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>Target Regions <span className="text-destructive">*</span></CardTitle></CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {REGIONS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => toggleRegion(r)}
+                    className={`rounded-md border px-2 py-1 text-xs transition-colors ${form.targetRegions.includes(r) ? 'bg-primary text-primary-foreground border-primary' : 'border-input hover:bg-accent'}`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => router.push('/campaigns')}>Cancel</Button>
+            <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Create Campaign'}</Button>
+          </div>
         </div>
       </form>
     </div>
