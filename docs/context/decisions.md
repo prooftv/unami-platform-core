@@ -127,3 +127,29 @@ fan-out over existing single-ID Edge Function endpoints.
 No new bulk endpoints are added to Edge Functions.
 The `BulkActionBar` component in `packages/ui` surfaces results — partial failures are shown,
 not silently swallowed. Audit logs are written per-operation by the existing endpoint handlers.
+
+## D-025: Shell Framework — infrastructure only, composition per application
+`packages/ui/src/shell/` will become a generic shell framework providing infrastructure primitives:
+`ShellProvider`, `ShellSidebar`, `ShellHeader`, `ShellContent`, `ShellFooter`,
+`ShellBreadcrumbs`, `ShellSearch`, `ShellCommandPalette`, `ShellPreferences`,
+`ShellUserMenu`, `ShellNotifications`, `ShellMobileNavigation`.
+
+What the shell framework does NOT contain:
+- Navigation items
+- Logos or branding
+- Product-specific modules
+- Routing assumptions
+- Any reference to Moments, Umkhandlu, Spree, or any application
+
+Each application composes its own shell on top of these primitives:
+- `apps/admin` → `AppSidebar`, `MomentsHeader`, `MomentsNavigation`
+- `apps/umkhandlu` → `UmkhandluSidebar`, `UmkhandluHeader`
+- `apps/spree` → `SpreeSidebar`
+
+The current `packages/ui/src/shell/` components (`AppShell`, `Sidebar`, `Header`, `MobileNav`,
+`ContentLayout`) are placeholders from Phase 3. They are NOT the shell framework.
+They must not be consumed by any application until the shell framework milestone is complete.
+
+This work is a dedicated platform milestone — not an unplanned refactor.
+It is scheduled after Phase 16 (package rename) is complete.
+`apps/admin` remains the reference implementation that the shell framework will be extracted from.

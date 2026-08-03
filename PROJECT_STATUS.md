@@ -186,6 +186,41 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 
 ---
 
+### Phase 17 — Shell Framework Extraction
+**Goal:** Extract a generic, reusable shell framework into `packages/ui/src/shell/` so every
+future application inherits polished shell infrastructure without inheriting any product.
+
+**What gets extracted (infrastructure only):**
+- `ShellProvider` — sidebar state, cookie persistence, keyboard shortcuts
+- `ShellSidebar` — responsive collapse, icon mode, mobile Sheet
+- `ShellHeader` — slot-based (leading, title, actions, userArea)
+- `ShellContent` — content area with layout variants
+- `ShellFooter`
+- `ShellBreadcrumbs`
+- `ShellSearch` — command palette trigger
+- `ShellCommandPalette` — generic, app provides items
+- `ShellPreferences` — theme, density, motion, scale
+- `ShellUserMenu` — slot-based
+- `ShellNotifications` — slot-based
+- `ShellMobileNavigation`
+
+**What stays in each app (composition):**
+- Nav items, logo, branding
+- Product-specific sidebar (`AppSidebar`, `UmkhandluSidebar`, etc.)
+- Route structure
+
+**Reference implementation:** `apps/admin` — extracted from, not replaced.
+
+| Task | Status |
+|---|---|
+| Audit `apps/admin` shell components for generic vs product-specific split | ⏳ |
+| Implement `Shell*` primitives in `packages/ui/src/shell/` | ⏳ |
+| Migrate `apps/admin` to consume `Shell*` primitives | ⏳ |
+| Remove Phase 3 placeholder shell components | ⏳ |
+| Document shell composition pattern for future apps | ⏳ |
+
+---
+
 ## Architecture Freeze
 
 The platform foundation is **feature-frozen**. Do not:
@@ -221,6 +256,7 @@ Fix bugs only. All new work is product workflow completion.
 |---|---|---|
 | Moments-domain logic in shared package | `packages/shared/src/` | Refactor to `apps/moments/domain` when second app onboards |
 | Package scope `@moments/*` | All packages | Rename to `@unami/*` before Phase 16 |
+| Phase 3 shell placeholders | `packages/ui/src/shell/` | `AppShell`, `Sidebar`, `Header`, `MobileNav` are unfinished stubs. Do not consume. Replace with `Shell*` framework in Phase 17 (D-025) |
 
 ---
 
