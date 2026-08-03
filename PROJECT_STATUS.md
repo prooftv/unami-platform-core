@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 16 — Platform Expansion (in progress) |
+| Phase | Phase 17A — Public PWA Completion |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `9e22e80` |
+| Last commit | `586d238` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -186,16 +186,71 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 
 ---
 
-### Phase 17 — Moments Completion & Platform Validation
-**Goal:** Moments is a complete, production-ready product. Platform is validated as multi-app capable.
-Focus: Moments workflow gaps, WhatsApp production readiness, platform v1.0 tag.
+### Phase 17A — Public PWA Completion
+**Goal:** `apps/web` becomes the actual Moments community experience.
+Data source: Supabase via existing public API. No Sanity yet.
 
 | Task | Status |
 |---|---|
-| WhatsApp production credentials configured in Supabase | ⏳ Ops |
-| HELP/STATUS/MYAUTHORITY webhook reply handlers (Edge Functions) | ⏳ |
+| Homepage — hero, featured moments, category navigation | ⏳ |
+| Moment feed — proper card design, urgency, sponsor attribution | ⏳ |
+| Moment detail — full content, media, share, related | ⏳ |
+| Subscribe page — clear WhatsApp opt-in flow | ⏳ |
+| About / Help / Privacy static pages | ⏳ |
+| Sponsor directory page | ⏳ |
+| PWA install prompt, offline page polish | ⏳ |
+
+---
+
+### Phase 17B — Sanity CMS Setup
+**Goal:** Sanity project created, schema defined, Studio deployed. No content yet.
+
+| Task | Status |
+|---|---|
+| Sanity project created | ⏳ |
+| Schema: `homePage`, `featuredStory`, `sponsorPage`, `helpArticle`, `aboutPage` | ⏳ |
+| Sanity Studio deployed | ⏳ |
+| `@sanity/client` added to `apps/web` | ⏳ |
+| Environment variables documented | ⏳ |
+
+---
+
+### Phase 17C — Connect PWA to Sanity
+**Goal:** Editorial pages driven by Sanity. Operational pages remain Supabase.
+
+| Task | Status |
+|---|---|
+| Homepage hero + featured stories → Sanity | ⏳ |
+| About / Help / Privacy → Sanity | ⏳ |
+| Sponsor pages → Sanity | ⏳ |
+| ISR + on-demand revalidation webhook | ⏳ |
+
+---
+
+### Phase 17D — WhatsApp Production
+**Goal:** End-to-end broadcast delivery working in production.
+
+| Task | Status |
+|---|---|
+| WhatsApp Cloud API credentials configured in Supabase secrets | ⏳ Ops |
+| HELP reply handler (Edge Function) | ⏳ |
+| STATUS reply handler (Edge Function) | ⏳ |
+| MYAUTHORITY reply handler (Edge Function) | ⏳ |
 | Live webhook end-to-end test | ⏳ |
-| Platform tagged `v1.0.0` | ⏳ |
+
+---
+
+### Phase 18 — Moments Launch
+**Goal:** Moments publicly available and production-ready.
+
+| Task | Status |
+|---|---|
+| Domain configured | ⏳ |
+| Vercel deployments (`apps/web`, `apps/admin`) | ⏳ |
+| Supabase project on paid plan | ⏳ |
+| Sanity project on appropriate plan | ⏳ |
+| WhatsApp Business Account verified | ⏳ |
+| First real broadcast sent | ⏳ |
 
 ---
 

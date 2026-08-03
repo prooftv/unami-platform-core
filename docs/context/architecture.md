@@ -182,12 +182,17 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 
 ## Current Phase
 
-**Phase 17 — Moments Product Completion**
+**Phase 17A — Public PWA Completion**
 
-Platform is v1.0 and frozen. Focus is Moments production readiness:
-- WhatsApp production credentials (ops)
-- HELP/STATUS/MYAUTHORITY webhook reply handlers (Edge Functions)
-- Live end-to-end broadcast test
+Platform is v1.0 and frozen. `apps/web` is being built into the full Moments community
+experience. Data source is Supabase via existing public API. Sanity CMS is Phase 17B.
+
+Roadmap:
+- 17A: Complete `apps/web` as the Moments public product (Supabase-driven)
+- 17B: Sanity project setup, schema, Studio deployed
+- 17C: Connect `apps/web` editorial pages to Sanity
+- 17D: WhatsApp production credentials + reply handlers
+- 18: Launch
 
 ---
 
@@ -201,5 +206,5 @@ Platform is v1.0 and frozen. Focus is Moments production readiness:
 
 ## What Is Active
 
-- Phase 17: HELP/STATUS/MYAUTHORITY webhook reply handlers
-- Phase 17: WhatsApp production credentials + live broadcast test
+- Phase 17A: `apps/web` — homepage, feed, detail, subscribe, static pages, PWA polish
+- Phase 17B (next): Sanity project + schema + Studio

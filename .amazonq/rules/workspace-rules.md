@@ -24,9 +24,22 @@
 - Fix bugs only — no speculative improvements to infrastructure
 
 ## Current priority
-Phase 17 — Moments Product Completion.
-Platform is v1.0 and frozen. Focus: WhatsApp production readiness and webhook reply handlers.
+Phase 17A — Public PWA Completion.
+The platform is v1.0 and frozen. The next objective is to complete the public-facing Moments
+product. Build `apps/web` into the primary community experience using Supabase for operational
+data now, Sanity CMS for editorial content in Phase 17B/17C.
+Do not modify platform packages, Edge Functions, or `apps/admin` unless a bug requires it.
+WhatsApp production integration is intentionally deferred to Phase 17D — after the public product exists.
 Do not scaffold other applications (Umkhandlu, Spree, BeatsChain, etc.) — that is future work.
+
+## Sanity CMS rules (Phase 17B onward)
+- Sanity is added to `apps/web` only — never `packages/`, `apps/admin`, or Edge Functions
+- Sanity owns editorial content: homepage, stories, sponsor pages, help, about, privacy
+- Supabase owns operational data: broadcasts, subscribers, moderation, analytics
+- `apps/web` queries Sanity directly via `@sanity/client` — no Edge Function proxy
+- Sanity Studio is a separate deployment — not inside this monorepo
+- ISR + on-demand revalidation for all Sanity-driven pages
+- The moment feed, detail, region, and category pages remain Supabase-driven — unchanged
 
 ## Layer rules
 - `packages/ui` — no Supabase, no auth, no domain knowledge, no app-specific components
