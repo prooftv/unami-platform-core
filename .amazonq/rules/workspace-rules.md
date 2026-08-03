@@ -14,24 +14,33 @@
 4. Read `docs/context/decisions.md` for all architectural decisions
 5. Check `docs/DATABASE_SCHEMA.md` before any schema changes
 
-## Platform is feature-frozen
+## Platform is frozen at v1.0
 - Do not restructure `packages/`
 - Do not add new packages unless a concrete product requirement demands it
-- Do not redesign the admin shell — it is the permanent shell
+- Do not add domain logic to `packages/shared` — it contains only platform primitives
+- Do not add application-specific components to `packages/ui` — it contains only design system primitives
+- Do not redesign the admin shell — it belongs to Moments, not the platform
 - Do not create new abstraction layers
 - Fix bugs only — no speculative improvements to infrastructure
 
 ## Current priority
-Phase 16 — Platform Expansion.
-Phase 16.5 (Admin Completion) is complete. All admin modules have full CRUD.
-Phase 16 work: rename complete (`@moments/*` → `@unami/*`). Next: extract Moments domain from `packages/shared`, scaffold second application.
+Phase 17 — Moments Product Completion.
+Platform is v1.0 and frozen. Focus: WhatsApp production readiness and webhook reply handlers.
+Do not scaffold other applications (Umkhandlu, Spree, BeatsChain, etc.) — that is future work.
 
 ## Layer rules
-- `packages/ui` — no Supabase, no auth, no app-specific logic
-- `packages/shared` — no React, no Next.js, no Supabase
+- `packages/ui` — no Supabase, no auth, no domain knowledge, no app-specific components
+- `packages/shared` — no React, no Next.js, no Supabase, no Moments-specific logic
+- `packages/api` — typed HTTP clients only, domain types inlined as string literals
 - `supabase/functions/` — only layer that touches the database
-- `apps/admin` — consume packages, never reimplement platform capabilities
-- `apps/web` — not yet built, Phase 14
+- `apps/admin` — owns Moments domain (`src/domain/moments/`), shell, and all admin modules
+- `apps/web` — owns public routing, no auth, no Supabase client
+
+## Domain ownership rule (D-027)
+- Moments domain lives in `apps/admin/src/domain/moments/` and `apps/web/src/domain/moments.ts`
+- Never move domain logic back into `packages/shared`
+- Future applications own their own domain — never share domain across apps
+- The test: deleting Moments must leave `packages/` compiling without modification
 
 ## Component rules (apps/admin)
 - Use shadcn primitives from `src/components/ui/` for low-level elements (Input, Select, Label, Textarea, Dialog, etc.)
@@ -46,7 +55,7 @@ Phase 16 work: rename complete (`@moments/*` → `@unami/*`). Next: extract Mome
   - `PageSkeleton`, `TableSkeleton` — loading states (via loading.tsx)
   - `AnalyticsCard`, `LineChart`, `BarChart`, `PieChart`, `AreaChart` — charts and analytics
   - `ActivityFeed`, `QuickActions` — dashboard feed and action widgets
-- Do NOT use from `@unami/ui`: `AppShell`, `Sidebar`, `Header`, `MobileNav` — admin uses its own shadcn shell
+- Do NOT use from `@unami/ui`: `AppShell`, `Sidebar`, `Header`, `MobileNav` — Phase 3 stubs, do not consume
 - Badge variants: `default | secondary | destructive | outline` only — no `warning`, `success`, `info`
 - `data-active={isActive || undefined}` — never `data-active={isActive}`
 

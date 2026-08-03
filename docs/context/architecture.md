@@ -1,8 +1,8 @@
 # Architecture Context
 
 ## Project
-Moments v2 is a WhatsApp-first community information platform built on Unami Platform Core.
-The platform infrastructure is complete. Active work is product workflow completion.
+Unami Platform Core v1.0 — a multi-application platform. Moments is the first product built on it.
+The platform layer is complete and application-agnostic. Active work is Moments product completion.
 
 ## Repository
 https://github.com/prooftv/unami-platform-core
@@ -20,16 +20,57 @@ https://github.com/prooftv/unami-platform-core
 
 ---
 
+## Platform vs Application — The Core Distinction
+
+The platform owns infrastructure. Applications own experience.
+
+**Platform layer** (`packages/`) — shared by every application, contains no business domain:
+- `@unami/ui` — design system primitives: Button, Card, Input, Table, Badge, Dialog, Charts, Theme Engine, Preferences, Loading/Empty/Error states
+- `@unami/shared` — platform contracts: RBAC, Language, Pagination, Utilities, Formatting, Auth validators
+- `@unami/api` — typed HTTP clients for Edge Functions
+
+**Application layer** (`apps/`) — each application owns its shell, navigation, dashboard, domain, and workflows:
+- `apps/admin` — Moments admin. Owns its sidebar, header, dashboard widgets, and `domain/moments/`
+- `apps/web` — Moments public PWA. Owns its layout, public routing, and `domain/moments.ts`
+
+**The test:** If Moments were deleted entirely, `packages/shared`, `packages/ui`, and `packages/api` must compile without modification. As of v1.0, this is true.
+
+**What does NOT belong in `packages/ui`:**
+- Sidebar navigation
+- Dashboard widgets
+- Application-specific layouts
+- Any component that references a product domain
+
+Each application builds its own shell. The platform provides the primitives to build with.
+
+---
+
 ## Layer Boundaries
 
 | Layer | Package | Status | Rule |
 |---|---|---|---|
-| Presentation | `packages/ui` | ✅ Complete | No Supabase, no auth, no app-specific logic |
-| Shared primitives | `packages/shared` | ✅ Complete | No React, no Next.js, no Supabase |
-| API contracts | `packages/api` | ✅ Complete | Frontend never calls Supabase directly |
+| Design system + primitives | `packages/ui` | ✅ Complete | No Supabase, no auth, no domain knowledge |
+| Platform contracts | `packages/shared` | ✅ Complete | No React, no Next.js, no Supabase, no domain |
+| API clients | `packages/api` | ✅ Complete | Typed HTTP only — domain types inlined as string literals |
 | Edge Functions | `supabase/functions/` | ✅ Complete | Only layer that touches the database |
-| Admin app | `apps/admin` | ✅ Complete | Consumes packages, never reimplements platform |
-| Public PWA | `apps/web` | ⏳ Not started | Phase 14 |
+| Moments admin | `apps/admin` | ✅ Complete | Owns Moments domain, shell, all modules |
+| Moments public PWA | `apps/web` | ✅ Complete | Owns public routing, no auth, no Supabase client |
+
+---
+
+## Domain Ownership (D-027)
+
+`packages/shared` contains only platform-generic primitives:
+`Language`, `ModerationStatus`, `MessageType`, `AdminRole`, `Pagination`, `PaginatedResponse`,
+`AdminUser`, `SystemSetting`, `Message`, auth validators, settings validators, phone/formatting helpers.
+
+Moments domain lives in the Moments applications:
+- `apps/admin/src/domain/moments/` — enums, constants, types, validators, helpers
+- `apps/web/src/domain/moments.ts` — Region/Category const objects for public routing only
+
+`packages/api` inlines Moments domain types as string literal unions. No domain dependency.
+
+Future applications follow the same pattern: each owns its domain, nothing leaks into `packages/`.
 
 ---
 
@@ -38,7 +79,7 @@ https://github.com/prooftv/unami-platform-core
 ```
 apps/admin or apps/web
   → packages/api (typed client)
-      createApiClient({ baseUrl, token: jwt })       ← admin: user JWT
+      createApiClient({ baseUrl, token: jwt })        ← admin: user JWT
       createPublicApiClient({ baseUrl, token: anon }) ← web: anon key
     → supabase/functions/* (Edge Function, Deno)
       → Supabase DB (service role key, RLS enforced)
@@ -48,12 +89,12 @@ No application code calls Supabase directly. No exceptions.
 
 ---
 
-## Edge Functions (Complete)
+## Edge Functions (15 — Complete)
 
 | Function | Routes | Auth |
 |---|---|---|
 | `auth` | `GET /auth` | JWT validation → role + authority_id |
-| `moments` | `GET/POST/PUT/DELETE /moments`, `POST /moments/:id/schedule`, `GET/POST /moments/public` | requireAuth (admin routes), public (public routes) |
+| `moments` | `GET/POST/PUT/DELETE /moments`, `POST /moments/:id/schedule`, `GET/POST /moments/public` | requireAuth (admin), public (public routes) |
 | `broadcast` | `POST /broadcast/:momentId` | requireAuth — content_admin+ |
 | `retry-batches` | `POST /retry-batches` | requireAuth — content_admin+ |
 | `broadcasts` | `GET /broadcasts`, `GET /broadcasts/:id` | requireAuth |
@@ -67,60 +108,37 @@ No application code calls Supabase directly. No exceptions.
 | `settings` | `GET/POST /settings/flags`, `/system` | requireAuth — superadmin for writes |
 | `media` | `POST /media`, `GET /media`, `DELETE /media/:id` | requireAuth |
 | `user-profiles` | `GET /user-profiles`, `GET /user-profiles/:id` | requireAuth |
-| `retry-batches` | `POST /retry-batches` | requireAuth — content_admin+ |
 
 ---
 
 ## API Client (`packages/api`)
 
 Two factories:
-- `createApiClient({ baseUrl, token })` — authenticated, returns all 10 domain clients. Used by `apps/admin`.
-- `createPublicApiClient({ baseUrl, token })` — uses anon key, returns `{ moments }` public client only. Used by `apps/web`.
+- `createApiClient({ baseUrl, token })` — authenticated, returns all domain clients. Used by `apps/admin`.
+- `createPublicApiClient({ baseUrl, token })` — anon key, returns `{ moments }` public client only. Used by `apps/web`.
 
-All response types flow from `packages/shared` types — no duplication.
-
----
-
-## Public PWA (`apps/web`)
-
-**Shell:** `(public)/layout.tsx` — sticky nav header + footer with region/category links. No auth.
-
-**Routes:**
-- `/` — moment feed (broadcasted + publish_to_pwa=true), paginated
-- `/moments/[id]` — moment detail, WhatsApp share button
-- `/region/[region]` — feed filtered by region
-- `/category/[category]` — feed filtered by category
-- `/search` — keyword search across moments
-- `/subscribe` — WhatsApp deep link opt-in flow
-
-**Data access:** `getPublicApiClient()` — anon key, calls `/moments/public` endpoints only.
-**No auth, no Supabase client, no `@supabase/ssr`.**
+Domain types (Region, Category, MomentStatus, etc.) are inlined as string literal unions in `packages/api/src/types/index.ts`.
+No import from `apps/admin/domain`. The API package has no domain dependency.
 
 ---
 
-## Admin App (`apps/admin`)
+## Moments Admin (`apps/admin`)
 
-**Shell:** `(admin)/layout.tsx` owns the full shell — auth guard, sidebar, header. All 11 routes inherit automatically.
+**Shell:** `(admin)/layout.tsx` owns the full shell — auth guard, sidebar, header. All routes inherit automatically.
+The admin shell belongs to Moments. It is not extracted into `packages/ui`.
 
-**Routes:**
-- `/dashboard` — 7-section command centre, 17 widgets, live data
-- `/moments` — list, create, detail + broadcast trigger
-- `/broadcasts` — delivery history (broken — see known issues)
-- `/subscribers` — POPIA-masked list, KPIs, filters
-- `/moderation` — approve/reject queue, advisories panel
-- `/authority` — profiles table, audit log
-- `/sponsors` — tier list, KPIs
-- `/campaigns` — status list, budget utilisation
-- `/settings` — feature flags, system settings, session info
+**Domain:** `apps/admin/src/domain/moments/` — all Moments-specific enums, constants, types, validators, helpers.
+
+**Routes:** `/dashboard`, `/moments`, `/broadcasts`, `/subscribers`, `/moderation`, `/authority`, `/sponsors`, `/campaigns`, `/media`, `/settings`
 
 **Component policy:**
-- `@unami/ui` shared primitives for all structural patterns: `PageHeader`, `KPIGrid`, `MetricCard`,
+- `@unami/ui` shared primitives for structural patterns: `PageHeader`, `KPIGrid`, `MetricCard`,
   `TableToolbar`, `TablePagination`, `BulkActionBar`, `DataTable`, `EmptyState`, `ErrorState`,
   `PageSkeleton`, `TableSkeleton`, `StatusBadge`, `AnalyticsCard`, `LineChart`, `BarChart`,
   `PieChart`, `AreaChart`, `ActivityFeed`, `QuickActions`
 - shadcn primitives from `src/components/ui/` for low-level elements: `Input`, `Select`, `Label`,
   `Textarea`, `Dialog`, `Button`, `Badge`, `Card`, etc.
-- Do NOT use from `@unami/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav`
+- Do NOT use from `@unami/ui` in admin: `AppShell`, `Sidebar`, `Header`, `MobileNav` — those are Phase 3 stubs
 
 **Page layout standard (D-026):**
 
@@ -134,6 +152,18 @@ All response types flow from `packages/shared` types — no duplication.
 - Each form section in its own `Card` — no bare `<div>` with `<p className="text-sm font-medium">` labels
 - `getToken` always from `@/lib/auth/token` — never copy-pasted
 - Error: `text-destructive` — Success: `text-muted-foreground` — never raw colour classes
+
+---
+
+## Moments Public PWA (`apps/web`)
+
+**Shell:** `(public)/layout.tsx` — sticky nav header + footer with region/category links. No auth.
+**Domain:** `apps/web/src/domain/moments.ts` — Region/Category const objects for routing only.
+
+**Routes:** `/` (feed), `/moments/[id]`, `/region/[region]`, `/category/[category]`, `/search`, `/subscribe`
+
+**Data access:** `getPublicApiClient()` — anon key, calls `/moments/public` endpoints only.
+No auth, no Supabase client, no `@supabase/ssr`.
 
 ---
 
@@ -152,23 +182,24 @@ System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_
 
 ## Current Phase
 
-**Current Phase:** Phase 16 — Platform Expansion (in progress)
+**Phase 17 — Moments Product Completion**
 
-Package rename `@moments/*` → `@unami/*` complete. Shared UI layer standardised (D-026).
-Next: extract Moments domain from `packages/shared`, scaffold second application.
+Platform is v1.0 and frozen. Focus is Moments production readiness:
+- WhatsApp production credentials (ops)
+- HELP/STATUS/MYAUTHORITY webhook reply handlers (Edge Functions)
+- Live end-to-end broadcast test
 
 ---
 
 ## What Is Frozen
 
 - Database schema (add via new numbered migrations only)
-- `packages/shared`, `packages/ui`, `packages/api` — no restructuring
-- Admin shell — no redesigns
+- `packages/shared`, `packages/ui`, `packages/api` — no restructuring, no new domain logic
+- Admin shell — no redesigns, no extraction into packages
 - Edge Function auth pattern — `requireAuth()` is the standard
+- `packages/ui/src/shell/` — Phase 3 stubs, do not consume, do not extend
 
 ## What Is Active
 
-- Phase 16: extract Moments domain from `packages/shared`, scaffold second application
-- Phase 17: Shell Framework Extraction (planned)
-- Form/detail page layout standardisation across all admin modules (D-026)
-- Future: `apps/web` public PWA (Phase 14)
+- Phase 17: HELP/STATUS/MYAUTHORITY webhook reply handlers
+- Phase 17: WhatsApp production credentials + live broadcast test
