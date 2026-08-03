@@ -128,7 +128,26 @@ No new bulk endpoints are added to Edge Functions.
 The `BulkActionBar` component in `packages/ui` surfaces results — partial failures are shown,
 not silently swallowed. Audit logs are written per-operation by the existing endpoint handlers.
 
-## D-026: Page layout — consistent structure across all admin pages
+## D-027: Domain extraction — Moments domain lives in apps/admin, not packages/shared
+`packages/shared` contains only platform-generic primitives: `Language`, `ModerationStatus`,
+`MessageType`, `AdminRole`, `Pagination`, `PaginatedResponse`, `AdminUser`, `SystemSetting`,
+`Message`, auth validators, settings validators, phone/formatting/failOpen helpers.
+
+All Moments-specific domain lives in `apps/admin/src/domain/moments/`:
+enums (MomentStatus, Region, Category, UrgencyLevel, SponsorTier, CampaignStatus, etc.),
+constants (LIMITS, COMMANDS, BLAST_RADIUS_BY_LEVEL, MCP, BUDGET, PROHIBITED_TERMS, etc.),
+types (Moment, Sponsor, Campaign, Broadcast, AuthorityProfile, etc.),
+validators (CreateMomentSchema, CreateCampaignSchema, etc.),
+helpers (isBroadcastable, isEditable, formatMomentForWhatsApp, etc.).
+
+`packages/api` inlines Moments domain types as string literal unions — it has no dependency
+on the domain package. This keeps the API client usable by any future application.
+
+`apps/web` has its own `src/domain/moments.ts` with only the const objects it needs
+for public routing (Region, Category). It does not import from `apps/admin`.
+
+The rule: if deleting Moments entirely, `packages/shared`, `packages/ui`, and `packages/api`
+must still compile without modification. As of Phase 16, this is true.
 
 **List pages:**
 - `PageHeader` (title, description, primary action button)

@@ -14,7 +14,7 @@ Read this first when resuming work or starting a new session.
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | pending |
+| Last commit | `9e22e80` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -32,7 +32,7 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 | `packages/ui` | ✅ Complete | 100% |
 | `packages/api` | ✅ Complete | 100% |
 | `apps/admin` shell + dashboard | ✅ Complete | 100% |
-| `apps/web` public PWA | ⚠️ Not started | 0% |
+| `apps/web` public PWA | ✅ Complete | 100% |
 
 ---
 
@@ -173,51 +173,29 @@ The infrastructure phase is complete. The platform is no longer the bottleneck.
 
 ---
 
-### Phase 16 — Platform Expansion
-**Goal:** Second application onboards onto the platform. Package scope renamed.
+### Phase 16 — Platform Expansion ✅
+**Goal:** Platform becomes application-agnostic. Package scope renamed. Domain boundaries enforced.
 
 | Task | Status |
 |---|---|
 | Rename `@moments/*` → `@unami/*` across all packages and apps | ✅ |
-| Extract Moments domain enums from `packages/shared` into `apps/admin/domain` | ⏳ |
-| Spree Operations Dashboard scaffold (`apps/spree`) | ⏳ |
-| BeatsChain domain package scaffold (`packages/domain/beatschain`) | ⏳ |
-| Umkhandlu governance domain scaffold | ⏳ |
+| Extract Moments domain from `packages/shared` into `apps/admin/src/domain/moments/` | ✅ |
+| `packages/shared` contains only platform-generic primitives | ✅ |
+| `packages/api` inlines domain types — no domain dependency | ✅ |
+| `apps/web` domain constants isolated in `apps/web/src/domain/moments.ts` | ✅ |
 
 ---
 
-### Phase 17 — Shell Framework Extraction
-**Goal:** Extract a generic, reusable shell framework into `packages/ui/src/shell/` so every
-future application inherits polished shell infrastructure without inheriting any product.
-
-**What gets extracted (infrastructure only):**
-- `ShellProvider` — sidebar state, cookie persistence, keyboard shortcuts
-- `ShellSidebar` — responsive collapse, icon mode, mobile Sheet
-- `ShellHeader` — slot-based (leading, title, actions, userArea)
-- `ShellContent` — content area with layout variants
-- `ShellFooter`
-- `ShellBreadcrumbs`
-- `ShellSearch` — command palette trigger
-- `ShellCommandPalette` — generic, app provides items
-- `ShellPreferences` — theme, density, motion, scale
-- `ShellUserMenu` — slot-based
-- `ShellNotifications` — slot-based
-- `ShellMobileNavigation`
-
-**What stays in each app (composition):**
-- Nav items, logo, branding
-- Product-specific sidebar (`AppSidebar`, `UmkhandluSidebar`, etc.)
-- Route structure
-
-**Reference implementation:** `apps/admin` — extracted from, not replaced.
+### Phase 17 — Moments Completion & Platform Validation
+**Goal:** Moments is a complete, production-ready product. Platform is validated as multi-app capable.
+Focus: Moments workflow gaps, WhatsApp production readiness, platform v1.0 tag.
 
 | Task | Status |
 |---|---|
-| Audit `apps/admin` shell components for generic vs product-specific split | ⏳ |
-| Implement `Shell*` primitives in `packages/ui/src/shell/` | ⏳ |
-| Migrate `apps/admin` to consume `Shell*` primitives | ⏳ |
-| Remove Phase 3 placeholder shell components | ⏳ |
-| Document shell composition pattern for future apps | ⏳ |
+| WhatsApp production credentials configured in Supabase | ⏳ Ops |
+| HELP/STATUS/MYAUTHORITY webhook reply handlers (Edge Functions) | ⏳ |
+| Live webhook end-to-end test | ⏳ |
+| Platform tagged `v1.0.0` | ⏳ |
 
 ---
 
@@ -254,7 +232,7 @@ Fix bugs only. All new work is product workflow completion.
 
 | Item | Location | Resolution |
 |---|---|---|
-| Moments-domain logic in shared package | `packages/shared/src/` | Refactor to `apps/moments/domain` when second app onboards |
+| Moments-domain logic in shared package | `packages/shared/src/` | ✅ Resolved — extracted to `apps/admin/src/domain/moments/` in Phase 16 |
 | Package scope `@moments/*` | All packages | ✅ Renamed to `@unami/*` in Phase 16 |
 | Phase 3 shell placeholders | `packages/ui/src/shell/` | `AppShell`, `Sidebar`, `Header`, `MobileNav` are unfinished stubs. Do not consume. Replace with `Shell*` framework in Phase 17 (D-025) |
 
@@ -266,7 +244,7 @@ Fix bugs only. All new work is product workflow completion.
 unami-platform-core/
 ├── apps/
 │   ├── admin/          Next.js 16 — Moments admin (complete — all modules, full CRUD)
-│   └── web/            Next.js 16 — Moments public PWA (complete)
+│   └── web/            Next.js 16 — Moments public PWA (complete — feed, detail, regions, categories, search, subscribe, PWA)
 ├── packages/
 │   ├── ui/             @unami/ui — design system, charts, theme engine (complete)
 │   ├── shared/         @unami/shared — enums, types, validators, constants (complete)
