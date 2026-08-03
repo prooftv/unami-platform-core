@@ -17,7 +17,7 @@ export function createAuthClient(config: ApiConfig) {
     },
 
     me(): Promise<AuthSession> {
-      return apiFetch(config, '/auth/me');
+      return apiFetch(config, '/auth');
     },
   };
 }
