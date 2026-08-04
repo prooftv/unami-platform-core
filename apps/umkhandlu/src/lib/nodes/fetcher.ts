@@ -1,4 +1,4 @@
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { getNodeClient } from '@/lib/api/client';
 import type { NodeWithHealth } from '@/app/(umkhandlu)/dashboard/widgets/OverviewWidgets';
 import type {
@@ -35,7 +35,7 @@ async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 export async function getRegisteredNodes(): Promise<GovernanceNodeRow[]> {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('governance_nodes')
     .select('*')
@@ -46,7 +46,7 @@ export async function getRegisteredNodes(): Promise<GovernanceNodeRow[]> {
 }
 
 export async function getAllNodes(): Promise<GovernanceNodeRow[]> {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('governance_nodes')
     .select('*')
