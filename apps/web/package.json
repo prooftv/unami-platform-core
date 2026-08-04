@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@sanity/client": "^6",
     "@unami/api": "workspace:*",
     "@unami/shared": "workspace:*",
     "@unami/ui": "workspace:*",

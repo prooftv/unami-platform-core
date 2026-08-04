@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 17B — Content Ownership Constitution |
+| Phase | Phase 17C — Sanity Editorial Layer |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `e1e1622` |
+| Last commit | `b7fb7ba` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -97,18 +97,18 @@ Ten sub-phases. Each builds on the last. Do not begin a sub-phase until the prev
 
 ---
 
-### Phase 17B — Content Ownership Constitution ⏳
+### Phase 17B — Content Ownership Constitution ✅
 
 **Goal:** Freeze the boundary between Sanity and Supabase before writing a single line of CMS code.
 Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, not a note.
 
 | Task | Status |
 |---|---|
-| Define every content type and assign it to Sanity or Supabase | ⏳ |
-| Define immutability rules per content type | ⏳ |
-| Define editorial vs operational boundary | ⏳ |
-| Define generated vs curated vs operational content | ⏳ |
-| `CONTENT_OWNERSHIP.md` written and committed | ⏳ |
+| Define every content type and assign it to Sanity or Supabase | ✅ |
+| Define immutability rules per content type | ✅ |
+| Define editorial vs operational boundary | ✅ |
+| Define generated vs curated vs operational content | ✅ |
+| `CONTENT_OWNERSHIP.md` written and committed | ✅ |
 
 ---
 
@@ -118,14 +118,16 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 
 | Task | Status |
 |---|---|
-| Sanity project created | ⏳ |
-| Schema: `homePage`, `featuredStory`, `sponsorPage`, `helpArticle`, `aboutPage`, `privacyPage`, `authorityPage` | ⏳ |
-| GROQ queries defined for all schemas | ⏳ |
-| Sanity Studio deployed (Sanity-hosted) | ⏳ |
-| `@sanity/client` added to `apps/web` only | ⏳ |
-| `apps/web/src/lib/sanity/client.ts` — typed Sanity client | ⏳ |
-| `apps/web/src/lib/sanity/queries.ts` — all GROQ queries | ⏳ |
-| Environment variables documented in `.env.example` | ⏳ |
+| Sanity project created | ⏳ Ops |
+| Sanity Studio deployed (Sanity-hosted) | ⏳ Ops |
+| `@sanity/client` added to `apps/web` | ✅ |
+| `apps/web/src/lib/sanity/client.ts` — typed Sanity client | ✅ |
+| `apps/web/src/lib/sanity/types.ts` — TypeScript types for all schemas | ✅ |
+| `apps/web/src/lib/sanity/queries.ts` — all GROQ queries | ✅ |
+| `apps/web/src/app/api/revalidate/route.ts` — on-demand revalidation webhook | ✅ |
+| `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`, `SANITY_REVALIDATE_SECRET` in `.env.example` | ✅ |
+| Sanity schemas defined in Studio: `homePage`, `featuredStory`, `sponsorPage`, `campaignPage`, `aboutPage`, `helpArticle`, `privacyPage`, `termsPage`, `authorityPage`, `siteSettings` | ⏳ Ops |
+| Sanity webhook configured → `/api/revalidate` | ⏳ Ops |
 
 ---
 
