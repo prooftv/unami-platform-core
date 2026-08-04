@@ -1,0 +1,5 @@
+{
+  "installCommand": "cd ../.. && pnpm install",
+  "buildCommand": "cd ../.. && pnpm --filter @unami/umkhandlu build",
+  "outputDirectory": ".next"
+}
