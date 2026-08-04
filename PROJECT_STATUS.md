@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 17J — Production Validation ✅ Engineering Complete |
+| Phase | Phase 18A — Umkhandlu Intelligence Dashboard — Foundation |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `phase-17j-complete` (pending push) |
+| Last commit | `phase-17j-complete` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -284,12 +284,14 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 
 ---
 
-## Phase 18 — Umkhandlu Intelligence Dashboard
+## Phase 18 — Umkhandlu Intelligence Dashboard ⏳ Active
 
 **Goal:** The first application built on top of the mature platform. Not another CMS. Not another admin.
-The control centre — consuming multiple Umkhandlu nodes, Moments, and future applications.
+The governance operating platform for traditional authorities and community institutions.
+Validates multi-application federation — proves the platform serves more than one product.
 
-This phase begins only after Phase 17J is complete.
+Constitutional reference: `docs/abstractions/umkhandlu/` (13 documents).
+Read `12_IMPLEMENTATION_ROADMAP.md` and `09_PLATFORM_MAPPING.md` before writing any code.
 
 ```
                Node 1              Node 2              Node 3
@@ -309,7 +311,41 @@ This phase begins only after Phase 17J is complete.
                     Predictive Analytics
 ```
 
-Sub-phases defined in `docs/abstractions/umkhandlu/12_IMPLEMENTATION_ROADMAP.md`.
+### Phase 18A — Foundation ⏳ Active
+
+| Task | Status |
+|---|---|
+| Scaffold `apps/umkhandlu` — Next.js, TypeScript, Tailwind, shadcn | ⏳ |
+| Shell, navigation, domain structure (`src/domain/umkhandlu/`) | ⏳ |
+| Platform tables: `records`, `notices`, `evidence` — migration `006_platform_records.sql` | ⏳ |
+| Edge Functions: `records/index.ts`, `notices/index.ts` | ⏳ |
+| Typed clients in `packages/api` — `records`, `notices` | ⏳ |
+| `apps/umkhandlu` wired to `packages/api` typed clients | ⏳ |
+| Typecheck clean, build passing | ⏳ |
+
+### Phase 18B — Governance Records
+
+Full record CRUD, lineage chain, evidence attachments, status lifecycle, governance authority sign-off.
+
+### Phase 18C — Notice Architecture
+
+Community notices, statutory notices, notice lifecycle, notice→record lineage.
+
+### Phase 18D — Public Participation
+
+Consent-gated participation forms, webhook delivery, participation log, deadline enforcement, proof of publication.
+
+### Phase 18E — Evidence Engine
+
+Environmental context (weather auto-capture), TCRS conflict logs, Layer 5 derived outputs.
+
+### Phase 18F — Commercial Layer
+
+CSR campaign type, certified deliverables, progress log, RAG status, beneficiary tracking.
+
+### Phase 18G — Intelligence Dashboard
+
+Operator dashboard, node health view, TCRS escalation surface.
 
 ---
 
@@ -318,7 +354,7 @@ Sub-phases defined in `docs/abstractions/umkhandlu/12_IMPLEMENTATION_ROADMAP.md`
 ```
 Phase 16  Platform Independence          ✅ Complete
 Phase 17  Moments Product Completion     ✅ Engineering Complete (ops gates remaining)
-Phase 18  Umkhandlu Intelligence Dashboard  (after 17J ops sign-off)
+Phase 18  Umkhandlu Intelligence Dashboard  ⏳ Active (18A)
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence
 Phase 21  National Institutional Memory

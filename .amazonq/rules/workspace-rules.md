@@ -32,64 +32,50 @@ Do not begin a new phase until the previous phase is complete and documented.
 - Fix bugs only — no speculative improvements to infrastructure
 
 ## Current priority
-Phase 17B — Content Ownership Constitution.
+Phase 18 — Umkhandlu Intelligence Dashboard. Active.
 
-The deliverable is `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document that freezes
-the boundary between Sanity (editorial) and Supabase (operational) before any CMS code is written.
+Moments (Phase 17) is engineering-complete and frozen. Do not touch `apps/admin`, `apps/web`,
+or any Moments Edge Functions unless a production bug requires it.
 
-Do not write Sanity schemas, create a Sanity project, or add `@sanity/client` until
-`CONTENT_OWNERSHIP.md` is complete and committed. That is Phase 17C.
+Phase 18 is the first new application on the platform. It validates multi-application federation.
+The constitutional reference is `docs/abstractions/umkhandlu/` (13 documents).
+Read `12_IMPLEMENTATION_ROADMAP.md` and `09_PLATFORM_MAPPING.md` before writing any code.
 
-Do not modify platform packages, Edge Functions, or `apps/admin` unless a bug requires it.
-Do not scaffold other applications — that is post-Phase 17J work.
+Phase 18 sub-phases (in order — do not skip):
+- **18A** ⏳ Foundation — scaffold `apps/umkhandlu`, shell, navigation, domain structure, platform tables, Edge Functions
+- **18B** Governance Records — full record CRUD, lineage chain, evidence attachments, status lifecycle
+- **18C** Notice Architecture — community notices, statutory notices, notice lifecycle, notice→record lineage
+- **18D** Public Participation — consent-gated forms, webhook delivery, participation log, deadline enforcement
+- **18E** Evidence Engine — environmental context, TCRS conflict logs, Layer 5 derived outputs
+- **18F** Commercial Layer — CSR campaign type, certified deliverables, progress log, RAG status, beneficiary tracking
+- **18G** Intelligence Dashboard — operator dashboard, node health view, TCRS escalation surface
 
-## Phase 17 — Moments Product Completion
-Ten sub-phases. Each builds on the last. Do not skip ahead.
+## Phase 17 — Moments Product Completion ✅ Engineering Complete
+All ten sub-phases complete. Frozen. Ops gates remaining (see `docs/LAUNCH_CHECKLIST.md`).
 
-- **17A** ✅ Public PWA Foundation — shell, homepage, all pages, navigation, theme
-- **17B** ⏳ Content Ownership Constitution — `CONTENT_OWNERSHIP.md` frozen before any CMS code
-- **17C** Sanity Editorial Layer — schemas, Studio, GROQ queries, `@sanity/client` in `apps/web`
-- **17D** Governance Adaptation — participation, evidence, development moments (from abstraction pack)
-- **17E** Public Participation Engine — consent-gated, webhook-delivered, never stored
-- **17F** Evidence Layer — media evidence, weather context, verification
-- **17G** Commercial Layer — full project tracking, certified deliverables
-- **17H** Intelligence Foundation — aggregations, KPIs, derived metrics (no dashboard yet)
-- **17I** WhatsApp Integration — end-to-end delivery, last
-- **17J** Production Validation and Launch — Moments v2 shipped
+- **17A** ✅ Public PWA Foundation
+- **17B** ✅ Content Ownership Constitution
+- **17C** ✅ Sanity Editorial Layer
+- **17D** ✅ Governance Adaptation
+- **17E** ✅ Public Participation Engine
+- **17F** ✅ Evidence Layer
+- **17G** ✅ Commercial Layer
+- **17H** ✅ Intelligence Foundation
+- **17I** ✅ WhatsApp Integration
+- **17J** ✅ Production Validation — engineering complete, ops pending
 
-## Phase 18 — Umkhandlu Intelligence Dashboard
-Begins only after Phase 17J is complete.
-The first application built on top of the mature platform.
-Consumes multiple Umkhandlu nodes, Moments, and future applications.
-Sub-phases defined in `docs/abstractions/umkhandlu/12_IMPLEMENTATION_ROADMAP.md`.
-
-## Content ownership rules (Phase 17B — constitutional)
-The boundary between Sanity and Supabase is defined in `CONTENT_OWNERSHIP.md`.
-Until that document exists, no content architecture decisions are made in code.
-
-Summary of the boundary (detail in `CONTENT_OWNERSHIP.md`):
-- **Sanity** — editorial, curated, presentation: homepage, stories, sponsor pages, static pages, SEO
-- **Supabase** — operational, records, evidence: moments, participation, evidence, analytics, intelligence
-- **Edge Functions** — orchestration: all database access, business rules, webhook routing
-- **apps/web** — composition: editorial + operational in one Next.js application
-
-## Sanity CMS rules (Phase 17C onward)
-- Sanity is added to `apps/web` only — never `packages/`, `apps/admin`, or Edge Functions
-- Sanity owns editorial content only — as defined in `CONTENT_OWNERSHIP.md`
-- Supabase owns all operational data — moments, participation, evidence, analytics
-- `apps/web` queries Sanity directly via `@sanity/client` — no Edge Function proxy
-- Sanity Studio is a separate deployment — not inside this monorepo
-- ISR + on-demand revalidation for all Sanity-driven pages
-- Moment feed, detail, region, and category pages remain Supabase-driven — never move to Sanity
-- Sanity client lives in `apps/web/src/lib/sanity/client.ts`
-- GROQ queries live in `apps/web/src/lib/sanity/queries.ts`
-
-## Governance adaptation rules (Phase 17D onward)
-- All governance concepts trace back to `docs/abstractions/umkhandlu/`
-- The platform mapping reference is `09_PLATFORM_MAPPING.md`
-- New capabilities are additive — they do not change existing broadcasts or moments
-- Domain vocabulary follows `11_MOMENTS_ADAPTATION.md` — governance concepts adapted, not imported
-- New database tables follow `10_DATABASE_IMPACT.md` classification
+## Phase 18 rules — Umkhandlu application
+- `apps/umkhandlu` owns its own shell, navigation, and domain — it does not share with `apps/admin`
+- Umkhandlu domain lives in `apps/umkhandlu/src/domain/umkhandlu/` — never in `packages/shared`
+- Platform tables (`records`, `notices`, `evidence`, `participation_log`, `conflict_logs`) are added via new migrations
+- Umkhandlu-specific tables (`governance_nodes`, `governance_areas`, `governance_persons`) are application tables
+- New Edge Functions: `records`, `notices` — follow the same pattern as existing functions
+- New typed clients added to `packages/api` — domain types inlined as string literals, no domain dependency
+- All governance concepts trace back to `docs/abstractions/umkhandlu/` — read before implementing
+- The platform mapping reference is `09_PLATFORM_MAPPING.md` — classifies every concept as platform or domain
+- New database tables follow `10_DATABASE_IMPACT.md` classification — no speculative additions
+- The test: deleting Umkhandlu must leave `packages/` compiling without modification
+- Do not touch `apps/admin` or `apps/web` — Moments is frozen
 
 ## Layer rules
 - `packages/ui` — no Supabase, no auth, no domain knowledge, no app-specific components
@@ -202,12 +188,11 @@ Every detail/view page must follow this exact structure:
 ## Platform roadmap
 ```
 Phase 16  Platform Independence          ✅ Complete
-Phase 17  Moments Product Completion     ⏳ Active (17B)
-Phase 18  Umkhandlu Intelligence Dashboard  (after 17J)
+Phase 17  Moments Product Completion     ✅ Engineering Complete (ops pending)
+Phase 18  Umkhandlu Intelligence Dashboard  ⏳ Active (18A)
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence
 Phase 21  National Institutional Memory
 ```
 
-No new platform application begins until Phase 17J (Moments Launch) is complete.
 Each application consumes `@unami/ui`, `@unami/shared`, `@unami/api`. None modify `packages/`.
