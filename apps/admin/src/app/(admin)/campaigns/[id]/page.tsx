@@ -16,5 +16,21 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
 
   if (!campaign) notFound();
 
-  return <CampaignDetailClient campaign={campaign} transactions={transactions} session={session!} />;
+  const isCSR = campaign.campaignType === 'csr';
+  const [progressLog, deliverables] = isCSR
+    ? await Promise.all([
+        api.campaigns.progressLog(id).catch(() => []),
+        api.campaigns.deliverables(id).catch(() => []),
+      ])
+    : [[], []];
+
+  return (
+    <CampaignDetailClient
+      campaign={campaign}
+      transactions={transactions}
+      progressLog={progressLog}
+      deliverables={deliverables}
+      session={session!}
+    />
+  );
 }

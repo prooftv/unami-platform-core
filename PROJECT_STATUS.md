@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 17F — Evidence Layer ✅ Complete |
+| Phase | Phase 17G — Commercial Layer ✅ Complete |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `phase-17f-complete` (pending push) |
+| Last commit | `phase-17g-complete` (pending push) |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -37,7 +37,7 @@ The Umkhandlu Intelligence Dashboard is the second. It validates multi-applicati
 | Layer | Status |
 |---|---|
 | Database — 26 tables | ✅ Complete |
-| Edge Functions — 17 functions (+ participation, evidence) | ✅ Complete |
+| Edge Functions — 17 functions (+ participation, evidence, updated campaigns) | ✅ Complete |
 | `packages/shared` — platform primitives | ✅ Frozen |
 | `packages/ui` — design system | ✅ Frozen |
 | `packages/api` — typed clients | ✅ Frozen |
@@ -195,18 +195,25 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 
 ---
 
-### Phase 17G — Commercial Layer ⏳
+### Phase 17G — Commercial Layer ✅
 
 **Goal:** Extend campaigns to full project tracking. From abstraction document 07.
 
 | Task | Status |
 |---|---|
-| Campaign `csr` type — full project tracking | ⏳ |
-| Certified deliverables | ⏳ |
-| Progress log | ⏳ |
-| RAG project health status | ⏳ |
-| Beneficiary count and impact summary | ⏳ |
-| Lessons learned at closure | ⏳ |
+| `campaign_type` column — ad / activation / csr | ✅ |
+| `project_health` (RAG), `project_phase` columns | ✅ |
+| `project_reference`, `funding_source`, `contractor`, `beneficiaries` columns | ✅ |
+| `progress_log` JSONB — append-only | ✅ |
+| `deliverables_certified` JSONB | ✅ |
+| `impact_summary`, `lessons_learned` columns | ✅ |
+| Migration `005_commercial_layer.sql` | ✅ |
+| `CampaignType`, `ProjectHealth`, `ProjectPhase` enums in `apps/admin/src/domain/moments/enums.ts` | ✅ |
+| `packages/api` — `Campaign` type extended, `CertifiedDeliverable` + `ProgressLogEntry` interfaces | ✅ |
+| `packages/api` — `addProgress`, `certifyDeliverable`, `complete`, `progressLog`, `deliverables` methods | ✅ |
+| `CampaignFormClient` — type selector + conditional CSR project detail fields | ✅ |
+| `CampaignDetailClient` — project details card, progress log panel, deliverables panel, complete action | ✅ |
+| `campaigns` Edge Function — new routes: GET/POST progress, GET/POST deliverables, POST complete | ✅ |
 
 ---
 
@@ -303,7 +310,7 @@ Sub-phases defined in `docs/abstractions/umkhandlu/12_IMPLEMENTATION_ROADMAP.md`
 
 ```
 Phase 16  Platform Independence          ✅ Complete
-Phase 17  Moments Product Completion     ⏳ Active (17B)
+Phase 17  Moments Product Completion     ⏳ Active (17H)
 Phase 18  Umkhandlu Intelligence Dashboard
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence
@@ -363,7 +370,12 @@ unami-platform-core/
 ├── supabase/
 │   ├── functions/      17 Edge Functions (+ participation, evidence)
 │   └── migrations/
-│       └── 000_initial_schema.sql   ← baseline, immutable
+│       ├── 000_initial_schema.sql   ← baseline, immutable
+│       ├── 001_...
+│       ├── 002_governance_adaptation.sql
+│       ├── 003_participation_engine.sql
+│       ├── 004_evidence_layer.sql
+│       └── 005_commercial_layer.sql
 ├── docs/
 │   ├── abstractions/umkhandlu/      ← constitutional abstraction pack (13 documents)
 │   ├── context/

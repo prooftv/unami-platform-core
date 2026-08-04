@@ -129,8 +129,44 @@ The central unit. Everything else references this table.
 | status | TEXT | NOT NULL, CHECK enum, default 'pending_review' | pending_review/approved/active/paused/completed/cancelled/published |
 | template_name | TEXT | nullable | WhatsApp template used |
 | created_by | TEXT | nullable | Admin user ID |
+| campaign_type | TEXT | NOT NULL, CHECK enum, default 'ad' | ad/activation/csr |
+| project_health | TEXT | nullable, CHECK enum | green/amber/red — RAG status, csr type only |
+| project_phase | TEXT | nullable, CHECK enum | planning/procurement/construction/commissioning/operational |
+| project_reference | TEXT | nullable | Format: PRJ-YYYY-XXXX |
+| funding_source | TEXT | nullable | Programme or entity funding the project |
+| contractor | TEXT | nullable | Main contractor name |
+| beneficiaries | INTEGER | nullable, CHECK >= 0 | Community members impacted |
+| impact_summary | TEXT | nullable | For reports and sponsor feedback |
+| lessons_learned | TEXT | nullable | At project closure — permanent institutional memory |
+| progress_log | JSONB | NOT NULL, default '[]' | Append-only array of {date, update} entries |
+| deliverables_certified | JSONB | NOT NULL, default '[]' | Array of certified deliverable objects |
 | created_at | TIMESTAMPTZ | NOT NULL, default NOW() | |
 | updated_at | TIMESTAMPTZ | NOT NULL, auto-updated | |
+
+**Certified deliverable shape:**
+```json
+{
+  "id": "uuid",
+  "task": "string",
+  "status": "pending | certified | disputed",
+  "certifiedBy": "string",
+  "percentageComplete": 0-100,
+  "weightage": 0-100,
+  "certificationDate": "ISO date",
+  "notes": "string"
+}
+```
+
+**Progress log entry shape:**
+```json
+{ "date": "ISO date", "update": "string", "addedBy": "userId" }
+```
+
+**Rules:**
+- `progress_log` is append-only — entries are never edited or deleted.
+- `deliverables_certified` entries can transition: `pending` → `certified` or `pending` → `disputed`.
+- `lessons_learned` is written at closure — permanent institutional memory, never overwritten.
+- `campaign_type` defaults to `ad` — existing campaigns are unaffected.
 
 **Business rules:** Campaigns require approval before publish. Status workflow enforced in API, not DB.
 

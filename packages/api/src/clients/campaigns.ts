@@ -1,6 +1,6 @@
 import { apiFetch, type ApiConfig } from '../http';
-import type { CampaignWithSponsor, PaginatedResponse } from '../types/index';
-import type { CampaignStatus, Region, Category } from '../types/index';
+import type { CampaignWithSponsor, PaginatedResponse, CertifiedDeliverable, ProgressLogEntry } from '../types/index';
+import type { CampaignStatus, CampaignType, ProjectHealth, ProjectPhase, Region, Category } from '../types/index';
 
 export interface CampaignBudgetEntry {
   campaignId: string;
@@ -32,9 +32,32 @@ export interface CreateCampaignInput {
   targetCategories?: Category[];
   mediaUrls?: string[];
   scheduledAt?: string | null;
+  campaignType?: CampaignType;
+  projectReference?: string | null;
+  fundingSource?: string | null;
+  contractor?: string | null;
+  beneficiaries?: number | null;
 }
 
-export type UpdateCampaignInput = Partial<CreateCampaignInput>;
+export type UpdateCampaignInput = Partial<CreateCampaignInput> & {
+  projectHealth?: ProjectHealth | null;
+  projectPhase?: ProjectPhase | null;
+  impactSummary?: string | null;
+  lessonsLearned?: string | null;
+};
+
+export interface AddProgressInput {
+  update: string;
+  date?: string;
+}
+
+export interface CertifyDeliverableInput {
+  task: string;
+  certifiedBy: string;
+  percentageComplete: number;
+  weightage?: number;
+  notes?: string;
+}
 
 export function createCampaignsClient(config: ApiConfig) {
   return {
@@ -55,6 +78,14 @@ export function createCampaignsClient(config: ApiConfig) {
       return apiFetch(config, `/campaigns/${id}/transactions`);
     },
 
+    progressLog(id: string): Promise<ProgressLogEntry[]> {
+      return apiFetch(config, `/campaigns/${id}/progress`);
+    },
+
+    deliverables(id: string): Promise<CertifiedDeliverable[]> {
+      return apiFetch(config, `/campaigns/${id}/deliverables`);
+    },
+
     create(input: CreateCampaignInput): Promise<CampaignWithSponsor> {
       const body = {
         title: input.title,
@@ -66,6 +97,11 @@ export function createCampaignsClient(config: ApiConfig) {
         target_categories: input.targetCategories ?? [],
         media_urls: input.mediaUrls ?? [],
         scheduled_at: input.scheduledAt ?? null,
+        campaign_type: input.campaignType ?? 'ad',
+        project_reference: input.projectReference ?? null,
+        funding_source: input.fundingSource ?? null,
+        contractor: input.contractor ?? null,
+        beneficiaries: input.beneficiaries ?? null,
       };
       return apiFetch(config, '/campaigns', { method: 'POST', body: JSON.stringify(body) });
     },
@@ -81,7 +117,28 @@ export function createCampaignsClient(config: ApiConfig) {
       if (input.targetCategories !== undefined) body.target_categories = input.targetCategories;
       if (input.mediaUrls !== undefined) body.media_urls = input.mediaUrls;
       if (input.scheduledAt !== undefined) body.scheduled_at = input.scheduledAt;
+      if (input.campaignType !== undefined) body.campaign_type = input.campaignType;
+      if (input.projectHealth !== undefined) body.project_health = input.projectHealth;
+      if (input.projectPhase !== undefined) body.project_phase = input.projectPhase;
+      if (input.projectReference !== undefined) body.project_reference = input.projectReference;
+      if (input.fundingSource !== undefined) body.funding_source = input.fundingSource;
+      if (input.contractor !== undefined) body.contractor = input.contractor;
+      if (input.beneficiaries !== undefined) body.beneficiaries = input.beneficiaries;
+      if (input.impactSummary !== undefined) body.impact_summary = input.impactSummary;
+      if (input.lessonsLearned !== undefined) body.lessons_learned = input.lessonsLearned;
       return apiFetch(config, `/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+    },
+
+    addProgress(id: string, input: AddProgressInput): Promise<ProgressLogEntry[]> {
+      return apiFetch(config, `/campaigns/${id}/progress`, { method: 'POST', body: JSON.stringify(input) });
+    },
+
+    certifyDeliverable(id: string, input: CertifyDeliverableInput): Promise<CertifiedDeliverable[]> {
+      return apiFetch(config, `/campaigns/${id}/deliverables`, { method: 'POST', body: JSON.stringify(input) });
+    },
+
+    complete(id: string, input: { impactSummary: string; lessonsLearned: string }): Promise<CampaignWithSponsor> {
+      return apiFetch(config, `/campaigns/${id}/complete`, { method: 'POST', body: JSON.stringify(input) });
     },
 
     approve(id: string): Promise<CampaignWithSponsor> {

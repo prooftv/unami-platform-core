@@ -4,6 +4,9 @@ import { requireAuth, corsHeaders, json, err, logAudit, logError } from '../_sha
 
 const Region = ['KZN','WC','GP','EC','FS','LP','MP','NC','NW','National'] as const;
 const Category = ['Education','Safety','Culture','Opportunity','Events','Health','Technology','Community'] as const;
+const CampaignType = ['ad', 'activation', 'csr'] as const;
+const ProjectHealth = ['green', 'amber', 'red'] as const;
+const ProjectPhase = ['planning', 'procurement', 'construction', 'commissioning', 'operational'] as const;
 
 const CreateCampaignSchema = z.object({
   title: z.string().min(1).max(200),
@@ -15,12 +18,51 @@ const CreateCampaignSchema = z.object({
   target_categories: z.array(z.enum(Category)).default([]),
   media_urls: z.array(z.string().url()).default([]),
   scheduled_at: z.string().datetime().nullable().default(null),
+  campaign_type: z.enum(CampaignType).default('ad'),
+  project_reference: z.string().nullable().default(null),
+  funding_source: z.string().nullable().default(null),
+  contractor: z.string().nullable().default(null),
+  beneficiaries: z.coerce.number().int().nonnegative().nullable().default(null),
 });
 
-const UpdateCampaignSchema = CreateCampaignSchema.partial().refine(
-  (d) => Object.keys(d).length > 0,
-  { message: 'At least one field required' },
-);
+const UpdateCampaignSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  content: z.string().min(10).max(2000).optional(),
+  category: z.enum(Category).optional(),
+  sponsor_id: z.string().uuid().nullable().optional(),
+  budget: z.coerce.number().nonnegative().optional(),
+  target_regions: z.array(z.enum(Region)).min(1).optional(),
+  target_categories: z.array(z.enum(Category)).optional(),
+  media_urls: z.array(z.string().url()).optional(),
+  scheduled_at: z.string().datetime().nullable().optional(),
+  campaign_type: z.enum(CampaignType).optional(),
+  project_health: z.enum(ProjectHealth).nullable().optional(),
+  project_phase: z.enum(ProjectPhase).nullable().optional(),
+  project_reference: z.string().nullable().optional(),
+  funding_source: z.string().nullable().optional(),
+  contractor: z.string().nullable().optional(),
+  beneficiaries: z.coerce.number().int().nonnegative().nullable().optional(),
+  impact_summary: z.string().nullable().optional(),
+  lessons_learned: z.string().nullable().optional(),
+}).refine((d) => Object.keys(d).length > 0, { message: 'At least one field required' });
+
+const AddProgressSchema = z.object({
+  update: z.string().min(1).max(1000),
+  date: z.string().optional(),
+});
+
+const CertifyDeliverableSchema = z.object({
+  task: z.string().min(1).max(500),
+  certifiedBy: z.string().min(1).max(200),
+  percentageComplete: z.coerce.number().int().min(0).max(100),
+  weightage: z.coerce.number().min(0).max(100).default(0),
+  notes: z.string().max(1000).default(''),
+});
+
+const CompleteSchema = z.object({
+  impactSummary: z.string().min(1).max(2000),
+  lessonsLearned: z.string().min(1).max(2000),
+});
 
 Deno.serve(async (req: Request) => {
   const cors = corsHeaders(req);
@@ -34,11 +76,16 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'GET' && parts[0] === 'budget') return await budgetOverview(req, cors);
     if (req.method === 'GET' && parts.length === 1) return await getCampaign(req, parts[0], cors);
     if (req.method === 'GET' && parts.length === 2 && parts[1] === 'transactions') return await getTransactions(req, parts[0], cors);
+    if (req.method === 'GET' && parts.length === 2 && parts[1] === 'progress') return await getProgress(req, parts[0], cors);
+    if (req.method === 'GET' && parts.length === 2 && parts[1] === 'deliverables') return await getDeliverables(req, parts[0], cors);
     if (req.method === 'POST' && parts.length === 0) return await createCampaign(req, cors);
     if (req.method === 'PUT' && parts.length === 1) return await updateCampaign(req, parts[0], cors);
     if (req.method === 'POST' && parts.length === 2 && parts[1] === 'approve') return await approveCampaign(req, parts[0], cors);
     if (req.method === 'POST' && parts.length === 2 && parts[1] === 'pause') return await pauseCampaign(req, parts[0], cors);
     if (req.method === 'POST' && parts.length === 2 && parts[1] === 'cancel') return await cancelCampaign(req, parts[0], cors);
+    if (req.method === 'POST' && parts.length === 2 && parts[1] === 'progress') return await addProgress(req, parts[0], cors);
+    if (req.method === 'POST' && parts.length === 2 && parts[1] === 'deliverables') return await certifyDeliverable(req, parts[0], cors);
+    if (req.method === 'POST' && parts.length === 2 && parts[1] === 'complete') return await completeCampaign(req, parts[0], cors);
     return err('Not found', 404, cors);
   } catch (e) {
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -137,8 +184,6 @@ async function createCampaign(req: Request, cors: Record<string, string>) {
   await logAudit(supabase, context.userId, 'create', 'campaign', data.id, parsed.data);
   return json(data, 201, cors);
 }
-
-async function updateCampaign(req: Request, id: string, cors: Record<string, string>) {
   const auth = await requireAuth(req, ['superadmin', 'content_admin']);
   if (auth instanceof Response) return auth;
   const { context, supabase } = auth;

@@ -10,7 +10,7 @@ export type { SubscriberStats } from './clients/subscribers';
 export type { ModerationStats, MessageWithAdvisories, Comment } from './clients/moderation';
 export type { AuthorityAuditEntry, AuthorityStats, CreateAuthorityInput, UpdateAuthorityInput } from './clients/authority';
 export type { SponsorStats, CreateSponsorInput, UpdateSponsorInput } from './clients/sponsors';
-export type { CampaignBudgetEntry, BudgetTransaction, CreateCampaignInput, UpdateCampaignInput } from './clients/campaigns';
+export type { CampaignBudgetEntry, BudgetTransaction, CreateCampaignInput, UpdateCampaignInput, AddProgressInput, CertifyDeliverableInput } from './clients/campaigns';
 export type { IntentStats } from './clients/analytics';
 export type { FeatureFlag, SystemSetting, AuditLogEntry, ErrorLogEntry } from './clients/settings';
 export type { UserProfile } from './clients/user-profiles';

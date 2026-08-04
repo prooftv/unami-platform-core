@@ -44,6 +44,9 @@ export type Category = 'Education' | 'Safety' | 'Culture' | 'Opportunity' | 'Eve
 export type Region = 'KZN' | 'WC' | 'GP' | 'EC' | 'FS' | 'LP' | 'MP' | 'NC' | 'NW' | 'National';
 export type SponsorTier = 'bronze' | 'silver' | 'gold' | 'platinum';
 export type CampaignStatus = 'pending_review' | 'approved' | 'active' | 'paused' | 'completed' | 'cancelled' | 'published';
+export type CampaignType = 'ad' | 'activation' | 'csr';
+export type ProjectHealth = 'green' | 'amber' | 'red';
+export type ProjectPhase = 'planning' | 'procurement' | 'construction' | 'commissioning' | 'operational';
 export type DeliverySchedule = 'instant' | 'morning' | 'evening' | 'weekly';
 export type BroadcastStatus = 'pending' | 'processing' | 'completed' | 'failed';
 export type AuthorityLevel = 1 | 2 | 3 | 4 | 5;
@@ -98,6 +101,23 @@ export interface Sponsor {
   updatedAt: string;
 }
 
+export interface CertifiedDeliverable {
+  id: string;
+  task: string;
+  status: 'pending' | 'certified' | 'disputed';
+  certifiedBy: string;
+  percentageComplete: number;
+  weightage: number;
+  certificationDate: string | null;
+  notes: string;
+}
+
+export interface ProgressLogEntry {
+  date: string;
+  update: string;
+  addedBy: string;
+}
+
 export interface Campaign {
   id: string;
   title: string;
@@ -112,6 +132,17 @@ export interface Campaign {
   status: CampaignStatus;
   templateName: string | null;
   createdBy: string | null;
+  campaignType: CampaignType;
+  projectHealth: ProjectHealth | null;
+  projectPhase: ProjectPhase | null;
+  projectReference: string | null;
+  fundingSource: string | null;
+  contractor: string | null;
+  beneficiaries: number | null;
+  impactSummary: string | null;
+  lessonsLearned: string | null;
+  progressLog: ProgressLogEntry[];
+  deliverablesCertified: CertifiedDeliverable[];
   createdAt: string;
   updatedAt: string;
 }

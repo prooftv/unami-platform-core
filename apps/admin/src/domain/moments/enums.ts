@@ -92,6 +92,41 @@ export const CampaignStatus = {
 } as const;
 export type CampaignStatus = (typeof CampaignStatus)[keyof typeof CampaignStatus];
 
+export const CampaignType = {
+  AD: 'ad',
+  ACTIVATION: 'activation',
+  CSR: 'csr',
+} as const;
+export type CampaignType = (typeof CampaignType)[keyof typeof CampaignType];
+
+export const CAMPAIGN_TYPE_LABELS: Record<CampaignType, string> = {
+  ad: 'Sponsorship',
+  activation: 'Activation',
+  csr: 'CSR / Initiative',
+};
+
+export const ProjectHealth = {
+  GREEN: 'green',
+  AMBER: 'amber',
+  RED: 'red',
+} as const;
+export type ProjectHealth = (typeof ProjectHealth)[keyof typeof ProjectHealth];
+
+export const PROJECT_HEALTH_LABELS: Record<ProjectHealth, string> = {
+  green: 'On Track',
+  amber: 'At Risk',
+  red: 'Critical',
+};
+
+export const ProjectPhase = {
+  PLANNING: 'planning',
+  PROCUREMENT: 'procurement',
+  CONSTRUCTION: 'construction',
+  COMMISSIONING: 'commissioning',
+  OPERATIONAL: 'operational',
+} as const;
+export type ProjectPhase = (typeof ProjectPhase)[keyof typeof ProjectPhase];
+
 export const SubscriptionStatus = {
   ACTIVE: 'active',
   OPTED_OUT: 'opted_out',
