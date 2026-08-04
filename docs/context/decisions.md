@@ -217,6 +217,21 @@ platform-generic or domain-specific and prevents architectural drift.
 The implementation sequence is defined in `12_IMPLEMENTATION_ROADMAP.md`.
 Phase 19 (Umkhandlu) begins only after Phase 18 is complete.
 
+## D-033: Phase 17 engineering complete — ops gates remaining
+All Phase 17 engineering deliverables are complete as of commit `phase-17j-complete`.
+Moments v2 is feature-complete and production-ready from an engineering standpoint.
+
+The remaining gates before launch are operational:
+- Supabase Pro plan, migrations applied, storage buckets created
+- WhatsApp Business Account verified, credentials set in Supabase secrets
+- Vercel deployments with custom domains
+- Sanity Studio deployed, seed documents verified
+- End-to-end functional validation against production infrastructure
+- Lighthouse scores verified, first real broadcast sent
+
+The acceptance checklist is `docs/LAUNCH_CHECKLIST.md`.
+Phase 18 (Umkhandlu Intelligence Dashboard) begins only after the checklist is signed off.
+
 ---
 
 **List pages:**

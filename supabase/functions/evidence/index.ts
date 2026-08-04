@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { requireAuth, corsHeaders, json, err, logAudit, logError } from '../_shared/auth.ts';
+import { requireAuth, corsHeaders, json, err, logAudit, logError, checkRateLimit } from '../_shared/auth.ts';
 
 const ACCEPTED_MIME: Record<string, 'image' | 'document' | 'pdf'> = {
   'image/jpeg':                                                          'image',
@@ -31,6 +31,11 @@ Deno.serve(async (req: Request) => {
 
     // POST /evidence — upload (authenticated, content_admin+)
     if (req.method === 'POST' && parts.length === 0) {
+      // Rate limit uploads by IP
+      const supabaseForLimit = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      const ip = req.headers.get('CF-Connecting-IP') ?? req.headers.get('X-Forwarded-For') ?? 'unknown';
+      const rateLimited = await checkRateLimit(supabaseForLimit, ip, '/evidence');
+      if (rateLimited) return rateLimited;
       return await uploadEvidence(req, cors);
     }
 

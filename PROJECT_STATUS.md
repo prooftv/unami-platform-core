@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 17I — WhatsApp Integration ✅ Complete |
+| Phase | Phase 17J — Production Validation ✅ Engineering Complete |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `phase-17i-complete` (pending push) |
+| Last commit | `phase-17j-complete` (pending push) |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -259,28 +259,28 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 
 ---
 
-### Phase 17J — Production Validation and Launch ⏳
+### Phase 17J — Production Validation ✅ Engineering Complete
 
-**Goal:** Moments v2 is shipped. Not deployed — shipped. Genuinely production-ready.
+**Goal:** Moments v2 is shipped. Engineering complete. Ops gates remaining.
 
 | Task | Status |
 |---|---|
-| Domain configured | ⏳ |
-| Vercel deployments — `apps/web` and `apps/admin` | ⏳ |
-| Supabase project on paid plan | ⏳ |
-| Sanity project on appropriate plan | ⏳ |
-| WhatsApp Business Account verified | ⏳ |
-| Caching strategy — CDN, ISR, service worker | ⏳ |
-| Rate limiting audit — all Edge Functions | ⏳ |
-| Security headers — CSP, HSTS, X-Frame-Options | ⏳ |
-| Error monitoring — Sentry or equivalent | ⏳ |
-| Performance budget — bundle size, LCP, CLS | ⏳ |
-| Lighthouse — all pages ≥ 90 | ⏳ |
-| Accessibility — WCAG 2.1 AA | ⏳ |
-| Load testing — broadcast at scale | ⏳ |
-| Rollback procedures documented | ⏳ |
-| First real broadcast sent | ⏳ |
-| Acceptance checklist signed off | ⏳ |
+| Security headers — CSP, HSTS, X-Frame-Options, Permissions-Policy on both apps | ✅ |
+| Rate limit audit — all 19 Edge Functions covered in `_shared/auth.ts` | ✅ |
+| `checkRateLimit` added to `auth` Edge Function (brute-force protection) | ✅ |
+| `checkRateLimit` added to `evidence` upload route | ✅ |
+| `docs/LAUNCH_CHECKLIST.md` — acceptance checklist written | ✅ |
+| D-033 recorded in `decisions.md` — Phase 17 engineering complete | ✅ |
+| Supabase Pro plan | ⏳ Ops |
+| All migrations applied (000–005) | ⏳ Ops |
+| Storage buckets created (`evidence`, `moments-media`) | ⏳ Ops |
+| WhatsApp Business Account verified, credentials set | ⏳ Ops |
+| Vercel deployments with custom domains | ⏳ Ops |
+| Sanity Studio deployed, seed documents verified | ⏳ Ops |
+| Lighthouse scores ≥ 90 on `apps/web` | ⏳ Ops |
+| End-to-end functional validation | ⏳ Ops |
+| First real broadcast sent | ⏳ Ops |
+| Acceptance checklist signed off | ⏳ Ops |
 
 ---
 
@@ -317,8 +317,8 @@ Sub-phases defined in `docs/abstractions/umkhandlu/12_IMPLEMENTATION_ROADMAP.md`
 
 ```
 Phase 16  Platform Independence          ✅ Complete
-Phase 17  Moments Product Completion     ⏳ Active (17J)
-Phase 18  Umkhandlu Intelligence Dashboard
+Phase 17  Moments Product Completion     ✅ Engineering Complete (ops gates remaining)
+Phase 18  Umkhandlu Intelligence Dashboard  (after 17J ops sign-off)
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence
 Phase 21  National Institutional Memory
@@ -350,8 +350,8 @@ Fix bugs only. All new work is Moments product completion (Phase 17) or Phase 18
 | Issue | Severity | Phase |
 |---|---|---|
 | Advisory confidence hardcoded `0.5` — n8n not connected | P2 | Deferred (D-023) |
-| WhatsApp secrets unset in Supabase | P0 Ops | Phase 17I |
-| HELP/STATUS/MYAUTHORITY webhook reply handlers not built | P1 | Phase 17I |
+| WhatsApp secrets unset in Supabase | P0 Ops | Phase 17J ops |
+| Lighthouse scores not yet verified against production | P1 Ops | Phase 17J ops |
 
 ---
 

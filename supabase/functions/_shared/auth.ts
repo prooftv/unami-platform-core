@@ -90,6 +90,16 @@ const RATE_LIMITS: Record<string, { windowMs: number; max: number }> = {
   '/analytics':     { windowMs: 60_000, max: 30 },
   '/auth':          { windowMs: 60_000, max: 5 },
   '/participation': { windowMs: 60_000, max: 20 },
+  '/evidence':      { windowMs: 60_000, max: 30 },
+  '/media':         { windowMs: 60_000, max: 20 },
+  '/campaigns':     { windowMs: 60_000, max: 60 },
+  '/sponsors':      { windowMs: 60_000, max: 60 },
+  '/subscribers':   { windowMs: 60_000, max: 60 },
+  '/moderation':    { windowMs: 60_000, max: 60 },
+  '/authority':     { windowMs: 60_000, max: 60 },
+  '/broadcasts':    { windowMs: 60_000, max: 60 },
+  '/settings':      { windowMs: 60_000, max: 30 },
+  '/retry-batches': { windowMs: 60_000, max: 5 },
 };
 
 export async function checkRateLimit(
