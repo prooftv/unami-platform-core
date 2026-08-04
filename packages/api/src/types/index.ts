@@ -39,6 +39,7 @@ export interface AdminSession {
 export type MomentStatus = 'draft' | 'scheduled' | 'broadcasted' | 'cancelled';
 export type ContentSource = 'admin' | 'community' | 'whatsapp' | 'campaign';
 export type UrgencyLevel = 'low' | 'medium' | 'high' | 'urgent';
+export type MomentType = 'standard' | 'community' | 'opportunity' | 'infrastructure' | 'consultation';
 export type Category = 'Education' | 'Safety' | 'Culture' | 'Opportunity' | 'Events' | 'Health' | 'Technology' | 'Community';
 export type Region = 'KZN' | 'WC' | 'GP' | 'EC' | 'FS' | 'LP' | 'MP' | 'NC' | 'NW' | 'National';
 export type SponsorTier = 'bronze' | 'silver' | 'gold' | 'platinum';
@@ -67,6 +68,9 @@ export interface Moment {
   broadcastedAt: string | null;
   status: MomentStatus;
   urgencyLevel: UrgencyLevel;
+  momentType: MomentType;
+  participationEnabled: boolean;
+  participationDeadline: string | null;
   contentSource: ContentSource;
   createdBy: string | null;
   publishToWhatsapp: boolean;

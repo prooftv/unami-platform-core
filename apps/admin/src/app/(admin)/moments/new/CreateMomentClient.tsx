@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
-import { Region, Category, UrgencyLevel } from '@/domain/moments';
+import { Region, Category, UrgencyLevel, MomentType, MOMENT_TYPE_LABELS, MOMENT_TYPE_DESCRIPTIONS } from '@/domain/moments';
 import { Language } from '@unami/shared';
 import { createApiClient } from '@unami/api';
 import { getToken } from '@/lib/auth/token';
@@ -22,6 +22,7 @@ const REGIONS = Object.values(Region);
 const CATEGORIES = Object.values(Category);
 const LANGUAGES = Object.values(Language);
 const URGENCY_LEVELS = Object.values(UrgencyLevel);
+const MOMENT_TYPES = Object.values(MomentType);
 
 const URGENCY_DESCRIPTIONS: Record<string, string> = {
   low: 'Routine community update',
@@ -44,6 +45,9 @@ export function CreateMomentClient({ sponsors }: Props) {
     category: CATEGORIES[0],
     language: Language.ENGLISH,
     urgencyLevel: UrgencyLevel.LOW,
+    momentType: MomentType.STANDARD as MomentType,
+    participationEnabled: false,
+    participationDeadline: '',
     publishToPwa: true,
     publishToWhatsapp: false,
     isSponsored: false,
@@ -75,6 +79,11 @@ export function CreateMomentClient({ sponsors }: Props) {
         category: form.category as typeof CATEGORIES[number],
         language: form.language,
         urgencyLevel: form.urgencyLevel,
+        momentType: form.momentType,
+        participationEnabled: form.participationEnabled,
+        participationDeadline: form.participationEnabled && form.participationDeadline
+          ? new Date(form.participationDeadline).toISOString()
+          : null,
         publishToPwa: form.publishToPwa,
         publishToWhatsapp: form.publishToWhatsapp,
         isSponsored: form.isSponsored,
@@ -180,6 +189,21 @@ export function CreateMomentClient({ sponsors }: Props) {
                     <SelectContent>{URGENCY_LEVELS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-1.5 col-span-2">
+                  <Label>Moment Type</Label>
+                  <Select value={form.momentType} onValueChange={(v) => {
+                    set('momentType', v);
+                    if (v !== 'consultation') set('participationEnabled', false);
+                  }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {MOMENT_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>{MOMENT_TYPE_LABELS[t]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">{MOMENT_TYPE_DESCRIPTIONS[form.momentType as MomentType]}</p>
+                </div>
               </CardContent>
             </Card>
 
@@ -219,11 +243,37 @@ export function CreateMomentClient({ sponsors }: Props) {
                     <Switch id="isSponsored" checked={form.isSponsored} onCheckedChange={handleSponsoredToggle} />
                     <Label htmlFor="isSponsored" className="font-normal">Sponsored content</Label>
                   </div>
+                  {form.momentType === 'consultation' && (
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        id="participationEnabled"
+                        checked={form.participationEnabled}
+                        onCheckedChange={(v) => set('participationEnabled', v)}
+                      />
+                      <Label htmlFor="participationEnabled" className="font-normal">Enable community responses</Label>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {form.isSponsored && (
+              {form.momentType === 'consultation' && form.participationEnabled && (
+              <Card>
+                <CardHeader><CardTitle>Community Responses</CardTitle></CardHeader>
+                <CardContent className="space-y-1.5">
+                  <Label htmlFor="participationDeadline">Response deadline</Label>
+                  <p className="text-xs text-muted-foreground">Leave empty for no deadline</p>
+                  <Input
+                    id="participationDeadline"
+                    value={form.participationDeadline}
+                    onChange={(e) => set('participationDeadline', e.target.value)}
+                    type="datetime-local"
+                  />
+                </CardContent>
+              </Card>
+              )}
+
+              {form.isSponsored && (
               <Card>
                 <CardHeader><CardTitle>Sponsor Attribution</CardTitle></CardHeader>
                 <CardContent className="space-y-1.5">
@@ -258,6 +308,10 @@ export function CreateMomentClient({ sponsors }: Props) {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">State</span>
                     <Badge variant="secondary">Draft</Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Type</span>
+                    <span className="font-medium">{MOMENT_TYPE_LABELS[form.momentType as MomentType]}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Urgency</span>

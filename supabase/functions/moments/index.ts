@@ -12,6 +12,7 @@ const Language = ['eng','zul','xho','afr'] as const;
 const UrgencyLevel = ['low','medium','high','urgent'] as const;
 const MomentStatus = ['draft','scheduled','broadcasted','cancelled'] as const;
 const ContentSource = ['admin','community','whatsapp','campaign'] as const;
+const MomentType = ['standard','community','opportunity','infrastructure','consultation'] as const;
 
 const CreateMomentSchema = z.object({
   title: z.string().min(3).max(200),
@@ -25,6 +26,9 @@ const CreateMomentSchema = z.object({
   media_urls: z.array(z.string().url()).default([]),
   scheduled_at: z.string().datetime().nullable().default(null),
   urgency_level: z.enum(UrgencyLevel).default('low'),
+  moment_type: z.enum(MomentType).default('standard'),
+  participation_enabled: z.boolean().default(false),
+  participation_deadline: z.string().datetime().nullable().default(null),
   publish_to_pwa: z.boolean().default(true),
   publish_to_whatsapp: z.boolean().default(false),
 });
@@ -146,6 +150,9 @@ async function listMoments(req: Request, cors: Record<string, string>) {
   if (category) query = query.eq('category', category);
   if (source)   query = query.eq('content_source', source);
   if (search)   query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
+  // moment_type filter
+  const momentType = new URL(req.url).searchParams.get('moment_type');
+  if (momentType) query = query.eq('moment_type', momentType);
 
   const { data, error, count } = await query;
   if (error) return err(error.message, 500, cors);
@@ -320,7 +327,7 @@ async function listPublicMoments(req: Request, cors: Record<string, string>) {
 
   let query = supabase
     .from('moments')
-    .select('id, title, content, region, category, language, urgency_level, is_sponsored, sponsor_id, pwa_link, media_urls, created_at, sponsors(display_name, logo_url, tier)', { count: 'exact' })
+    .select('id, title, content, region, category, language, urgency_level, moment_type, participation_enabled, participation_deadline, is_sponsored, sponsor_id, pwa_link, media_urls, created_at, sponsors(display_name, logo_url, tier)', { count: 'exact' })
     .eq('status', 'broadcasted')
     .eq('publish_to_pwa', true)
     .order('created_at', { ascending: false })
@@ -347,7 +354,7 @@ async function getPublicMoment(req: Request, id: string, cors: Record<string, st
 
   const { data, error } = await supabase
     .from('moments')
-    .select('id, title, content, region, category, language, urgency_level, is_sponsored, sponsor_id, pwa_link, media_urls, created_at, sponsors(display_name, logo_url, tier)')
+    .select('id, title, content, region, category, language, urgency_level, moment_type, participation_enabled, participation_deadline, is_sponsored, sponsor_id, pwa_link, media_urls, created_at, sponsors(display_name, logo_url, tier)')
     .eq('id', id)
     .eq('status', 'broadcasted')
     .eq('publish_to_pwa', true)

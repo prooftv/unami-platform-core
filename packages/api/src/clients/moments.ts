@@ -1,5 +1,5 @@
 import { apiFetch, type ApiConfig } from '../http';
-import type { Moment, MomentWithSponsor, PaginatedResponse, MomentStatus, Region, Category, UrgencyLevel } from '../types/index';
+import type { Moment, MomentWithSponsor, PaginatedResponse, MomentStatus, MomentType, Region, Category, UrgencyLevel } from '../types/index';
 
 export interface CreateMomentInput {
   title: string;
@@ -13,6 +13,9 @@ export interface CreateMomentInput {
   mediaUrls?: string[];
   scheduledAt?: string | null;
   urgencyLevel?: UrgencyLevel;
+  momentType?: MomentType;
+  participationEnabled?: boolean;
+  participationDeadline?: string | null;
   publishToPwa?: boolean;
   publishToWhatsapp?: boolean;
 }

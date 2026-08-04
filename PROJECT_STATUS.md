@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 17C — Sanity Editorial Layer ✅ Complete |
+| Phase | Phase 17D — Governance Adaptation ✅ Complete |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `6bb4769` |
+| Last commit | `pending` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -134,19 +134,21 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 
 ---
 
-### Phase 17D — Governance Adaptation ⏳
+### Phase 17D — Governance Adaptation ✅
 
-**Goal:** Introduce governance-inspired capabilities into Moments — from the abstraction pack.
-Community participation, evidence, development moments, statutory moments, community responses.
-Does not change existing broadcasts. Additive only.
+**Goal:** Introduce governance-inspired moment types and participation foundation into Moments — additive only.
 
 | Task | Status |
 |---|---|
-| Development Moment type | ⏳ |
-| Statutory Moment type | ⏳ |
-| Community Response concept | ⏳ |
-| Evidence attachment model | ⏳ |
-| Governance-inspired moment categories | ⏳ |
+| `moment_type` column — standard/community/opportunity/infrastructure/consultation | ✅ |
+| `participation_enabled` + `participation_deadline` columns on `moments` | ✅ |
+| Migration `002_governance_adaptation.sql` | ✅ |
+| `MomentType` enum + labels + descriptions in `apps/admin/src/domain/moments/enums.ts` | ✅ |
+| `MomentType` type exported from `packages/api` | ✅ |
+| `Moment` and `PublicMoment` types updated with new fields | ✅ |
+| Edge Function `moments/index.ts` — validates and persists new fields | ✅ |
+| `CreateMomentClient` — moment type selector, participation toggle, deadline field | ✅ |
+| `apps/web` moment detail — type badge, participation banner, deadline display | ✅ |
 
 ---
 

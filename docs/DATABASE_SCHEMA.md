@@ -67,6 +67,9 @@ The central unit. Everything else references this table.
 | broadcasted_at | TIMESTAMPTZ | nullable | When actually sent |
 | status | TEXT | NOT NULL, CHECK enum, default 'draft' | draft → scheduled → broadcasted → cancelled |
 | urgency_level | TEXT | NOT NULL, CHECK enum, default 'low' | low/medium/high/urgent |
+| moment_type | TEXT | NOT NULL, CHECK enum, default 'standard' | standard/community/opportunity/infrastructure/consultation |
+| participation_enabled | BOOLEAN | NOT NULL, default false | Whether community responses are open |
+| participation_deadline | TIMESTAMPTZ | nullable | Response window close time |
 | content_source | TEXT | NOT NULL, CHECK enum, default 'admin' | admin/community/whatsapp/campaign |
 | created_by | TEXT | nullable | Admin user ID or phone number |
 | publish_to_whatsapp | BOOLEAN | NOT NULL, default false | Admin must explicitly enable |

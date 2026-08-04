@@ -1,5 +1,5 @@
 import { apiFetch, type ApiConfig } from '../http';
-import type { PaginatedResponse } from '../types/index';
+import type { PaginatedResponse, MomentType } from '../types/index';
 import type { Region, Category } from '../types/index';
 
 // Shape returned by the Edge Function (raw DB columns, snake_case)
@@ -11,6 +11,9 @@ interface RawPublicMoment {
   category: Category;
   language: string;
   urgency_level: string;
+  moment_type: MomentType;
+  participation_enabled: boolean;
+  participation_deadline: string | null;
   is_sponsored: boolean;
   sponsor_id: string | null;
   pwa_link: string | null;
@@ -28,6 +31,9 @@ export interface PublicMoment {
   category: Category;
   language: string;
   urgencyLevel: string;
+  momentType: MomentType;
+  participationEnabled: boolean;
+  participationDeadline: string | null;
   isSponsored: boolean;
   sponsorId: string | null;
   pwaLink: string | null;
@@ -53,6 +59,9 @@ function mapMoment(raw: RawPublicMoment): PublicMoment {
     category: raw.category,
     language: raw.language,
     urgencyLevel: raw.urgency_level,
+    momentType: raw.moment_type ?? 'standard',
+    participationEnabled: raw.participation_enabled ?? false,
+    participationDeadline: raw.participation_deadline ?? null,
     isSponsored: raw.is_sponsored,
     sponsorId: raw.sponsor_id,
     pwaLink: raw.pwa_link,

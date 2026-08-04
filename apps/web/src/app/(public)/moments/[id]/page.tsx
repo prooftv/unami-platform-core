@@ -20,6 +20,19 @@ export default async function MomentDetailPage({ params }: { params: Promise<{ i
   const waText = encodeURIComponent(`${moment.title}\n\n${moment.content}`);
   const waShareUrl = `https://wa.me/?text=${waText}`;
 
+  const TYPE_LABELS: Record<string, string> = {
+    standard: 'Standard',
+    community: 'Community Notice',
+    opportunity: 'Opportunity',
+    infrastructure: 'Infrastructure Update',
+    consultation: 'Public Consultation',
+  };
+
+  const isConsultation = moment.momentType === 'consultation';
+  const deadlinePassed = moment.participationDeadline
+    ? new Date(moment.participationDeadline) < new Date()
+    : false;
+
   return (
     <article className="space-y-6 max-w-2xl">
       <div>
@@ -31,11 +44,30 @@ export default async function MomentDetailPage({ params }: { params: Promise<{ i
           <Link href={`/category/${moment.category}`} className="hover:text-foreground transition-colors">
             {moment.category}
           </Link>
+          {moment.momentType !== 'standard' && (
+            <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 font-medium">
+              {TYPE_LABELS[moment.momentType] ?? moment.momentType}
+            </span>
+          )}
           <span>·</span>
           <time>{new Date(moment.createdAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}</time>
         </div>
         <h1 className="text-2xl font-semibold leading-snug tracking-tight">{moment.title}</h1>
       </div>
+
+      {isConsultation && moment.participationEnabled && (
+        <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm">
+          <p className="font-medium text-foreground">Community responses open</p>
+          {moment.participationDeadline && !deadlinePassed && (
+            <p className="mt-0.5 text-muted-foreground">
+              Deadline: {new Date(moment.participationDeadline).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
+          {deadlinePassed && (
+            <p className="mt-0.5 text-muted-foreground">Response window has closed.</p>
+          )}
+        </div>
+      )}
 
       {moment.isSponsored && moment.sponsor && (
         <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">

@@ -2,6 +2,7 @@ export { ApiError } from './http';
 export type { ApiConfig } from './http';
 export type * from './types/index';
 export type { PublicMoment, PublicListParams } from './clients/public-moments';
+export type { MomentType } from './types/index';
 
 export type { SubscriberStats } from './clients/subscribers';
 export type { ModerationStats, MessageWithAdvisories, Comment } from './clients/moderation';

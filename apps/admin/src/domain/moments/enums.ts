@@ -22,6 +22,31 @@ export const UrgencyLevel = {
 } as const;
 export type UrgencyLevel = (typeof UrgencyLevel)[keyof typeof UrgencyLevel];
 
+export const MomentType = {
+  STANDARD: 'standard',
+  COMMUNITY: 'community',
+  OPPORTUNITY: 'opportunity',
+  INFRASTRUCTURE: 'infrastructure',
+  CONSULTATION: 'consultation',
+} as const;
+export type MomentType = (typeof MomentType)[keyof typeof MomentType];
+
+export const MOMENT_TYPE_LABELS: Record<MomentType, string> = {
+  standard: 'Standard',
+  community: 'Community Notice',
+  opportunity: 'Opportunity',
+  infrastructure: 'Infrastructure Update',
+  consultation: 'Public Consultation',
+};
+
+export const MOMENT_TYPE_DESCRIPTIONS: Record<MomentType, string> = {
+  standard: 'General community communication',
+  community: 'Meeting announcement or community notice',
+  opportunity: 'Jobs, bursaries, training, or tenders',
+  infrastructure: 'Project status, service delivery, or infrastructure update',
+  consultation: 'Public participation — community responses enabled',
+};
+
 export const Category = {
   EDUCATION: 'Education',
   SAFETY: 'Safety',
