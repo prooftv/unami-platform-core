@@ -14,6 +14,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/c
 import { cn } from '@/lib/utils';
 
 const ROLE_LABELS: Record<string, string> = {
+  super_admin: 'Super Admin',
   operator: 'Operator',
 };
 
