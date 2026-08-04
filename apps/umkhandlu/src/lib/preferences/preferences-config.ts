@@ -51,6 +51,24 @@ export type PreferenceValueMap = {
   [K in PreferenceKey]: (typeof PREFERENCE_REGISTRY)[K]['values'][number];
 };
 
+export type PreferencePersistence = 'none' | 'client-cookie' | 'server-cookie' | 'localStorage';
+
+export const PREFERENCE_KEYS = Object.freeze(Object.keys(PREFERENCE_REGISTRY) as PreferenceKey[]);
+
+export function getPreferencePersistence(key: PreferenceKey): PreferencePersistence {
+  return PREFERENCE_REGISTRY[key].persistence;
+}
+
 export const PREFERENCE_DEFAULTS = Object.fromEntries(
   (Object.keys(PREFERENCE_REGISTRY) as PreferenceKey[]).map((key) => [key, PREFERENCE_REGISTRY[key].defaultValue]),
 ) as PreferenceValueMap;
+
+export function parsePreference<K extends PreferenceKey>(
+  key: K,
+  rawValue: string | null | undefined,
+): PreferenceValueMap[K] {
+  const definition = PREFERENCE_REGISTRY[key];
+  const allowedValues = definition.values as readonly string[];
+  if (rawValue && allowedValues.includes(rawValue)) return rawValue as PreferenceValueMap[K];
+  return definition.defaultValue as PreferenceValueMap[K];
+}

@@ -2,7 +2,10 @@ import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getOperatorSession } from '@/lib/auth/operator';
+import { PREFERENCE_DEFAULTS } from '@/lib/preferences/preferences-config';
+import { PreferencesStoreProvider } from '@/stores/preferences/preferences-provider';
 import { AppSidebar } from './dashboard/_components/sidebar/app-sidebar';
+import { LayoutControls } from './dashboard/_components/header/layout-controls';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -21,25 +24,30 @@ export default async function UmkhandluLayout({ children }: { children: ReactNod
   };
 
   return (
-    <SidebarProvider
-      defaultOpen={defaultOpen}
-      style={{ '--sidebar-width': 'calc(var(--spacing) * 64)' } as React.CSSProperties}
-    >
-      <AppSidebar user={user} />
-      <SidebarInset className={cn('min-w-0 overflow-x-clip')}>
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b sticky top-0 z-50 bg-background/80 backdrop-blur-md">
-          <div className="flex w-full items-center px-4 lg:px-6 gap-2">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mx-2 data-[orientation=vertical]:h-4 data-[orientation=vertical]:self-center"
-            />
+    <PreferencesStoreProvider initialValues={PREFERENCE_DEFAULTS}>
+      <SidebarProvider
+        defaultOpen={defaultOpen}
+        style={{ '--sidebar-width': 'calc(var(--spacing) * 64)' } as React.CSSProperties}
+      >
+        <AppSidebar user={user} />
+        <SidebarInset className={cn('min-w-0 overflow-x-clip')}>
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b sticky top-0 z-50 bg-background/80 backdrop-blur-md">
+            <div className="flex w-full items-center px-4 lg:px-6 gap-2">
+              <SidebarTrigger className="-ml-1" />
+              <Separator
+                orientation="vertical"
+                className="mx-2 data-[orientation=vertical]:h-4 data-[orientation=vertical]:self-center"
+              />
+              <div className="ml-auto">
+                <LayoutControls />
+              </div>
+            </div>
+          </header>
+          <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-4 md:p-6">
+            {children}
           </div>
-        </header>
-        <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-4 md:p-6">
-          {children}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+        </SidebarInset>
+      </SidebarProvider>
+    </PreferencesStoreProvider>
   );
 }
