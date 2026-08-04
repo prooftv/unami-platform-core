@@ -3,7 +3,7 @@
 ## Project
 Unami Platform Core v1.0 — a multi-application platform. The platform is complete and frozen.
 Active work is **Moments product completion** (Phase 17) — not platform engineering.
-Phase 18 is the Umkhandlu Intelligence Dashboard — the first validation of multi-application federation.
+Phase 18 is the Unami Control Centre — the first validation of multi-application federation.
 
 ## Repository
 https://github.com/prooftv/unami-platform-core

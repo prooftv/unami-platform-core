@@ -202,28 +202,48 @@ Ten sub-phases. Each builds on the last.
 
 ---
 
-## Phase 18 — Umkhandlu Intelligence Dashboard
+## Phase 18 — Unami Control Centre
 
 The first application built on top of the mature platform.
-Not another CMS. Not another admin. The control centre.
+Not another CMS. Not another admin. Not a governance editor.
+The control centre that connects to deployed governance nodes and produces institutional intelligence.
 
 Begins only after Phase 17J is complete.
 
-Consumes:
-- Multiple Umkhandlu governance nodes
-- Moments operational data
-- Future application nodes
-- Commercial intelligence
-- Evidence and participation
-- Institutional memory
+### What the Control Centre is NOT
+
+The production Umkhandlu governance application already exists at `umkhandlu.unamifoundation.org`.
+It owns: governance editing, records, notices, evidence, participation, public website, Sanity Studio.
+Platform Core does not duplicate it. Platform Core does not replace it.
+
+### What the Control Centre IS
+
+`apps/umkhandlu` inside Platform Core is the **Unami Control Centre** — a read-oriented
+intelligence layer that connects to one or more deployed governance nodes and aggregates
+what they know into a cross-node operational view.
+
+The abstraction pack (`docs/abstractions/umkhandlu/`) defines the shared platform concepts
+(Record, Notice, Evidence, Participation, Campaign) so that all nodes speak the same language
+when the Control Centre queries them. It does not require Platform Core to build CRUD screens
+for those concepts.
+
+Consumes (from deployed nodes via read-only APIs):
+- Governance records — counts, types, statuses, lineage
+- Notices — community and statutory, lifecycle state
+- Evidence — attachment counts, environmental context
+- Participation — counts, types, deadline compliance
+- Commercial projects — RAG status, deliverables, beneficiaries
+- Institutional memory — lineage chains, provenance
 
 Produces:
-- Regional intelligence view
+- Node registry and health view
 - Cross-node aggregation
-- Infrastructure health
+- Regional intelligence view
+- Infrastructure health (RAG distribution)
 - Participation trends
 - Commercial projections
-- Predictive analytics
+- TCRS escalation surface
+- Compliance monitoring
 
 ---
 
@@ -232,7 +252,7 @@ Produces:
 ```
 Phase 16  Platform Independence          ✅ Complete
 Phase 17  Moments Product Completion     ⏳ Active
-Phase 18  Umkhandlu Intelligence Dashboard
+Phase 18  Unami Control Centre
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence
 Phase 21  National Institutional Memory

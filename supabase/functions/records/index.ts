@@ -49,9 +49,12 @@ Deno.serve(async (req: Request) => {
     const type   = url.searchParams.get('type');
     const offset = (page - 1) * limit;
 
+    const originNoticeId = url.searchParams.get('origin_notice_id');
+
     let query = supabase.from('records').select('*', { count: 'exact' });
-    if (status) query = query.eq('status', status);
-    if (type)   query = query.eq('type', type);
+    if (status)         query = query.eq('status', status);
+    if (type)           query = query.eq('type', type);
+    if (originNoticeId) query = query.eq('origin_notice_id', originNoticeId);
     query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;

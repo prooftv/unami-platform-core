@@ -42,8 +42,14 @@ export interface UpdateRecordInput {
 
 export function createRecordsClient(config: ApiConfig) {
   return {
-    list(params?: { page?: number; limit?: number; status?: GovernanceRecordStatus; type?: GovernanceRecordType }): Promise<PaginatedResponse<GovernanceRecord>> {
-      const qs = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
+    list(params?: { page?: number; limit?: number; status?: GovernanceRecordStatus; type?: GovernanceRecordType; originNoticeId?: string }): Promise<PaginatedResponse<GovernanceRecord>> {
+      const raw: Record<string, string> = {};
+      if (params?.page)           raw.page            = String(params.page);
+      if (params?.limit)          raw.limit           = String(params.limit);
+      if (params?.status)         raw.status          = params.status;
+      if (params?.type)           raw.type            = params.type;
+      if (params?.originNoticeId) raw.origin_notice_id = params.originNoticeId;
+      const qs = Object.keys(raw).length ? '?' + new URLSearchParams(raw).toString() : '';
       return apiFetch(config, `/records${qs}`);
     },
 

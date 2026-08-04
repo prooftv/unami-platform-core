@@ -1,4 +1,4 @@
-# Phase 18 — Umkhandlu Intelligence Dashboard
+# Phase 18 — Unami Control Centre
 # Chat prompt. Load at the start of every Phase 18 session.
 
 ## Session context
@@ -8,167 +8,130 @@ You are working on Phase 18 of Unami Platform Core.
 Phase 17 (Moments) is engineering-complete and frozen. Do not touch `apps/admin`, `apps/web`,
 or any Moments Edge Functions unless a production bug requires it.
 
-Phase 18 is the first new application on the platform. It validates multi-application federation.
+Phase 18 is the Unami Control Centre — the first application built on the mature platform.
+It validates multi-application federation by connecting to deployed governance nodes
+and producing institutional intelligence across them.
+
+See D-035 in `decisions.md` for the full architectural correction and constitutional hierarchy.
+
+---
+
+## What the Control Centre is NOT
+
+The production Umkhandlu governance application already exists at `umkhandlu.unamifoundation.org`.
+It owns: governance editing, records, notices, evidence, participation, public website, Sanity Studio.
+
+`apps/umkhandlu` inside Platform Core does NOT duplicate that application.
+Do not build CRUD screens for records, notices, evidence, or participation.
+Do not build governance editing UI of any kind.
+
+---
+
+## What the Control Centre IS
+
+`apps/umkhandlu` is a read-oriented intelligence application that:
+- Connects to deployed governance nodes via read-only APIs
+- Aggregates institutional intelligence across nodes
+- Surfaces node health, cross-node patterns, commercial projections, TCRS escalations
+
+The abstraction pack defines shared platform concepts (Record, Notice, Evidence, Participation,
+Campaign) so that all nodes speak the same language when the Control Centre queries them.
+It does not require Platform Core to build CRUD screens for those concepts.
 
 ---
 
 ## What you must read before writing any code
 
-1. `PROJECT_STATUS.md` — current sub-phase, last commit, what is done and what is next
-2. `docs/abstractions/umkhandlu/12_IMPLEMENTATION_ROADMAP.md` — the sequence and trigger conditions
-3. `docs/abstractions/umkhandlu/09_PLATFORM_MAPPING.md` — what is platform-generic vs domain-specific
-4. `docs/abstractions/umkhandlu/10_DATABASE_IMPACT.md` — future table classification
-5. `docs/abstractions/umkhandlu/00_EXECUTIVE_SUMMARY.md` — the philosophy and five-layer model
-6. `docs/abstractions/umkhandlu/01_DOMAIN_MODEL.md` — complete domain map
-7. `docs/context/COMMERCIAL_DOMAIN.md` — commercial capability constitutional reference
-8. `docs/context/decisions.md` — decisions that must not be reversed
-9. `docs/DATABASE_SCHEMA.md` — before any schema changes
+1. `PROJECT_STATUS.md` — current sub-phase, what is done and what is next
+2. `docs/context/decisions.md` — D-035 specifically — the architectural correction
+3. `docs/abstractions/umkhandlu/08_INTELLIGENCE_LAYER.md` — the intelligence architecture
+4. `docs/abstractions/umkhandlu/09_PLATFORM_MAPPING.md` — platform vs domain classification
+5. `docs/abstractions/umkhandlu/00_EXECUTIVE_SUMMARY.md` — the five-layer model
+6. `docs/context/product-vision.md` — Phase 18 description
 
 ---
 
-## What Phase 18 builds
+## Sub-phases (in order — do not skip)
 
-`apps/umkhandlu` — a governance operating platform for traditional authorities and community institutions.
-
-Not another CMS. Not another admin dashboard. An institutional memory engine.
-
-Sub-phases (in order — do not skip):
-- **18A** ⏳ Foundation — scaffold `apps/umkhandlu`, shell, navigation, domain, platform tables, Edge Functions
-- **18B** Governance Records — full record CRUD, lineage chain, evidence, status lifecycle
-- **18C** Notice Architecture — community + statutory notices, lifecycle, notice→record lineage
-- **18D** Public Participation — consent-gated, webhook-delivered, never stored
-- **18E** Evidence Engine — environmental context, TCRS conflict logs, Layer 5 derived outputs
-- **18F** Commercial Layer — CSR campaigns, certified deliverables, progress log, RAG, beneficiaries
-- **18G** Intelligence Dashboard — operator dashboard, node health, TCRS escalation surface
+- **18A** ⚠️ Foundation — scaffold correct, CRUD screens must be removed, node registry model needed
+- **18B** Node Connection — connect to first governance node, read-only API, data model alignment
+- **18C** Node Health View — per-node health dashboard, record/notice/project counts, status distributions
+- **18D** Cross-Node Aggregation — multi-node view, regional intelligence, comparative performance
+- **18E** Commercial Intelligence — RAG distribution, deliverables, beneficiary tracking, projections
+- **18F** TCRS Escalation Surface — conflict logs, authority classification, escalation tracking
+- **18G** Institutional Memory — lineage views, provenance, Layer 5 derived outputs
 
 ---
 
-## Architecture rules for Phase 18
+## 18A cleanup — what must be removed before 18B begins
 
-**Application ownership:**
-- `apps/umkhandlu` owns its own shell, navigation, and domain
-- It does not share shell or navigation with `apps/admin`
-- Umkhandlu domain lives in `apps/umkhandlu/src/domain/umkhandlu/` — never in `packages/shared`
-- The test: deleting Umkhandlu must leave `packages/` compiling without modification
+The following files were built incorrectly (governance CRUD, duplicates existing Umkhandlu repo):
 
-**Platform tables (new migrations):**
-- `records`, `notices`, `evidence`, `participation_log`, `conflict_logs`, `conflict_claims` — platform-owned
-- `governance_nodes`, `governance_areas`, `governance_persons` — Umkhandlu application tables
-- All new tables follow `10_DATABASE_IMPACT.md` classification
-- `docs/DATABASE_SCHEMA.md` is updated first — then the migration is written
-- Next migration: `006_platform_records.sql`
+```
+apps/umkhandlu/src/app/(umkhandlu)/records/
+apps/umkhandlu/src/app/(umkhandlu)/notices/
+```
 
-**Edge Functions:**
-- New functions: `records/index.ts`, `notices/index.ts`
-- Follow the exact same pattern as existing functions — Hono, `requireAuth()`, `checkRateLimit()`
-- Edge Functions are the only layer that touches the database — no exceptions
-
-**packages/api:**
-- New typed clients for `records` and `notices` added to `packages/api`
-- Domain types inlined as string literal unions — no import from `apps/umkhandlu/domain`
-- `packages/api` must remain usable by any application without domain dependency
-
-**packages/ are frozen:**
-- Do not restructure `packages/`
-- Do not add domain logic to `packages/shared`
-- Do not add application-specific components to `packages/ui`
-- Only add to `packages/api` when a new Edge Function endpoint requires a typed client
+These must be deleted. The platform tables (`records`, `notices`), Edge Functions, and
+`packages/api` clients remain — they define the shared data model nodes speak.
+Only the UI screens are wrong.
 
 ---
 
-## Domain vocabulary (Umkhandlu)
+## Architecture rules
 
-Use this vocabulary in `apps/umkhandlu` domain code. Never use it in `packages/`.
+**What the Control Centre builds:**
+- Node registry — which governance nodes are connected
+- Node health views — live state of a connected node (read-only queries)
+- Cross-node aggregation — patterns across multiple nodes
+- Intelligence dashboards — RAG, participation trends, commercial projections
+- TCRS escalation surface — conflict tracking across nodes
 
-| Concept | Vocabulary |
-|---|---|
-| Governance event origin | Notice |
-| Community notice types | meeting · announcement · resolution · alert · opportunity · employment · smme · project-update |
-| Statutory notice types | eia · rezoning · land-use · township · building · mining · liquor · telecom · estate · liquidation · pto |
-| Institutional memory node | Record |
-| Record types | minutes · resolution · community-decision · land-allocation · dispute-resolution · report · infrastructure-concern · project-outcome · policy · agenda · public-notice · external-resource |
-| Record status lifecycle | pending → adopted / approved / resolved |
-| Geographic unit | isigodi (ward-level), governance area |
-| Leadership | Inkosi (chief), Induna (headman) |
-| Project health | RAG — green / amber / red |
-| Project phases | planning · procurement · construction · commissioning · operational |
-| Funding sources | EPWP · MIG · WSIG · RBIG · own-funds · private |
-| Legal frameworks | SPLUMA · NEMA · B-BBEE · CIPC |
-| Infrastructure certificate | IPC (Infrastructure Progress Certificate) |
-| Project management | PMU (Project Management Unit) |
+**What the Control Centre never builds:**
+- Create/edit/delete screens for records, notices, evidence, participation
+- Governance workflow UI of any kind
+- Anything that duplicates `umkhandlu.unamifoundation.org`
+
+**Data flow:**
+```
+Governance Node (umkhandlu.unamifoundation.org)
+    │
+    │  read-only API (authenticated)
+    ▼
+apps/umkhandlu (Control Centre)
+    │
+    │  packages/api typed clients
+    ▼
+Intelligence views, health dashboards, aggregations
+```
+
+**packages/ rules:**
+- `packages/api` — add read-only intelligence clients only, no create/update operations
+- `packages/ui` — frozen, no new components
+- `packages/shared` — frozen, no domain logic
+
+**The test:** deleting `apps/umkhandlu` must leave `packages/` compiling without modification.
 
 ---
 
 ## Component rules (apps/umkhandlu)
 
-Same rules as `apps/admin`:
-- `@unami/ui` shared primitives for structural patterns: `PageHeader`, `KPIGrid`, `MetricCard`,
-  `TableToolbar`, `TablePagination`, `BulkActionBar`, `DataTable`, `EmptyState`, `ErrorState`,
-  `PageSkeleton`, `TableSkeleton`, `StatusBadge`, `AnalyticsCard`, `LineChart`, `BarChart`,
-  `PieChart`, `AreaChart`, `ActivityFeed`, `QuickActions`
+- `@unami/ui` shared primitives: `PageHeader`, `KPIGrid`, `MetricCard`, `AnalyticsCard`,
+  `LineChart`, `BarChart`, `PieChart`, `AreaChart`, `ActivityFeed`, `QuickActions`,
+  `EmptyState`, `ErrorState`, `PageSkeleton`, `TableSkeleton`
 - shadcn primitives from `src/components/ui/` for low-level elements
 - Do NOT use from `@unami/ui`: `AppShell`, `Sidebar`, `Header`, `MobileNav` — Phase 3 stubs
 - Badge variants: `default | secondary | destructive | outline` only
-- `data-active={isActive || undefined}` — never `data-active={isActive}`
-
-**Page layout rules** — identical to `apps/admin`:
-- List pages: `PageHeader` + `KPIGrid` (if metrics) + `TableToolbar` + table + `TablePagination`
-- Form pages: `PageHeader` + `max-w-2xl` + one `Card` per field group + submit row
-- Detail pages: `PageHeader` + `max-w-3xl` + `grid grid-cols-2 gap-4` + content `Card`(s)
-
----
-
-## Auth pattern (apps/umkhandlu)
-
-Same pattern as `apps/admin`:
-- `(umkhandlu)/layout.tsx` is the single auth gate
-- `getOperatorSession()` for session value downstream
-- `session!` non-null assertion in page files — layout guarantees non-null
-- Role checks use `session?.role` optional chaining
-
----
-
-## What is frozen — do not touch
-
-- `apps/admin` — Moments admin, complete and frozen
-- `apps/web` — Moments public PWA, complete and frozen
-- `packages/ui`, `packages/shared` — frozen at v1.0
-- `supabase/migrations/000_initial_schema.sql` — immutable
-- All existing Edge Functions — frozen unless a bug requires a fix
-- `docs/DATABASE_SCHEMA.md` — update here first before writing any migration
-
----
-
-## Commit pattern
-
-Each sub-phase committed with a descriptive message and pushed to `origin main` immediately.
-Format: `phase-18a-complete`, `phase-18b-complete`, etc.
-
-Typecheck before every commit: `pnpm --filter umkhandlu exec tsc --noEmit`
-
----
-
-## The five-layer model (architectural reference)
-
-Every concept in Umkhandlu maps to a layer:
-
-| Layer | Name | Concepts |
-|---|---|---|
-| 1 | Community Communication | Notice, announcement, alert, opportunity |
-| 2 | Governance Records | Record (all types), decision, resolution |
-| 3 | Evidence Preservation | Attachments, public comments, conflict logs |
-| 4 | Institutional Memory | Lineage, parent/child chains, provenance |
-| 5 | Governance Evidence | Certificates, journey maps, audit packages |
-
-Layer 5 is derived from Layers 1–4. It is never a primary input.
 
 ---
 
 ## Before writing any code — answer these questions
 
-1. Does this concept belong in the platform (`packages/`) or in the application (`apps/umkhandlu`)?
-2. Is this platform-generic or Umkhandlu domain-specific? (check `09_PLATFORM_MAPPING.md`)
-3. Does an equivalent already exist in `packages/` or in the existing schema?
+1. Is this a read operation (intelligence, aggregation, health view) or a write operation (CRUD)?
+   If write — stop. The Control Centre does not write governance data.
+2. Does this duplicate something that already exists in `umkhandlu.unamifoundation.org`?
+   If yes — stop.
+3. Does this belong in `packages/` or `apps/umkhandlu`?
 4. Does this introduce domain vocabulary into a shared package?
 
 If any answer is uncertain — stop and ask before writing.

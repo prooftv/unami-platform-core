@@ -167,26 +167,50 @@ The moment feed, detail, region, and category pages are always Supabase-driven.
 The homepage hero, featured stories, and static pages are always Sanity-driven (from Phase 17B).
 Neither source crosses into the other's domain.
 
-## D-030: No new application until Moments Phase 17J is complete
-No new platform application may begin until Moments has completed Phase 17J
-(Production Validation and Launch). After Moments is production-ready, subsequent
-applications must consume Unami Platform Core rather than extending it, unless a
-documented platform capability is genuinely missing and benefits more than one application.
+## D-035: Phase 18 is the Unami Control Centre — not a governance editor
 
-Each application builds its own shell, navigation, and domain on top of
-`@unami/ui`, `@unami/shared`, `@unami/api`. None of them modify `packages/`.
-The platform serves them — they do not reshape it.
+The production Umkhandlu governance application exists at `umkhandlu.unamifoundation.org`.
+It owns governance editing, records, notices, evidence, participation, public website, and Sanity Studio.
+Platform Core does not duplicate it.
 
-Phase 18 (Umkhandlu Intelligence Dashboard) is the first application after Moments.
-It is the first validation that the platform supports multiple applications without
-architectural changes.
+`apps/umkhandlu` inside Platform Core is the **Unami Control Centre** — a read-oriented
+intelligence application that connects to deployed governance nodes and aggregates institutional
+intelligence across them.
+
+The abstraction pack (`docs/abstractions/umkhandlu/`) defines shared platform concepts so that
+all nodes speak the same language when the Control Centre queries them. It does not require
+Platform Core to build CRUD screens for those concepts.
+
+The constitutional hierarchy when documents conflict:
+1. `product-vision.md` — what the product exists to become
+2. `architecture.md` — how that vision is realised
+3. `decisions.md` — immutable architectural decisions
+4. `PROJECT_STATUS.md` — current execution plan only
+
+`PROJECT_STATUS.md` cannot redefine the product. It tracks implementation of the product
+already defined in the documents above it. When phase descriptions in `PROJECT_STATUS.md`
+contradict `product-vision.md` or `decisions.md`, the higher documents win.
+
+Phase 18 sub-phases (corrected):
+- **18A** — Foundation: scaffold `apps/umkhandlu` as Control Centre, node registry model, platform tables
+- **18B** — Node Connection: connect to first governance node, read-only API, data model alignment
+- **18C** — Node Health View: per-node health dashboard, record/notice/project counts, status distributions
+- **18D** — Cross-Node Aggregation: multi-node view, regional intelligence, comparative performance
+- **18E** — Commercial Intelligence: RAG distribution, deliverables, beneficiary tracking, projections
+- **18F** — TCRS Escalation Surface: conflict logs, authority classification, escalation tracking
+- **18G** — Institutional Memory: lineage views, provenance, Layer 5 derived outputs
+
+The CRUD screens built in the previous 18A–18C implementation (records list, record detail,
+create record, notices list, notice detail, create notice) are the wrong thing.
+They duplicate the existing Umkhandlu repository and must not be deployed or extended.
+They may be removed in a cleanup commit before 18B begins.
 
 ## D-032: Platform validation order
 Unami Platform Core reached platform completeness at v1.0.0. All future work follows
 a validation sequence:
 
 1. Complete the first product (Moments — Phase 17A through 17J).
-2. Validate the platform through a second application (Umkhandlu Intelligence Dashboard — Phase 18).
+2. Validate the platform through a second application (Unami Control Centre — Phase 18).
 3. Expand the platform only when validated application requirements reveal reusable capabilities
    that genuinely benefit more than one application.
 
@@ -197,7 +221,7 @@ The roadmap:
 ```
 Phase 16  Platform Independence          ✅ Complete
 Phase 17  Moments Product Completion     ⏳ Active
-Phase 18  Umkhandlu Intelligence Dashboard
+Phase 18  Unami Control Centre
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence
 Phase 21  National Institutional Memory
@@ -252,7 +276,7 @@ The remaining gates before launch are operational:
 - Lighthouse scores verified, first real broadcast sent
 
 The acceptance checklist is `docs/LAUNCH_CHECKLIST.md`.
-Phase 18 (Umkhandlu Intelligence Dashboard) begins only after the checklist is signed off.
+Phase 18 (Unami Control Centre) begins only after the checklist is signed off.
 
 ---
 

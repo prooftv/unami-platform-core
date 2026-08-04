@@ -10,7 +10,7 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 18C — Notice Architecture |
+| Phase | Phase 18A — Foundation (direction corrected, cleanup pending) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
@@ -28,7 +28,7 @@ From here, all work is **application validation** — building products that pro
 reveal what it still needs, and expand its capabilities only when a concrete requirement demands it.
 
 Moments is the first product. It validates the platform end to end.
-The Umkhandlu Intelligence Dashboard is the second. It validates multi-application federation.
+The Unami Control Centre is the second. It validates multi-application federation.
 
 ---
 
@@ -284,18 +284,23 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 
 ---
 
-## Phase 18 — Umkhandlu Intelligence Dashboard ⏳ Active
+## Phase 18 — Unami Control Centre ⏳ Active
 
-**Goal:** The first application built on top of the mature platform. Not another CMS. Not another admin.
-The governance operating platform for traditional authorities and community institutions.
-Validates multi-application federation — proves the platform serves more than one product.
+**Goal:** The first application built on top of the mature platform.
+Not a governance editor. Not a CRUD application. The control centre that connects to
+deployed governance nodes and produces institutional intelligence across them.
+
+The production Umkhandlu governance application (`umkhandlu.unamifoundation.org`) already exists
+and owns governance editing, records, notices, evidence, participation, public website, Sanity Studio.
+Platform Core does not duplicate it. See D-035 in `decisions.md`.
 
 Constitutional reference: `docs/abstractions/umkhandlu/` (13 documents).
-Read `12_IMPLEMENTATION_ROADMAP.md` and `09_PLATFORM_MAPPING.md` before writing any code.
+Read `08_INTELLIGENCE_LAYER.md` and `09_PLATFORM_MAPPING.md` before writing any code.
 
 ```
                Node 1              Node 2              Node 3
            Umkhandlu A          Umkhandlu B          Umkhandlu C
+         (governance node)   (governance node)   (governance node)
                 │                    │                    │
                 └────────────────────┴────────────────────┘
                                      │
@@ -303,57 +308,55 @@ Read `12_IMPLEMENTATION_ROADMAP.md` and `09_PLATFORM_MAPPING.md` before writing 
                                      │
                          ────────────────────────
                            Unami Control Centre
+                              apps/umkhandlu
                          ────────────────────────
-                    Institutional Memory · Commercial Intelligence
-                    Infrastructure Intelligence · Participation
-                    Evidence · AI Insights · Regional Trends
-                    Provincial Trends · National Trends
-                    Predictive Analytics
+                    Node Registry · Health Views
+                    Cross-node Aggregation
+                    Commercial Intelligence
+                    TCRS Escalation Surface
+                    Institutional Memory
 ```
 
-### Phase 18A — Foundation ✅ Complete
+### Phase 18A — Foundation ⚠️ Partially complete — direction corrected
 
-| Task | Status |
-|---|---|
-| Scaffold `apps/umkhandlu` — Next.js, TypeScript, Tailwind, shadcn | ✅ |
-| Shell, navigation, domain structure (`src/domain/umkhandlu/`) | ✅ |
-| Platform tables: `records`, `notices` — migration `006_platform_records.sql` | ✅ |
-| Edge Functions: `records/index.ts`, `notices/index.ts` | ✅ |
-| Typed clients in `packages/api` — `records`, `notices` | ✅ |
-| `apps/umkhandlu` wired to `packages/api` typed clients | ✅ |
-| Typecheck clean, build passing | ✅ |
+The scaffold, shell, navigation, domain structure, platform tables (`records`, `notices`),
+Edge Functions, and `packages/api` clients are correct and remain.
 
-### Phase 18B — Governance Records ✅ Complete
+What was built incorrectly: CRUD screens (records list, record detail, create record,
+notices list, notice detail, create notice). These duplicate the existing Umkhandlu
+repository and must be removed before 18B begins.
 
-| Task | Status |
-|---|---|
-| Records list page — paginated, filterable by status and type | ✅ |
-| Record detail page — content, metadata, lineage chain display | ✅ |
-| Create record form — type, title, content, origin notice linkage | ✅ |
-| Status transition UI — governance-gated, permanent | ✅ |
-| `getApiClient` helper — mirrors apps/admin pattern | ✅ |
-| Loading skeletons on all routes | ✅ |
-| Typecheck clean | ✅ |
+What remains for 18A completion:
+- Remove CRUD screens from `apps/umkhandlu`
+- Define the node registry model
+- Define the read-only node API contract (what a node must expose to the Control Centre)
+- Correct the navigation to reflect Control Centre intent
 
-### Phase 18C — Notice Architecture
+### Phase 18B — Node Connection
 
-Community notices, statutory notices, notice lifecycle, notice→record lineage.
+Connect to the first governance node via read-only API. Data model alignment.
+The Control Centre queries a live node and displays what it knows.
 
-### Phase 18D — Public Participation
+### Phase 18C — Node Health View
 
-Consent-gated participation forms, webhook delivery, participation log, deadline enforcement, proof of publication.
+Per-node health dashboard. Record/notice/project counts. Status distributions.
+The operator sees the live state of a connected node.
 
-### Phase 18E — Evidence Engine
+### Phase 18D — Cross-Node Aggregation
 
-Environmental context (weather auto-capture), TCRS conflict logs, Layer 5 derived outputs.
+Multi-node view. Regional intelligence. Comparative performance across nodes.
 
-### Phase 18F — Commercial Layer
+### Phase 18E — Commercial Intelligence
 
-CSR campaign type, certified deliverables, progress log, RAG status, beneficiary tracking.
+RAG distribution across nodes. Deliverables. Beneficiary tracking. Projections.
 
-### Phase 18G — Intelligence Dashboard
+### Phase 18F — TCRS Escalation Surface
 
-Operator dashboard, node health view, TCRS escalation surface.
+Conflict logs. Authority classification. Escalation tracking across nodes.
+
+### Phase 18G — Institutional Memory
+
+Lineage views. Provenance. Layer 5 derived outputs.
 
 ---
 
@@ -362,7 +365,7 @@ Operator dashboard, node health view, TCRS escalation surface.
 ```
 Phase 16  Platform Independence          ✅ Complete
 Phase 17  Moments Product Completion     ✅ Engineering Complete (ops gates remaining)
-Phase 18  Umkhandlu Intelligence Dashboard  ⏳ Active (18A)
+Phase 18  Unami Control Centre                ⏳ Active (18A — cleanup pending)
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence
 Phase 21  National Institutional Memory

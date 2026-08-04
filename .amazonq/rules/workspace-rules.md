@@ -20,7 +20,7 @@
 ## What this repository is now
 Unami Platform Core v1.0 is complete. This is application validation work — not platform engineering.
 Moments is the first product. It validates the platform end to end.
-The Umkhandlu Intelligence Dashboard (Phase 18) is the second. It validates multi-application federation.
+The Unami Control Centre (Phase 18) is the second. It validates multi-application federation.
 Do not begin a new phase until the previous phase is complete and documented.
 
 ## Platform is frozen at v1.0
@@ -33,7 +33,7 @@ Do not begin a new phase until the previous phase is complete and documented.
 - Fix bugs only — no speculative improvements to infrastructure
 
 ## Current priority
-Phase 18 — Umkhandlu Intelligence Dashboard. Active.
+Phase 18 — Unami Control Centre. Active.
 
 Moments (Phase 17) is engineering-complete and frozen. Do not touch `apps/admin`, `apps/web`,
 or any Moments Edge Functions unless a production bug requires it.
@@ -43,13 +43,13 @@ The constitutional reference is `docs/abstractions/umkhandlu/` (13 documents).
 Read `12_IMPLEMENTATION_ROADMAP.md` and `09_PLATFORM_MAPPING.md` before writing any code.
 
 Phase 18 sub-phases (in order — do not skip):
-- **18A** ⏳ Foundation — scaffold `apps/umkhandlu`, shell, navigation, domain structure, platform tables, Edge Functions
-- **18B** Governance Records — full record CRUD, lineage chain, evidence attachments, status lifecycle
-- **18C** Notice Architecture — community notices, statutory notices, notice lifecycle, notice→record lineage
-- **18D** Public Participation — consent-gated forms, webhook delivery, participation log, deadline enforcement
-- **18E** Evidence Engine — environmental context, TCRS conflict logs, Layer 5 derived outputs
-- **18F** Commercial Layer — CSR campaign type, certified deliverables, progress log, RAG status, beneficiary tracking
-- **18G** Intelligence Dashboard — operator dashboard, node health view, TCRS escalation surface
+- **18A** ⚠️ Foundation — scaffold correct (cleanup: remove CRUD screens, define node registry, define node API contract)
+- **18B** Node Connection — connect to first governance node via read-only API, data model alignment
+- **18C** Node Health View — per-node health dashboard, record/notice/project counts, status distributions
+- **18D** Cross-Node Aggregation — multi-node view, regional intelligence, comparative performance
+- **18E** Commercial Intelligence — RAG distribution, deliverables, beneficiary tracking, projections
+- **18F** TCRS Escalation Surface — conflict logs, authority classification, escalation tracking
+- **18G** Institutional Memory — lineage views, provenance, Layer 5 derived outputs
 
 ## Phase 17 — Moments Product Completion ✅ Engineering Complete
 All ten sub-phases complete. Frozen. Ops gates remaining (see `docs/LAUNCH_CHECKLIST.md`).
@@ -65,16 +65,17 @@ All ten sub-phases complete. Frozen. Ops gates remaining (see `docs/LAUNCH_CHECK
 - **17I** ✅ WhatsApp Integration
 - **17J** ✅ Production Validation — engineering complete, ops pending
 
-## Phase 18 rules — Umkhandlu application
-- `apps/umkhandlu` owns its own shell, navigation, and domain — it does not share with `apps/admin`
-- Umkhandlu domain lives in `apps/umkhandlu/src/domain/umkhandlu/` — never in `packages/shared`
-- Platform tables (`records`, `notices`, `evidence`, `participation_log`, `conflict_logs`) are added via new migrations
-- Umkhandlu-specific tables (`governance_nodes`, `governance_areas`, `governance_persons`) are application tables
-- New Edge Functions: `records`, `notices` — follow the same pattern as existing functions
-- New typed clients added to `packages/api` — domain types inlined as string literals, no domain dependency
-- All governance concepts trace back to `docs/abstractions/umkhandlu/` — read before implementing
+## Phase 18 rules — Unami Control Centre
+- `apps/umkhandlu` is the Unami Control Centre — a read-oriented intelligence application, not a governance editor
+- The production Umkhandlu governance application (`umkhandlu.unamifoundation.org`) owns governance editing — do not duplicate it
+- `apps/umkhandlu` connects to deployed governance nodes via read-only APIs and aggregates institutional intelligence
+- Do not build CRUD screens for records, notices, evidence, or participation inside `apps/umkhandlu`
+- The abstraction pack defines shared platform concepts so nodes speak the same language — it does not require CRUD UI in Platform Core
+- Platform tables (`records`, `notices`) already added in 18A — they define the shared data model, not a UI to edit them
+- The node registry model defines which governance nodes the Control Centre connects to
+- New typed clients in `packages/api` are read-only intelligence clients — no create/update operations from the Control Centre
+- All intelligence concepts trace back to `docs/abstractions/umkhandlu/08_INTELLIGENCE_LAYER.md`
 - The platform mapping reference is `09_PLATFORM_MAPPING.md` — classifies every concept as platform or domain
-- New database tables follow `10_DATABASE_IMPACT.md` classification — no speculative additions
 - The test: deleting Umkhandlu must leave `packages/` compiling without modification
 - Do not touch `apps/admin` or `apps/web` — Moments is frozen
 
@@ -190,7 +191,7 @@ Every detail/view page must follow this exact structure:
 ```
 Phase 16  Platform Independence          ✅ Complete
 Phase 17  Moments Product Completion     ✅ Engineering Complete (ops pending)
-Phase 18  Umkhandlu Intelligence Dashboard  ⏳ Active (18A)
+Phase 18  Unami Control Centre                ⏳ Active (18A — cleanup pending)
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence
 Phase 21  National Institutional Memory
