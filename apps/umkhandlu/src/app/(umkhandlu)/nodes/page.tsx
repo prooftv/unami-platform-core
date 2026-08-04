@@ -2,7 +2,7 @@ import { PageHeader } from '@unami/ui';
 import { fetchRegisteredNodes } from '@/lib/nodes/fetcher';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Network, MapPin, Cpu, CheckCircle2, AlertTriangle, WifiOff } from 'lucide-react';
+import { MapPin, Cpu, CheckCircle2, AlertTriangle, WifiOff } from 'lucide-react';
 
 const STATUS_ICON = {
   healthy:     <CheckCircle2 className="h-4 w-4 text-green-500" />,
@@ -26,63 +26,85 @@ export default async function NodesPage() {
         description="Governance nodes connected to the Control Centre"
       />
 
-      {nodes.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center gap-3">
-            <WifiOff className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm font-medium">No nodes connected</p>
-            <p className="text-xs text-muted-foreground max-w-sm">
-              Set <span className="font-mono">UMKHANDLU_NODE_API_KEY</span> in environment variables to connect the first governance node.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {nodes.map(({ identity, health }) => (
+      <div className="max-w-3xl space-y-6">
+        {nodes.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center gap-3">
+              <WifiOff className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-medium">No nodes connected</p>
+              <p className="text-xs text-muted-foreground max-w-sm">
+                Set <span className="font-mono">UMKHANDLU_NODE_API_KEY</span> in environment variables to connect the first governance node.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          nodes.map(({ identity, health }) => (
             <Card key={identity.id}>
-              <CardHeader className="pb-3 border-b">
+              <CardHeader className="border-b pb-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <CardTitle className="text-sm font-semibold truncate">{identity.name}</CardTitle>
-                    <CardDescription className="text-xs mt-0.5 truncate">{identity.authority}</CardDescription>
+                    <CardTitle className="text-base">{identity.name}</CardTitle>
+                    <CardDescription className="mt-0.5">{identity.authority}</CardDescription>
                   </div>
                   <Badge variant={STATUS_VARIANT[health?.status ?? 'unreachable']}>
                     {health?.status ?? 'unreachable'}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="pt-3 space-y-3">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  {identity.location}
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Cpu className="h-3.5 w-3.5 shrink-0" />
-                  Contract v{identity.contractVersion} · Node v{identity.version}
-                </div>
-                {health && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {STATUS_ICON[health.status]}
-                    {health.recordCount} records · {health.noticeCount} notices
+              <CardContent className="pt-4 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Location</p>
+                    <div className="flex items-center gap-1.5 text-sm">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      {identity.location}
+                    </div>
                   </div>
-                )}
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {identity.capabilities.map((cap) => (
-                    <Badge key={cap} variant="outline" className="text-[10px] px-1.5 py-0">
-                      {cap}
-                    </Badge>
-                  ))}
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Version</p>
+                    <div className="flex items-center gap-1.5 text-sm">
+                      <Cpu className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      Contract v{identity.contractVersion} · Node v{identity.version}
+                    </div>
+                  </div>
+                  {health && (
+                    <>
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Records</p>
+                        <div className="flex items-center gap-1.5 text-sm">
+                          {STATUS_ICON[health.status]}
+                          {health.recordCount} records
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Notices</p>
+                        <p className="text-sm">{health.noticeCount} notices</p>
+                      </div>
+                    </>
+                  )}
                 </div>
+
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">Capabilities</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {identity.capabilities.map((cap) => (
+                      <Badge key={cap} variant="outline" className="text-xs">
+                        {cap}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
                 {health?.lastUpdated && (
-                  <p className="text-[10px] text-muted-foreground">
-                    Updated {new Date(health.lastUpdated).toLocaleString()}
+                  <p className="text-xs text-muted-foreground">
+                    Last updated {new Date(health.lastUpdated).toLocaleString()}
                   </p>
                 )}
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }
