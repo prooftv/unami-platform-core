@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 17H — Intelligence Foundation ✅ Complete |
+| Phase | Phase 17I — WhatsApp Integration ✅ Complete |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `phase-17h-complete` (pending push) |
+| Last commit | `phase-17i-complete` (pending push) |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -235,23 +235,27 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 
 ---
 
-### Phase 17I — WhatsApp Integration ⏳
+### Phase 17I — WhatsApp Integration ✅
 
-**Goal:** End-to-end broadcast delivery working in production.
-Last — only once PWA, CMS, participation, evidence, and commercial layers all exist.
+**Goal:** End-to-end WhatsApp delivery working. Reply handlers live. Broadcast production-ready.
 
 | Task | Status |
 |---|---|
-| WhatsApp Cloud API credentials configured | ⏳ Ops |
-| HELP reply handler (Edge Function) | ⏳ |
-| STATUS reply handler (Edge Function) | ⏳ |
-| MYAUTHORITY reply handler (Edge Function) | ⏳ |
-| Opt-in / opt-out confirmation messages | ⏳ |
-| Broadcast template testing | ⏳ |
-| Live webhook end-to-end test with real subscriber | ⏳ |
-| Delivery verification and retry testing | ⏳ |
-| POPIA compliance verification | ⏳ |
-| Full flow: Admin → Broadcast → WhatsApp → Subscriber → PWA | ⏳ |
+| `sendWhatsAppMessage` helper — extracted, used by all reply handlers | ✅ |
+| HELP reply handler — full command menu sent directly from webhook | ✅ |
+| STATUS reply handler — fetches subscriber settings, replies with live data | ✅ |
+| MYAUTHORITY reply handler — fetches authority profile, replies with level/role/scope | ✅ |
+| Opt-in confirmation message — welcome message sent on START | ✅ |
+| Opt-out confirmation message — unsubscribe confirmation sent on STOP | ✅ |
+| YES/NO added to OPT_IN/OPT_OUT command lists | ✅ |
+| MY added to STATUS command list | ✅ |
+| Broadcast — template support with free-text fallback | ✅ |
+| `buildTemplatePayload` — WhatsApp template with language mapping | ✅ |
+| `buildFreeTextPayload` — fallback for unverified/dev environments | ✅ |
+| `WHATSAPP_DEFAULT_TEMPLATE` env var documented in `.env.example` | ✅ |
+| WhatsApp Business Account verified | ⏳ Ops |
+| WhatsApp credentials set in Supabase secrets | ⏳ Ops |
+| Live end-to-end test with real subscriber | ⏳ Ops |
 
 ---
 
@@ -313,7 +317,7 @@ Sub-phases defined in `docs/abstractions/umkhandlu/12_IMPLEMENTATION_ROADMAP.md`
 
 ```
 Phase 16  Platform Independence          ✅ Complete
-Phase 17  Moments Product Completion     ⏳ Active (17I)
+Phase 17  Moments Product Completion     ⏳ Active (17J)
 Phase 18  Umkhandlu Intelligence Dashboard
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence

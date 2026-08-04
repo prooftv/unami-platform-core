@@ -205,7 +205,7 @@ async function executeBroadcast(
 }
 
 // ---------------------------------------------------------------------------
-// Meta API send (stub — replace with real Meta Cloud API call)
+// Meta API send — template with free-text fallback
 // ---------------------------------------------------------------------------
 
 async function sendBatch(
@@ -215,9 +215,9 @@ async function sendBatch(
   const startedAt = new Date().toISOString();
   const waToken = Deno.env.get('WHATSAPP_TOKEN');
   const phoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
+  const templateName = (moment.template_name as string | null) ?? Deno.env.get('WHATSAPP_DEFAULT_TEMPLATE');
 
   if (!waToken || !phoneNumberId) {
-    // No credentials configured — treat as failure in production, success in dev
     const isDev = Deno.env.get('ENVIRONMENT') === 'development';
     return { success: isDev ? phoneNumbers.length : 0, failure: isDev ? 0 : phoneNumbers.length, startedAt };
   }
@@ -228,23 +228,35 @@ async function sendBatch(
   await Promise.allSettled(
     phoneNumbers.map(async (phone) => {
       try {
+        const body = templateName
+          ? buildTemplatePayload(phone, templateName, moment)
+          : buildFreeTextPayload(phone, moment);
+
         const res = await fetch(
           `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
           {
             method: 'POST',
-            headers: {
-              Authorization: `Bearer ${waToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              messaging_product: 'whatsapp',
-              to: phone,
-              type: 'text',
-              text: { body: formatMessage(moment) },
-            }),
+            headers: { Authorization: `Bearer ${waToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
           },
         );
-        if (res.ok) success++; else failure++;
+
+        // If template send fails (e.g. template not approved), fall back to free text
+        if (!res.ok && templateName) {
+          const fallback = await fetch(
+            `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+            {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${waToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify(buildFreeTextPayload(phone, moment)),
+            },
+          );
+          if (fallback.ok) success++; else failure++;
+        } else if (res.ok) {
+          success++;
+        } else {
+          failure++;
+        }
       } catch {
         failure++;
       }
@@ -252,6 +264,49 @@ async function sendBatch(
   );
 
   return { success, failure, startedAt };
+}
+
+function buildTemplatePayload(
+  to: string,
+  templateName: string,
+  moment: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    messaging_product: 'whatsapp',
+    to,
+    type: 'template',
+    template: {
+      name: templateName,
+      language: { code: mapLanguageCode(moment.language as string) },
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: String(moment.title) },
+            { type: 'text', text: String(moment.content).slice(0, 1024) },
+            { type: 'text', text: moment.pwa_link ? String(moment.pwa_link) : '' },
+          ],
+        },
+      ],
+    },
+  };
+}
+
+function buildFreeTextPayload(
+  to: string,
+  moment: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    messaging_product: 'whatsapp',
+    to,
+    type: 'text',
+    text: { body: formatMessage(moment) },
+  };
+}
+
+function mapLanguageCode(lang: string): string {
+  const map: Record<string, string> = { eng: 'en', zul: 'zu', xho: 'xh', afr: 'af' };
+  return map[lang] ?? 'en';
 }
 
 function formatMessage(moment: Record<string, unknown>): string {

@@ -2,12 +2,41 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logError, checkRateLimit } from '../_shared/auth.ts';
 
 const COMMANDS = {
-  OPT_IN:    ['START', 'JOIN', 'SUBSCRIBE'],
-  OPT_OUT:   ['STOP', 'UNSUBSCRIBE', 'QUIT', 'CANCEL'],
-  HELP:      ['HELP', 'INFO', 'MENU', '?'],
-  STATUS:    ['STATUS', 'SETTINGS'],
+  OPT_IN:       ['START', 'JOIN', 'SUBSCRIBE', 'YES'],
+  OPT_OUT:      ['STOP', 'UNSUBSCRIBE', 'QUIT', 'CANCEL', 'NO'],
+  HELP:         ['HELP', 'INFO', 'MENU', '?'],
+  STATUS:       ['STATUS', 'SETTINGS', 'MY'],
   MY_AUTHORITY: ['MYAUTHORITY'],
 } as const;
+
+// ---------------------------------------------------------------------------
+// WhatsApp send helper
+// ---------------------------------------------------------------------------
+
+async function sendWhatsAppMessage(to: string, body: string): Promise<boolean> {
+  const token = Deno.env.get('WHATSAPP_TOKEN');
+  const phoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
+  if (!token || !phoneNumberId) return false;
+
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to,
+          type: 'text',
+          text: { body },
+        }),
+      },
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 Deno.serve(async (req: Request) => {
   // Meta webhook verification (GET)
@@ -200,13 +229,18 @@ async function routeMessage(
     return;
   }
 
-  if (COMMANDS.MY_AUTHORITY.includes(command as never)) {
-    await handleMyAuthority(supabase, fromNumber, authority);
+  if (COMMANDS.HELP.includes(command as never)) {
+    await handleHelp(fromNumber);
     return;
   }
 
-  if (COMMANDS.HELP.includes(command as never) || COMMANDS.STATUS.includes(command as never)) {
-    // Handled by n8n workflow — no DB action needed
+  if (COMMANDS.STATUS.includes(command as never)) {
+    await handleStatus(supabase, fromNumber);
+    return;
+  }
+
+  if (COMMANDS.MY_AUTHORITY.includes(command as never)) {
+    await handleMyAuthority(supabase, fromNumber, authority);
     return;
   }
 
@@ -214,7 +248,7 @@ async function routeMessage(
   await supabase.from('advisories').insert({
     message_id: messageId,
     advisory_type: 'content_quality',
-    confidence: 0.5, // placeholder — real MCP analysis via n8n
+    confidence: 0.5,
     urgency_level: 'low',
     escalation_suggested: false,
     details: { raw_text: rawText, authority_level: authority?.authority_level ?? 1 },
@@ -238,6 +272,18 @@ async function handleOptIn(supabase: ReturnType<typeof createClient>, fromNumber
     resource_type: 'subscription',
     resource_id: fromNumber,
   });
+
+  await sendWhatsAppMessage(
+    fromNumber,
+    `✅ *Welcome to Moments!*
+
+You’re now subscribed to community updates for your region.
+
+You’ll receive important notices, opportunities, and community news directly here.
+
+Reply *STOP* at any time to unsubscribe.
+Reply *HELP* for the full menu.`,
+  );
 }
 
 async function handleOptOut(supabase: ReturnType<typeof createClient>, fromNumber: string) {
@@ -255,6 +301,73 @@ async function handleOptOut(supabase: ReturnType<typeof createClient>, fromNumbe
     resource_type: 'subscription',
     resource_id: fromNumber,
   });
+
+  await sendWhatsAppMessage(
+    fromNumber,
+    `You have been unsubscribed from Moments community updates.
+
+You will no longer receive broadcasts.
+
+Reply *START* at any time to resubscribe.`,
+  );
+}
+
+async function handleHelp(fromNumber: string) {
+  await sendWhatsAppMessage(
+    fromNumber,
+    `*Moments — Community Updates*
+
+Available commands:
+
+• *START* — Subscribe to community updates
+• *STOP* — Unsubscribe from all updates
+• *STATUS* — View your current subscription settings
+• *MYAUTHORITY* — View your community authority level
+• *HELP* — Show this menu
+
+You can also send a message to share community news. It will be reviewed before publishing.
+
+Powered by Unami Platform.`,
+  );
+}
+
+async function handleStatus(supabase: ReturnType<typeof createClient>, fromNumber: string) {
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('opted_in, regions, categories, language_preference, delivery_schedule, opted_in_at')
+    .eq('phone_number', fromNumber)
+    .single();
+
+  if (!sub || !sub.opted_in) {
+    await sendWhatsAppMessage(
+      fromNumber,
+      `You are not currently subscribed to Moments.
+
+Reply *START* to subscribe and receive community updates.`,
+    );
+    return;
+  }
+
+  const regions = (sub.regions as string[]).join(', ') || 'National';
+  const categories = (sub.categories as string[]).join(', ') || 'All';
+  const schedule = (sub.delivery_schedule as string) ?? 'instant';
+  const since = sub.opted_in_at
+    ? new Date(sub.opted_in_at as string).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'Unknown';
+
+  await sendWhatsAppMessage(
+    fromNumber,
+    `*Your Moments Subscription*
+
+✅ Status: Active
+📍 Regions: ${regions}
+🏷️ Categories: ${categories}
+⏰ Delivery: ${schedule}
+📅 Subscribed since: ${since}
+
+Reply *STOP* to unsubscribe.
+Reply *HELP* for all commands.`,
+  );
 }
 
 async function handleMyAuthority(
@@ -262,13 +375,50 @@ async function handleMyAuthority(
   fromNumber: string,
   authority: Record<string, unknown> | null,
 ) {
-  // Response is sent via n8n workflow — we just log the request
   await supabase.from('analytics_events').insert({
     event_type: 'authority_queried',
     resource_type: 'authority_profile',
     resource_id: fromNumber,
     metadata: { has_authority: !!authority },
   });
+
+  if (!authority) {
+    await sendWhatsAppMessage(
+      fromNumber,
+      `*Your Community Authority*
+
+You are registered as a standard community member.
+
+Authority Level: 1 — Community Member
+Scope: Community
+
+Contact your community administrator to request elevated authority status.`,
+    );
+    return;
+  }
+
+  const level = authority.authority_level as number;
+  const role = authority.role_label as string;
+  const scope = authority.scope as string;
+  const scopeId = authority.scope_identifier as string | null;
+  const validUntil = authority.valid_until as string | null;
+
+  const scopeDisplay = scopeId ? `${scope} (${scopeId})` : scope;
+  const validDisplay = validUntil
+    ? new Date(validUntil).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'Permanent';
+
+  await sendWhatsAppMessage(
+    fromNumber,
+    `*Your Community Authority*
+
+🏅 Role: ${role}
+🔢 Level: ${level} of 5
+🌍 Scope: ${scopeDisplay}
+📅 Valid until: ${validDisplay}
+
+Your authority level determines how your community submissions are reviewed and how many people can receive your broadcasts.`,
+  );
 }
 
 async function processStatusUpdate(
