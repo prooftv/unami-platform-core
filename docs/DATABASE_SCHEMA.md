@@ -804,6 +804,67 @@ Formal evidence attachments on moments. Additive only — rows are never deleted
 
 ---
 
+## Platform Records — Phase 18A
+
+Added by migration `006_platform_records.sql`. Platform-owned tables reusable across all applications.
+
+### records
+
+Institutional memory nodes with lineage. The governance equivalent of a moment.
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| id | UUID | PK, default gen_random_uuid() | |
+| type | TEXT | NOT NULL | minutes/resolution/community-decision/land-allocation/dispute-resolution/report/infrastructure-concern/project-outcome/policy/agenda/public-notice/external-resource |
+| title | TEXT | NOT NULL, length 3–200 | |
+| content | TEXT | NOT NULL, length 10–5000 | |
+| status | TEXT | NOT NULL, default 'pending' | pending/adopted/approved/resolved/rejected |
+| authority_id | TEXT | nullable | Governance authority identifier |
+| approved_by | TEXT | nullable | Person who approved |
+| parent_record_id | UUID | FK records(id) ON DELETE SET NULL, nullable | Lineage chain |
+| origin_notice_id | UUID | FK notices(id) ON DELETE SET NULL, nullable | Origin notice |
+| weather_context | JSONB | nullable | WeatherSnapshot — auto-captured |
+| created_by | TEXT | NOT NULL | Admin user ID |
+| created_at | TIMESTAMPTZ | NOT NULL, default NOW() | |
+| updated_at | TIMESTAMPTZ | NOT NULL, auto-updated | |
+
+**Rules:**
+- Records are immutable once status reaches terminal state (adopted/approved/resolved/rejected).
+- New records reference old ones via `parent_record_id` — the chain is never broken.
+- `weather_context` is auto-captured, never manually entered.
+
+**RLS:** anon: no access. authenticated: read. service_role: all.
+
+---
+
+### notices
+
+Governance event origins. Community and statutory notices.
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| id | UUID | PK, default gen_random_uuid() | |
+| type | TEXT | NOT NULL | meeting/announcement/resolution/alert/opportunity/employment/smme/project-update/eia/rezoning/land-use/township/building/mining/liquor/telecom/estate/liquidation/pto |
+| title | TEXT | NOT NULL, length 3–200 | |
+| content | TEXT | NOT NULL, length 10–5000 | |
+| status | TEXT | NOT NULL, default 'draft' | draft/published/open/closed/approved/rejected/withdrawn/archived |
+| is_statutory | BOOLEAN | NOT NULL, default false | Derived from type on insert |
+| comment_deadline | TIMESTAMPTZ | nullable | Statutory notices only |
+| comments_received | INTEGER | NOT NULL, default 0, CHECK >= 0 | Operator-maintained count |
+| weather_context | JSONB | nullable | WeatherSnapshot — auto-captured |
+| created_by | TEXT | NOT NULL | Admin user ID |
+| created_at | TIMESTAMPTZ | NOT NULL, default NOW() | |
+| updated_at | TIMESTAMPTZ | NOT NULL, auto-updated | |
+
+**Rules:**
+- `is_statutory` is set automatically based on `type` — not user-supplied.
+- `comment_deadline` is required for statutory notices when status transitions to `open`.
+- `comments_received` is incremented by the operator from webhook data — never from live submissions.
+
+**RLS:** anon: SELECT where status IN ('published', 'open'). authenticated: all. service_role: all.
+
+---
+
 ## Next Step
 
 Generate `supabase/migrations/000_initial_schema.sql` from this document.

@@ -10,7 +10,7 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 18A — Umkhandlu Intelligence Dashboard — Foundation |
+| Phase | Phase 18B — Governance Records |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
@@ -311,17 +311,17 @@ Read `12_IMPLEMENTATION_ROADMAP.md` and `09_PLATFORM_MAPPING.md` before writing 
                     Predictive Analytics
 ```
 
-### Phase 18A — Foundation ⏳ Active
+### Phase 18A — Foundation ✅ Complete
 
 | Task | Status |
 |---|---|
-| Scaffold `apps/umkhandlu` — Next.js, TypeScript, Tailwind, shadcn | ⏳ |
-| Shell, navigation, domain structure (`src/domain/umkhandlu/`) | ⏳ |
-| Platform tables: `records`, `notices`, `evidence` — migration `006_platform_records.sql` | ⏳ |
-| Edge Functions: `records/index.ts`, `notices/index.ts` | ⏳ |
-| Typed clients in `packages/api` — `records`, `notices` | ⏳ |
-| `apps/umkhandlu` wired to `packages/api` typed clients | ⏳ |
-| Typecheck clean, build passing | ⏳ |
+| Scaffold `apps/umkhandlu` — Next.js, TypeScript, Tailwind, shadcn | ✅ |
+| Shell, navigation, domain structure (`src/domain/umkhandlu/`) | ✅ |
+| Platform tables: `records`, `notices` — migration `006_platform_records.sql` | ✅ |
+| Edge Functions: `records/index.ts`, `notices/index.ts` | ✅ |
+| Typed clients in `packages/api` — `records`, `notices` | ✅ |
+| `apps/umkhandlu` wired to `packages/api` typed clients | ✅ |
+| Typecheck clean, build passing | ✅ |
 
 ### Phase 18B — Governance Records
 
