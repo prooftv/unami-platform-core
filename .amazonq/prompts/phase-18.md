@@ -25,6 +25,12 @@ It owns: governance editing, records, notices, evidence, participation, public w
 Do not build CRUD screens for records, notices, evidence, or participation.
 Do not build governance editing UI of any kind.
 
+**D-036 — Node Sovereignty (non-negotiable):**
+The Control Centre never edits, mutates, creates, or administers content that belongs to a node.
+All write operations remain within the originating node.
+The Control Centre consumes read-only authenticated APIs to derive institutional intelligence.
+It asks questions. It does not issue commands.
+
 ---
 
 ## What the Control Centre IS

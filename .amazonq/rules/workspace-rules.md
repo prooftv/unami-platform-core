@@ -69,6 +69,8 @@ All ten sub-phases complete. Frozen. Ops gates remaining (see `docs/LAUNCH_CHECK
 - `apps/umkhandlu` is the Unami Control Centre — a read-oriented intelligence application, not a governance editor
 - The production Umkhandlu governance application (`umkhandlu.unamifoundation.org`) owns governance editing — do not duplicate it
 - `apps/umkhandlu` connects to deployed governance nodes via read-only APIs and aggregates institutional intelligence
+- **D-036: Node sovereignty** — the Control Centre never edits, mutates, creates, or administers node content
+- All write operations remain within the originating node — no exceptions, no proxied mutations
 - Do not build CRUD screens for records, notices, evidence, or participation inside `apps/umkhandlu`
 - The abstraction pack defines shared platform concepts so nodes speak the same language — it does not require CRUD UI in Platform Core
 - Platform tables (`records`, `notices`) already added in 18A — they define the shared data model, not a UI to edit them

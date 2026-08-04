@@ -167,6 +167,34 @@ The moment feed, detail, region, and category pages are always Supabase-driven.
 The homepage hero, featured stories, and static pages are always Sanity-driven (from Phase 17B).
 Neither source crosses into the other's domain.
 
+## D-036: Node sovereignty — the Control Centre observes, it does not govern
+
+Every deployed application node is sovereign over its own operational data.
+
+The Control Centre (`apps/umkhandlu`) never edits, mutates, creates, or administers
+content that belongs to a node. All write operations remain within the originating node.
+
+The Control Centre consumes read-only authenticated APIs to derive institutional intelligence.
+It asks questions. It does not issue commands.
+
+This applies permanently and without exception:
+- No create/edit/delete screens for records, notices, evidence, or participation in `apps/umkhandlu`
+- No write operations in `packages/api` intelligence clients
+- No mutations proxied through the platform to a node
+- No administrative actions on node content from the Control Centre
+
+The separation of concerns:
+- **Umkhandlu node** (`umkhandlu.unamifoundation.org`) — owns governance, writes data
+- **Moments** — owns community communication, writes data
+- **Platform Core** (`packages/`, Supabase, Edge Functions) — owns shared infrastructure
+- **Control Centre** (`apps/umkhandlu`) — owns intelligence, reads only
+
+This decision protects the federated sovereignty model. When a second node is onboarded,
+it connects to the same read-only contract. The Control Centre requires no changes.
+The node retains full authority over its own data.
+
+---
+
 ## D-035: Phase 18 is the Unami Control Centre — not a governance editor
 
 The production Umkhandlu governance application exists at `umkhandlu.unamifoundation.org`.

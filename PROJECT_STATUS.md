@@ -337,6 +337,21 @@ What remains for 18A completion:
 Connect to the first governance node via read-only API. Data model alignment.
 The Control Centre queries a live node and displays what it knows.
 
+**Definition of Done — all ten must be complete:**
+
+| Task | Status |
+|---|---|
+| Define the Governance Node API contract (what a node must expose) | ⏳ |
+| Register `umkhandlu.unamifoundation.org` as the first node | ⏳ |
+| Authenticate the connection (read-only, node-issued credentials) | ⏳ |
+| Read node metadata (name, description, deployment status) | ⏳ |
+| Read node health (last seen, response time, error rate) | ⏳ |
+| Read governance summaries (record counts by type and status) | ⏳ |
+| Read notice summaries (notice counts by type and status) | ⏳ |
+| Read commercial summaries (project counts, RAG distribution) | ⏳ |
+| Read participation summaries (counts, deadline compliance) | ⏳ |
+| Display all summaries in the Control Centre — no write capability exists | ⏳ |
+
 ### Phase 18C — Node Health View
 
 Per-node health dashboard. Record/notice/project counts. Status distributions.
