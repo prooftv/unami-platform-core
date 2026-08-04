@@ -1,4 +1,4 @@
-import { PREFERENCE_REGISTRY } from './preferences-config';
+import { PREFERENCE_REGISTRY } from '@/lib/preferences/preferences-config';
 
 export function ThemeBootScript() {
   const registry = JSON.stringify(PREFERENCE_REGISTRY);
