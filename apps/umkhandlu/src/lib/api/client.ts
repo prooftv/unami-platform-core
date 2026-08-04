@@ -1,13 +1,8 @@
-import { createClient } from '@/lib/supabase/server';
-import { createApiClient } from '@unami/api';
-import type { ApiClient } from '@unami/api';
+import { createGovernanceNodeClient } from '@unami/api';
+import type { GovernanceNodeClient } from '@unami/api';
 
-export async function getApiClient(): Promise<ApiClient | null> {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return null;
-  return createApiClient({
-    baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1',
-    token: session.access_token,
-  });
+// Returns a typed read-only client for a governance node.
+// baseUrl and apiKey come from env — one entry per registered node.
+export function getNodeClient(baseUrl: string, apiKey: string): GovernanceNodeClient {
+  return createGovernanceNodeClient({ baseUrl, token: apiKey });
 }

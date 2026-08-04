@@ -14,10 +14,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/c
 import { cn } from '@/lib/utils';
 
 const ROLE_LABELS: Record<string, string> = {
-  superadmin: 'Super Admin',
-  content_admin: 'Content Admin',
-  moderator: 'Moderator',
-  viewer: 'Viewer',
+  operator: 'Operator',
 };
 
 function getInitials(str: string): string {

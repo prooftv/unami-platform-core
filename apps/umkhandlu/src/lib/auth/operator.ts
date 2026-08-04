@@ -1,34 +1,23 @@
 import { createClient } from '@/lib/supabase/server';
-import { createApiClient } from '@unami/api';
-import type { AdminSession } from '@unami/api';
 
-export type OperatorSession = AdminSession;
+// Control Centre operator session — read directly from Supabase Auth.
+// No admin_roles table or Edge Function dependency in Phase 18B.
+// All authenticated users are operators. Role expansion in Phase 18C.
+export type OperatorSession = {
+  id: string;
+  email: string;
+  name: string | null;
+  role: 'operator';
+};
 
 export async function getOperatorSession(): Promise<OperatorSession | null> {
   const supabase = await createClient();
-
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return null;
-
-  try {
-    const api = createApiClient({
-      baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1',
-      token: session.access_token,
-    });
-
-    const authSession = await api.auth.me();
-
-    return {
-      id: authSession.id,
-      email: authSession.email,
-      name: null,
-      role: authSession.role,
-      authority_id: authSession.authority_id,
-    };
-  } catch {
-    return null;
-  }
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    name: user.user_metadata?.full_name ?? null,
+    role: 'operator',
+  };
 }
