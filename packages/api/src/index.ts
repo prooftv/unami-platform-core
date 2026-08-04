@@ -18,6 +18,13 @@ export type { UserProfile } from './clients/user-profiles';
 export type { MediaRecord, UploadMediaResult } from './clients/media';
 export type { GovernanceRecord, GovernanceRecordType, GovernanceRecordStatus, CreateRecordInput, UpdateRecordInput } from './clients/records';
 export type { GovernanceNotice, GovernanceNoticeType, GovernanceNoticeStatus, CreateNoticeInput, UpdateNoticeInput } from './clients/notices';
+export type {
+  NodeCapability, NodeHealthStatus,
+  GovernanceNodeIdentity, NodeHealth,
+  RecordsSummary, NoticesSummary, ParticipationSummary,
+  EvidenceSummary, CommercialSummary, TcrsSummary, LineageSummary,
+  GovernanceNodeClient,
+} from './clients/governance-node';
 
 import { createPublicMomentsClient } from './clients/public-moments';
 import { createPublicParticipationClient } from './clients/participation';
@@ -36,6 +43,7 @@ import { createUserProfilesClient } from './clients/user-profiles';
 import { createMediaClient } from './clients/media';
 import { createRecordsClient } from './clients/records';
 import { createNoticesClient } from './clients/notices';
+import { createGovernanceNodeClient } from './clients/governance-node';
 
 export interface ApiClientConfig {
   baseUrl: string;
@@ -74,3 +82,10 @@ export function createApiClient(config: ApiClientConfig) {
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;
+
+/**
+ * Governance Node client — one factory for all nodes.
+ * Pass the node's base URL (e.g. https://umkhandlu.unamifoundation.org)
+ * and its node-issued read-only API key.
+ */
+export { createGovernanceNodeClient };
