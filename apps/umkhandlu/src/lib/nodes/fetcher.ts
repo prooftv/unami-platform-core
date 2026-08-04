@@ -51,8 +51,11 @@ export async function getAllNodes(): Promise<GovernanceNodeRow[]> {
     .from('governance_nodes')
     .select('*')
     .order('created_at', { ascending: true });
-  if (error || !data) return [];
-  return data as GovernanceNodeRow[];
+  if (error) {
+    console.error('[getAllNodes] Supabase error:', error.message, error.code);
+    return [];
+  }
+  return (data ?? []) as GovernanceNodeRow[];
 }
 
 export async function fetchRegisteredNodes(): Promise<NodeWithHealth[]> {
