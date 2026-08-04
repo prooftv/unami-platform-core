@@ -3,6 +3,7 @@ export type { ApiConfig } from './http';
 export type * from './types/index';
 export type { PublicMoment, PublicListParams } from './clients/public-moments';
 export type { ParticipationResponseType, ParticipationRelationship, SubmitParticipationInput, ParticipationResult } from './clients/participation';
+export type { EvidenceRecord, UploadEvidenceInput } from './clients/evidence';
 export type { MomentType } from './types/index';
 
 export type { SubscriberStats } from './clients/subscribers';
@@ -17,6 +18,7 @@ export type { MediaRecord, UploadMediaResult } from './clients/media';
 
 import { createPublicMomentsClient } from './clients/public-moments';
 import { createPublicParticipationClient } from './clients/participation';
+import { createEvidenceClient, createPublicEvidenceClient } from './clients/evidence';
 import { createMomentsClient } from './clients/moments';
 import { createBroadcastsClient } from './clients/broadcasts';
 import { createAuthClient } from './clients/auth';
@@ -40,6 +42,7 @@ export function createPublicApiClient(config: ApiClientConfig) {
   return {
     moments: createPublicMomentsClient(config),
     participation: createPublicParticipationClient(config),
+    evidence: createPublicEvidenceClient(config),
   };
 }
 
@@ -59,6 +62,7 @@ export function createApiClient(config: ApiClientConfig) {
     settings:     createSettingsClient(config),
     userProfiles: createUserProfilesClient(config),
     media:        createMediaClient(config),
+    evidence:     createEvidenceClient(config),
   };
 }
 

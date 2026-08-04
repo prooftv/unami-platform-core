@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 17E — Public Participation Engine ✅ Complete |
+| Phase | Phase 17F — Evidence Layer ✅ Complete |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `phase-17e-complete` (pending push) |
+| Last commit | `phase-17f-complete` (pending push) |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -37,7 +37,7 @@ The Umkhandlu Intelligence Dashboard is the second. It validates multi-applicati
 | Layer | Status |
 |---|---|
 | Database — 26 tables | ✅ Complete |
-| Edge Functions — 16 functions (+ participation) | ✅ Complete |
+| Edge Functions — 17 functions (+ participation, evidence) | ✅ Complete |
 | `packages/shared` — platform primitives | ✅ Frozen |
 | `packages/ui` — design system | ✅ Frozen |
 | `packages/api` — typed clients | ✅ Frozen |
@@ -152,32 +152,46 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 
 ---
 
-### Phase 17E — Public Participation Engine ⏳
+### Phase 17E — Public Participation Engine ✅
 
-**Goal:** Structured community participation on moments. Exactly from abstraction document 04.
+**Goal:** Structured community participation on consultation moments. Consent-gated, webhook-delivered, never stored.
 
 | Task | Status |
 |---|---|
-| Consent-gated participation form | ⏳ |
-| Webhook delivery architecture | ⏳ |
-| Participation log (anonymised) | ⏳ |
-| Response window enforcement | ⏳ |
-| Response count (denormalised) | ⏳ |
-| Response types: comment / support / concern / question | ⏳ |
+| `participation_log` table — anonymised, no PII, POPIA constraint | ✅ |
+| `participation_count` column on `moment_stats` — denormalised | ✅ |
+| `increment_participation_count` DB function | ✅ |
+| `participation_webhook_url` system setting | ✅ |
+| Migration `003_participation_engine.sql` | ✅ |
+| `supabase/functions/participation/index.ts` — new Edge Function | ✅ |
+| Server-side consent validation (`popiaConsent: true` required) | ✅ |
+| Server-side deadline enforcement | ✅ |
+| Webhook delivery — personal data delivered, never stored | ✅ |
+| Webhook failure non-fatal — logged, submission still succeeds | ✅ |
+| Rate limit `/participation` — 20 req/min | ✅ |
+| `packages/api` — `createPublicParticipationClient`, exported types | ✅ |
+| `apps/web` — `ParticipationForm` component, wired to moment detail | ✅ |
 
 ---
 
-### Phase 17F — Evidence Layer ⏳
+### Phase 17F — Evidence Layer ✅
 
-**Goal:** Media as formal evidence. Environmental context. Verification. From abstraction document 05.
+**Goal:** Media as formal evidence. Environmental context. Additive, immutable, server-enforced.
 
 | Task | Status |
 |---|---|
-| Evidence attachments on moments | ⏳ |
-| Environmental context (weather auto-capture) | ⏳ |
-| GPS / location evidence | ⏳ |
-| Evidence verification model | ⏳ |
-| Future AI verification hooks | ⏳ |
+| `evidence` table — immutable, additive, RLS-gated | ✅ |
+| `weather_context` JSONB column on `moments` | ✅ |
+| Migration `004_evidence_layer.sql` | ✅ |
+| `supabase/functions/evidence/index.ts` — upload + list, multipart | ✅ |
+| File type validation server-side (mime type, 10 MB limit) | ✅ |
+| Supabase Storage upload — `evidence` bucket | ✅ |
+| `packages/api` — `createEvidenceClient`, `createPublicEvidenceClient`, exported types | ✅ |
+| `apps/admin` — `EvidencePanel` on moment detail — upload + list | ✅ |
+| `apps/web` — evidence list on public moment detail | ✅ |
+| `apps/web` — weather context display (historical/forecast) | ✅ |
+| `apps/web/src/lib/weather.ts` — Open-Meteo fetch, server-only | ✅ |
+| Weather fetch: server component only, fire-and-forget, never blocks render | ✅ |
 
 ---
 
@@ -347,7 +361,7 @@ unami-platform-core/
 │   ├── shared/         @unami/shared — platform primitives (frozen)
 │   └── api/            @unami/api — typed clients (frozen)
 ├── supabase/
-│   ├── functions/      16 Edge Functions (+ participation)
+│   ├── functions/      17 Edge Functions (+ participation, evidence)
 │   └── migrations/
 │       └── 000_initial_schema.sql   ← baseline, immutable
 ├── docs/

@@ -10,7 +10,8 @@ import { PageHeader } from '@unami/ui';
 import { Send, Pencil, XCircle } from 'lucide-react';
 import { createApiClient } from '@unami/api';
 import { getToken } from '@/lib/auth/token';
-import type { MomentWithSponsor, AdminSession, BroadcastWithMoment } from '@unami/api';
+import type { MomentWithSponsor, AdminSession, BroadcastWithMoment, EvidenceRecord } from '@unami/api';
+import { EvidencePanel } from './EvidencePanel';
 
 const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
   draft: 'outline', scheduled: 'secondary', broadcasted: 'default', cancelled: 'destructive',
@@ -25,9 +26,10 @@ interface Props {
   session: AdminSession;
   broadcasts: BroadcastWithMoment[];
   stats: { viewCount: number; commentCount: number; shareCount: number; reactionCount: number; updatedAt: string } | null;
+  evidence: EvidenceRecord[];
 }
 
-export function MomentDetailClient({ moment, session, broadcasts, stats }: Props) {
+export function MomentDetailClient({ moment, session, broadcasts, stats, evidence }: Props) {
   const router = useRouter();
   const [broadcasting, setBroadcasting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -200,6 +202,12 @@ export function MomentDetailClient({ moment, session, broadcasts, stats }: Props
         {moment.status === 'broadcasted' && (
           <p className="text-xs text-muted-foreground">This moment has been broadcasted and is immutable.</p>
         )}
+
+        <EvidencePanel
+          momentId={moment.id}
+          initialEvidence={evidence}
+          canUpload={session.role === 'superadmin' || session.role === 'content_admin'}
+        />
       </div>
     </div>
   );

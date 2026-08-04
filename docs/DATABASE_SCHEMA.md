@@ -701,6 +701,63 @@ log_authority_action(p_authority_profile_id UUID, p_action TEXT, p_actor_id TEXT
 
 ---
 
+---
+
+### evidence
+
+Formal evidence attachments on moments. Additive only — rows are never deleted.
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| id | UUID | PK, default gen_random_uuid() | |
+| moment_id | UUID | FK moments(id) ON DELETE CASCADE, NOT NULL | |
+| title | TEXT | NOT NULL, min 2 chars | Descriptive label for the attachment |
+| file_type | TEXT | NOT NULL, CHECK enum | image/document/pdf |
+| storage_path | TEXT | NOT NULL | Supabase Storage path |
+| public_url | TEXT | NOT NULL | Public CDN URL |
+| file_size | BIGINT | NOT NULL, CHECK > 0 | Bytes |
+| mime_type | TEXT | NOT NULL | e.g. image/jpeg, application/pdf |
+| uploaded_by | TEXT | NOT NULL | Admin user ID |
+| created_at | TIMESTAMPTZ | NOT NULL, default NOW() | |
+
+**Rules:**
+- Rows are never deleted — evidence is immutable once attached.
+- `file_type` is derived from `mime_type` on insert — not user-supplied.
+- Accepted mime types: `image/jpeg`, `image/png`, `image/webp`, `application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`.
+
+**RLS:** anon: SELECT (public evidence on broadcasted moments). authenticated: SELECT. service_role: all.
+
+---
+
+**`moments` table — additional column (Phase 17F):**
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| weather_context | JSONB | nullable | WeatherSnapshot — auto-captured, never manually entered |
+
+`weather_context` shape:
+```json
+{
+  "type": "forecast | historical",
+  "condition": "Clear sky",
+  "temperatureCelsius": 22,
+  "tempMinCelsius": 16,
+  "tempMaxCelsius": 28,
+  "rainfallMm": 0,
+  "windKmh": 14,
+  "humidityPercent": 58,
+  "uvIndex": 6,
+  "fetchedAt": "2025-01-01T10:00:00Z"
+}
+```
+
+**Rules:**
+- Captured automatically by `apps/web` server component on moment detail render.
+- Historical snapshots (past dates) are fetched once and locked — never re-fetched.
+- Forecast snapshots (future dates) are re-fetched on each render.
+- If no region coordinates available, weather is silently skipped.
+- Never manually entered or edited.
+
 ## What Is NOT in This Schema
 
 - No custom auth tables — Supabase Auth handles sessions and JWTs.

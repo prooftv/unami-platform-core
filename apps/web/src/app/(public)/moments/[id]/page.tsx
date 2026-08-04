@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getPublicApiClient } from '@/lib/api/client';
 import { ParticipationForm } from '@/components/ParticipationForm';
+import { fetchWeather } from '@/lib/weather';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -15,8 +16,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function MomentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const api = getPublicApiClient();
-  const moment = await api.moments.get(id).catch(() => null);
+  const [moment, evidence] = await Promise.all([
+    api.moments.get(id).catch(() => null),
+    api.evidence.list(id).catch(() => []),
+  ]);
   if (!moment) notFound();
+
+  // Fire-and-forget weather capture — server side only, never blocks render
+  const weather = await fetchWeather(moment.region, moment.createdAt).catch(() => null);
 
   const waText = encodeURIComponent(`${moment.title}\n\n${moment.content}`);
   const waShareUrl = `https://wa.me/?text=${waText}`;
@@ -100,6 +107,40 @@ export default async function MomentDetailPage({ params }: { params: Promise<{ i
           {moment.mediaUrls.map((url, i) => (
             <img key={i} src={url} alt="" className="rounded-lg w-full object-cover max-h-96" />
           ))}
+        </div>
+      )}
+
+      {evidence.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Evidence</p>
+          <ul className="space-y-1.5">
+            {evidence.map((item) => (
+              <li key={item.id}>
+                <a
+                  href={item.publicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-primary hover:underline"
+                >
+                  <span className="shrink-0">📎</span>
+                  <span className="truncate">{item.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {weather && (
+        <div className="rounded-md border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground mb-1">
+            {weather.type === 'historical' ? 'Weather at time of publication' : 'Forecast for publication date'}
+          </p>
+          <p>
+            {weather.condition} · {weather.temperatureCelsius}°C
+            ({weather.tempMinCelsius}–{weather.tempMaxCelsius}°C) ·
+            Rain {weather.rainfallMm} mm · Wind {weather.windKmh} km/h · UV {weather.uvIndex}
+          </p>
         </div>
       )}
 
