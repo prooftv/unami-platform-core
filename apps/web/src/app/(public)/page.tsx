@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getPublicApiClient } from '@/lib/api/client';
+import { getHomePage } from '@/lib/sanity/queries';
 
 export const dynamic = 'force-dynamic';
 import type { PublicMoment } from '@unami/api';
@@ -58,10 +59,9 @@ function MomentCard({ moment, featured = false }: { moment: PublicMoment; featur
 export default async function HomePage() {
   const api = getPublicApiClient();
 
-  const [allResult, urgentResult, sponsoredResult] = await Promise.all([
+  const [allResult, sanityHome] = await Promise.all([
     api.moments.list({ page: 1, limit: 12 }).catch(() => null),
-    api.moments.list({ page: 1, limit: 3 }).catch(() => null), // urgency filter added when API supports it
-    api.moments.list({ page: 1, limit: 4 }).catch(() => null),
+    getHomePage().catch(() => null),
   ]);
 
   const moments: PublicMoment[] = allResult?.data ?? [];
@@ -100,7 +100,28 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 2. Hero story */}
+      {/* 2. Hero — Sanity editorial or first moment */}
+      {sanityHome?.hero && (
+        <section>
+          <div className="rounded-2xl border bg-card p-8">
+            <h1 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">
+              {sanityHome.hero.heading}
+            </h1>
+            {sanityHome.hero.subheading && (
+              <p className="mt-3 text-muted-foreground leading-relaxed max-w-2xl">{sanityHome.hero.subheading}</p>
+            )}
+            {sanityHome.hero.ctaLabel && sanityHome.hero.ctaUrl && (
+              <Link
+                href={sanityHome.hero.ctaUrl}
+                className="mt-6 inline-flex items-center rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                {sanityHome.hero.ctaLabel}
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
+
       {heroMoment ? (
         <section>
           <Link

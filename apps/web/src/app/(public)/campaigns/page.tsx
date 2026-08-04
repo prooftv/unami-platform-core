@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { getCampaignPages } from '@/lib/sanity/queries';
 
 export const metadata: Metadata = {
   title: 'Campaigns',
   description: 'Active community campaigns on Moments.',
 };
 
-export default function CampaignsPage() {
+export default async function CampaignsPage() {
+  const campaigns = await getCampaignPages().catch(() => []);
+
   return (
     <div className="max-w-3xl space-y-10">
       <div>
@@ -22,20 +26,41 @@ export default function CampaignsPage() {
         </p>
       </div>
 
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight mb-4">Active Campaigns</h2>
-        <div className="rounded-xl border border-dashed py-16 text-center">
-          <p className="text-sm text-muted-foreground">Active campaigns will appear here.</p>
-          <p className="mt-1 text-xs text-muted-foreground">Campaign data will be connected in a future update.</p>
+      {campaigns.length > 0 ? (
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight mb-4">Active Campaigns</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {campaigns.map((campaign) => (
+              <Link
+                key={campaign._id}
+                href={`/campaigns/${campaign.slug.current}`}
+                className="rounded-xl border bg-card p-5 hover:border-primary/30 hover:shadow-sm transition-all"
+              >
+                <p className="font-medium">{campaign.title}</p>
+                {campaign.summary && (
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{campaign.summary}</p>
+                )}
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight mb-4">Past Campaigns</h2>
-        <div className="rounded-xl border border-dashed py-16 text-center">
-          <p className="text-sm text-muted-foreground">Completed campaigns will appear here.</p>
-        </div>
-      </div>
+      ) : (
+        <>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight mb-4">Active Campaigns</h2>
+            <div className="rounded-xl border border-dashed py-16 text-center">
+              <p className="text-sm text-muted-foreground">Active campaigns will appear here.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Campaign data will be connected in a future update.</p>
+            </div>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight mb-4">Past Campaigns</h2>
+            <div className="rounded-xl border border-dashed py-16 text-center">
+              <p className="text-sm text-muted-foreground">Completed campaigns will appear here.</p>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
