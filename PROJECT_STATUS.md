@@ -215,6 +215,32 @@ Each application builds its own shell, navigation, and domain on top of the shar
 
 ---
 
+## Umkhandlu Abstraction Pack
+
+The governance domain has been distilled into a 13-document constitutional abstraction pack.
+This is knowledge, not implementation. No code follows from it until Phase 18 is complete.
+
+```
+docs/abstractions/umkhandlu/
+  00_EXECUTIVE_SUMMARY.md       — why Umkhandlu exists, core philosophy
+  01_DOMAIN_MODEL.md            — complete domain map, concept classification
+  02_RECORD_ARCHITECTURE.md     — record structure, lineage, immutability
+  03_NOTICE_ARCHITECTURE.md     — community + statutory notices, lifecycle
+  04_PUBLIC_PARTICIPATION.md    — consent-gated, webhook-delivered, never stored
+  05_EVIDENCE_ARCHITECTURE.md   — attachments, weather context, TCRS
+  06_WORKFLOW_ENGINE.md         — governance workflows as record chains
+  07_COMMERCIAL_LAYER.md        — campaigns, certified deliverables, sponsors
+  08_INTELLIGENCE_LAYER.md      — operator dashboard, TCRS, federated nodes
+  09_PLATFORM_MAPPING.md        — critical bridge: platform vs domain classification
+  10_DATABASE_IMPACT.md         — future tables classified by ownership
+  11_MOMENTS_ADAPTATION.md      — governance concepts adapted for community use
+  12_IMPLEMENTATION_ROADMAP.md  — sequence, triggers, phase detail
+```
+
+See `docs/context/decisions.md` D-031 for the governing decision.
+
+---
+
 ## Architecture Freeze
 
 The platform foundation is **feature-frozen**. Do not:

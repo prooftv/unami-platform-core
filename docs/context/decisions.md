@@ -173,6 +173,22 @@ until Moments has completed Phase 18 (Launch). Each future application builds it
 navigation, and domain on top of `@unami/ui`, `@unami/shared`, `@unami/api`.
 None of them modify `packages/`. The platform serves them — they do not reshape it.
 
+## D-031: Umkhandlu abstraction pack — knowledge before implementation
+The Umkhandlu governance domain has been distilled into a 13-document constitutional abstraction pack
+in `docs/abstractions/umkhandlu/`. This pack is the canonical architectural reference for every future
+implementation decision that touches governance, records, participation, evidence, or intelligence.
+
+No implementation follows from this pack until Phase 18 (Moments Launch) is complete.
+The pack does not modify `packages/`, does not scaffold applications, and does not change the database.
+
+The critical bridge document is `09_PLATFORM_MAPPING.md` — it classifies every concept as
+platform-generic or domain-specific and prevents architectural drift.
+
+The implementation sequence is defined in `12_IMPLEMENTATION_ROADMAP.md`.
+Phase 19 (Umkhandlu) begins only after Phase 18 is complete.
+
+---
+
 **List pages:**
 - `PageHeader` (title, description, primary action button)
 - `KPIGrid` if the module has metrics
