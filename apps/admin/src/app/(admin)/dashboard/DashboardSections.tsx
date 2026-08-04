@@ -46,6 +46,13 @@ import {
   BudgetUtilisationWidget,
 } from './widgets/CommercialWidgets';
 import {
+  IntelligenceKPIs,
+  ParticipationBreakdownWidget,
+  EvidenceBreakdownWidget,
+  ProjectHealthWidget,
+  ActivityStreamWidget,
+} from './widgets/IntelligenceWidgets';
+import {
   SystemHealthWidget,
   StorageUsageWidget,
   ApiHealthWidget,
@@ -67,6 +74,10 @@ import type {
   SponsorStats,
   RevenueAnalytics,
   IntentStats,
+  ParticipationStats,
+  EvidenceStats,
+  ProjectHealthSummary,
+  ActivityEvent,
 } from '@unami/api';
 
 // ── Shared grid primitives ────────────────────────────────────────────────────
@@ -162,6 +173,13 @@ export type CommercialProps = {
 
 export type PlatformProps = {
   metrics: DashboardMetrics | null;
+};
+
+export type IntelligenceProps = {
+  participation: ParticipationStats | null;
+  evidence: EvidenceStats | null;
+  projectHealth: ProjectHealthSummary | null;
+  activity: ActivityEvent[];
 };
 
 // ── Section components ────────────────────────────────────────────────────────
@@ -269,6 +287,22 @@ export function CommercialSection({ campaigns, sponsorStats, revenue }: Commerci
       <WidgetGrid>
         <Col6><RevenueAnalyticsWidget revenue={revenue} /></Col6>
         <Col6><BudgetUtilisationWidget revenue={revenue} /></Col6>
+      </WidgetGrid>
+    </div>
+  );
+}
+
+export function IntelligenceSection({ participation, evidence, projectHealth, activity }: IntelligenceProps) {
+  return (
+    <div className="space-y-4 animate-in fade-in duration-300">
+      <IntelligenceKPIs participation={participation} evidence={evidence} projectHealth={projectHealth} />
+      <WidgetGrid>
+        <Col6><ParticipationBreakdownWidget stats={participation} /></Col6>
+        <Col6><EvidenceBreakdownWidget stats={evidence} /></Col6>
+      </WidgetGrid>
+      <WidgetGrid>
+        <Col4><ProjectHealthWidget summary={projectHealth} /></Col4>
+        <Col8><ActivityStreamWidget events={activity} /></Col8>
       </WidgetGrid>
     </div>
   );

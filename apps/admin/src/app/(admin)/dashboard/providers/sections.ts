@@ -145,3 +145,45 @@ export async function fetchRevenueAnalytics(): Promise<RevenueAnalytics | null> 
     return null;
   }
 }
+
+// ── Intelligence ──────────────────────────────────────────────────────────────
+
+export async function fetchParticipationStats(): Promise<import('@unami/api').ParticipationStats | null> {
+  try {
+    const api = await getApiClient();
+    if (!api) return null;
+    return await api.analytics.participationStats();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchEvidenceStats(): Promise<import('@unami/api').EvidenceStats | null> {
+  try {
+    const api = await getApiClient();
+    if (!api) return null;
+    return await api.analytics.evidenceStats();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchProjectHealthSummary(): Promise<import('@unami/api').ProjectHealthSummary | null> {
+  try {
+    const api = await getApiClient();
+    if (!api) return null;
+    return await api.analytics.projectHealthSummary();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchActivityStream(): Promise<import('@unami/api').ActivityEvent[]> {
+  try {
+    const api = await getApiClient();
+    if (!api) return [];
+    return await api.analytics.activityStream(30);
+  } catch {
+    return [];
+  }
+}

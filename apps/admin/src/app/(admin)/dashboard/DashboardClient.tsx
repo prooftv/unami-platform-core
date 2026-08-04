@@ -7,10 +7,10 @@ import { RefreshCw } from 'lucide-react';
 import { DashboardTabs, type DashboardSection } from './DashboardTabs';
 import {
   OverviewSection, OperationsSection, PublishingSection, AudienceSection,
-  GovernanceSection, CommercialSection, PlatformSection,
+  GovernanceSection, CommercialSection, IntelligenceSection, PlatformSection,
   KPIGridSkeleton, WidgetGridSkeleton,
   type OverviewProps, type OperationsProps, type PublishingProps,
-  type AudienceProps, type GovernanceProps, type CommercialProps, type PlatformProps,
+  type AudienceProps, type GovernanceProps, type CommercialProps, type IntelligenceProps, type PlatformProps,
 } from './DashboardSections';
 
 const ROLE_LABELS: Record<AdminSession['role'], string> = {
@@ -28,6 +28,7 @@ type DashboardClientProps = {
   audience: AudienceProps;
   governance: GovernanceProps;
   commercial: CommercialProps;
+  intelligence: IntelligenceProps;
   platform: PlatformProps;
 };
 
@@ -41,17 +42,18 @@ function SectionSkeleton() {
   );
 }
 
-export function DashboardClient({ session, overview, operations, publishing, audience, governance, commercial, platform }: DashboardClientProps) {
+export function DashboardClient({ session, overview, operations, publishing, audience, governance, commercial, intelligence, platform }: DashboardClientProps) {
   const [activeSection, setActiveSection] = useState<DashboardSection>('overview');
 
   const sections: Record<DashboardSection, React.ReactNode> = {
-    overview:   <OverviewSection {...overview} />,
-    operations: <OperationsSection {...operations} />,
-    publishing: <PublishingSection {...publishing} />,
-    audience:   <AudienceSection {...audience} />,
-    governance: <GovernanceSection {...governance} />,
-    commercial: <CommercialSection {...commercial} />,
-    platform:   <PlatformSection {...platform} />,
+    overview:      <OverviewSection {...overview} />,
+    operations:    <OperationsSection {...operations} />,
+    publishing:    <PublishingSection {...publishing} />,
+    audience:      <AudienceSection {...audience} />,
+    governance:    <GovernanceSection {...governance} />,
+    commercial:    <CommercialSection {...commercial} />,
+    intelligence:  <IntelligenceSection {...intelligence} />,
+    platform:      <PlatformSection {...platform} />,
   };
 
   return (

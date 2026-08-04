@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 17G — Commercial Layer ✅ Complete |
+| Phase | Phase 17H — Intelligence Foundation ✅ Complete |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `phase-17g-complete` (pending push) |
+| Last commit | `phase-17h-complete` (pending push) |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -217,18 +217,21 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 
 ---
 
-### Phase 17H — Intelligence Foundation ⏳
+### Phase 17H — Intelligence Foundation ✅
 
-**Goal:** Everything necessary before dashboards. No dashboard yet. From abstraction document 08.
+**Goal:** Aggregations, KPIs, and derived metrics surfaced in the operator dashboard. No new DB tables. All on-demand server-side queries.
 
 | Task | Status |
 |---|---|
-| Aggregated KPIs per region | ⏳ |
-| Derived metrics (participation rates, evidence counts) | ⏳ |
-| Institutional memory layer | ⏳ |
-| Commercial projections | ⏳ |
-| Regional metrics | ⏳ |
-| Activity event stream | ⏳ |
+| `analytics` Edge Function — 4 new routes: participation, evidence, project-health, activity | ✅ |
+| `participationStats` — total, byType, byRelationship, avgPerMoment | ✅ |
+| `evidenceStats` — total, byType, totalBytes, momentsWithEvidence | ✅ |
+| `projectHealthSummary` — CSR RAG distribution, byPhase, totalBeneficiaries | ✅ |
+| `activityStream` — unified event feed: moments, broadcasts, participation, evidence | ✅ |
+| `packages/api` — 4 new types: `ParticipationStats`, `EvidenceStats`, `ProjectHealthSummary`, `ActivityEvent` | ✅ |
+| `packages/api` — 4 new analytics client methods | ✅ |
+| Dashboard — `Intelligence` tab added | ✅ |
+| `IntelligenceWidgets` — KPI row, participation breakdown, evidence breakdown, project health, activity stream | ✅ |
 
 ---
 
@@ -310,7 +313,7 @@ Sub-phases defined in `docs/abstractions/umkhandlu/12_IMPLEMENTATION_ROADMAP.md`
 
 ```
 Phase 16  Platform Independence          ✅ Complete
-Phase 17  Moments Product Completion     ⏳ Active (17H)
+Phase 17  Moments Product Completion     ⏳ Active (17I)
 Phase 18  Umkhandlu Intelligence Dashboard
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence

@@ -15,6 +15,10 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'GET' && parts[0] === 'categories') return await categoryStats(req, cors);
     if (req.method === 'GET' && parts[0] === 'revenue') return await revenueAnalytics(req, cors);
     if (req.method === 'GET' && parts[0] === 'intents') return await intentStats(req, cors);
+    if (req.method === 'GET' && parts[0] === 'participation') return await participationStats(req, cors);
+    if (req.method === 'GET' && parts[0] === 'evidence') return await evidenceStats(req, cors);
+    if (req.method === 'GET' && parts[0] === 'project-health') return await projectHealthSummary(req, cors);
+    if (req.method === 'GET' && parts[0] === 'activity') return await activityStream(req, cors);
     return err('Not found', 404, cors);
   } catch (e) {
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -209,4 +213,132 @@ async function intentStats(req: Request, cors: Record<string, string>) {
     failed: failedRes.count ?? 0,
     lastProcessedAt: lastRes.data?.[0]?.updated_at ?? null,
   }, 200, cors);
+}
+
+async function participationStats(req: Request, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin', 'moderator', 'viewer']);
+  if (auth instanceof Response) return auth;
+  const { supabase } = auth;
+
+  const [totalRes, byTypeRes, byRelRes, consultationMomentsRes] = await Promise.all([
+    supabase.from('participation_log').select('id', { count: 'exact', head: true }),
+    supabase.from('participation_log').select('response_type'),
+    supabase.from('participation_log').select('relationship'),
+    supabase.from('moments').select('id', { count: 'exact', head: true })
+      .eq('moment_type', 'consultation').eq('participation_enabled', true),
+  ]);
+
+  const byType: Record<string, number> = {};
+  for (const row of byTypeRes.data ?? []) {
+    byType[row.response_type] = (byType[row.response_type] ?? 0) + 1;
+  }
+
+  const byRelationship: Record<string, number> = {};
+  for (const row of byRelRes.data ?? []) {
+    byRelationship[row.relationship] = (byRelationship[row.relationship] ?? 0) + 1;
+  }
+
+  const total = totalRes.count ?? 0;
+  const consultationMoments = consultationMomentsRes.count ?? 0;
+  const avgPerMoment = consultationMoments > 0 ? parseFloat((total / consultationMoments).toFixed(1)) : 0;
+
+  return json({ total, byType, byRelationship, consultationMoments, avgPerMoment }, 200, cors);
+}
+
+async function evidenceStats(req: Request, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin', 'moderator', 'viewer']);
+  if (auth instanceof Response) return auth;
+  const { supabase } = auth;
+
+  const [totalRes, byTypeRes, totalSizeRes, momentsWithEvidenceRes] = await Promise.all([
+    supabase.from('evidence').select('id', { count: 'exact', head: true }),
+    supabase.from('evidence').select('file_type'),
+    supabase.from('evidence').select('file_size'),
+    supabase.from('evidence').select('moment_id'),
+  ]);
+
+  const byType: Record<string, number> = {};
+  for (const row of byTypeRes.data ?? []) {
+    byType[row.file_type] = (byType[row.file_type] ?? 0) + 1;
+  }
+
+  const totalBytes = (totalSizeRes.data ?? []).reduce((s: number, r: Record<string, number>) => s + (r.file_size ?? 0), 0);
+  const uniqueMoments = new Set((momentsWithEvidenceRes.data ?? []).map((r: Record<string, string>) => r.moment_id)).size;
+
+  return json({
+    total: totalRes.count ?? 0,
+    byType,
+    totalBytes,
+    momentsWithEvidence: uniqueMoments,
+  }, 200, cors);
+}
+
+async function projectHealthSummary(req: Request, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin', 'moderator', 'viewer']);
+  if (auth instanceof Response) return auth;
+  const { supabase } = auth;
+
+  const { data, error } = await supabase
+    .from('campaigns')
+    .select('id, title, campaign_type, project_health, project_phase, beneficiaries, status')
+    .eq('campaign_type', 'csr');
+
+  if (error) return err(error.message, 500, cors);
+
+  const rows = data ?? [];
+  const byHealth: Record<string, number> = { green: 0, amber: 0, red: 0, unset: 0 };
+  const byPhase: Record<string, number> = {};
+  let totalBeneficiaries = 0;
+
+  for (const row of rows) {
+    const h = row.project_health ?? 'unset';
+    byHealth[h] = (byHealth[h] ?? 0) + 1;
+    if (row.project_phase) byPhase[row.project_phase] = (byPhase[row.project_phase] ?? 0) + 1;
+    if (row.beneficiaries) totalBeneficiaries += row.beneficiaries;
+  }
+
+  const active = rows.filter((r: Record<string, string>) => r.status === 'active');
+
+  return json({
+    total: rows.length,
+    active: active.length,
+    byHealth,
+    byPhase,
+    totalBeneficiaries,
+  }, 200, cors);
+}
+
+async function activityStream(req: Request, cors: Record<string, string>) {
+  const auth = await requireAuth(req, ['superadmin', 'content_admin', 'moderator', 'viewer']);
+  if (auth instanceof Response) return auth;
+  const { supabase } = auth;
+
+  const limit = Math.min(50, Math.max(1, parseInt(new URL(req.url).searchParams.get('limit') ?? '20')));
+
+  const [momentsRes, broadcastsRes, participationRes, evidenceRes] = await Promise.all([
+    supabase.from('moments').select('id, title, status, region, created_at').order('created_at', { ascending: false }).limit(limit),
+    supabase.from('broadcasts').select('id, moment_id, status, recipient_count, broadcast_started_at').order('broadcast_started_at', { ascending: false }).limit(limit),
+    supabase.from('participation_log').select('id, moment_id, response_type, submitted_at').order('submitted_at', { ascending: false }).limit(limit),
+    supabase.from('evidence').select('id, moment_id, title, file_type, created_at').order('created_at', { ascending: false }).limit(limit),
+  ]);
+
+  type ActivityEvent = { type: string; id: string; label: string; meta: string; timestamp: string };
+  const events: ActivityEvent[] = [];
+
+  for (const r of momentsRes.data ?? []) {
+    events.push({ type: 'moment', id: r.id, label: r.title, meta: `${r.region} · ${r.status}`, timestamp: r.created_at });
+  }
+  for (const r of broadcastsRes.data ?? []) {
+    events.push({ type: 'broadcast', id: r.id, label: `Broadcast to ${r.recipient_count} recipients`, meta: r.status, timestamp: r.broadcast_started_at });
+  }
+  for (const r of participationRes.data ?? []) {
+    events.push({ type: 'participation', id: r.id, label: `Participation: ${r.response_type}`, meta: r.moment_id, timestamp: r.submitted_at });
+  }
+  for (const r of evidenceRes.data ?? []) {
+    events.push({ type: 'evidence', id: r.id, label: r.title, meta: r.file_type, timestamp: r.created_at });
+  }
+
+  events.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+  return json(events.slice(0, limit), 200, cors);
 }

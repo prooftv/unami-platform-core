@@ -1,9 +1,10 @@
 'use client';
 
-export type DashboardSection = 'overview' | 'operations' | 'publishing' | 'audience' | 'governance' | 'commercial' | 'platform';
+export type DashboardSection = 'overview' | 'operations' | 'publishing' | 'audience' | 'governance' | 'commercial' | 'intelligence' | 'platform';
 const SECTIONS: { id: DashboardSection; label: string }[] = [
   { id: 'overview', label: 'Overview' }, { id: 'operations', label: 'Operations' }, { id: 'publishing', label: 'Publishing' },
-  { id: 'audience', label: 'Audience' }, { id: 'governance', label: 'Governance' }, { id: 'commercial', label: 'Commercial' }, { id: 'platform', label: 'Platform' },
+  { id: 'audience', label: 'Audience' }, { id: 'governance', label: 'Governance' }, { id: 'commercial', label: 'Commercial' },
+  { id: 'intelligence', label: 'Intelligence' }, { id: 'platform', label: 'Platform' },
 ];
 
 export function DashboardTabs({ active, onChange }: { active: DashboardSection; onChange: (section: DashboardSection) => void }) {

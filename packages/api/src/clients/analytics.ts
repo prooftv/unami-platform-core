@@ -5,6 +5,10 @@ import type {
   DailyStats,
   RegionalStats,
   CategoryStats,
+  ParticipationStats,
+  EvidenceStats,
+  ProjectHealthSummary,
+  ActivityEvent,
 } from '../types/index';
 
 export interface IntentStats {
@@ -39,6 +43,23 @@ export function createAnalyticsClient(config: ApiConfig) {
 
     intentStats(): Promise<IntentStats> {
       return apiFetch(config, '/analytics/intents');
+    },
+
+    participationStats(): Promise<ParticipationStats> {
+      return apiFetch(config, '/analytics/participation');
+    },
+
+    evidenceStats(): Promise<EvidenceStats> {
+      return apiFetch(config, '/analytics/evidence');
+    },
+
+    projectHealthSummary(): Promise<ProjectHealthSummary> {
+      return apiFetch(config, '/analytics/project-health');
+    },
+
+    activityStream(limit?: number): Promise<ActivityEvent[]> {
+      const qs = limit ? `?limit=${limit}` : '';
+      return apiFetch(config, `/analytics/activity${qs}`);
     },
   };
 }

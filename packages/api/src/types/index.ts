@@ -283,3 +283,34 @@ export interface CategoryStats {
   category: Category;
   momentCount: number;
 }
+
+export interface ParticipationStats {
+  total: number;
+  byType: Record<string, number>;
+  byRelationship: Record<string, number>;
+  consultationMoments: number;
+  avgPerMoment: number;
+}
+
+export interface EvidenceStats {
+  total: number;
+  byType: Record<string, number>;
+  totalBytes: number;
+  momentsWithEvidence: number;
+}
+
+export interface ProjectHealthSummary {
+  total: number;
+  active: number;
+  byHealth: Record<string, number>;
+  byPhase: Record<string, number>;
+  totalBeneficiaries: number;
+}
+
+export interface ActivityEvent {
+  type: 'moment' | 'broadcast' | 'participation' | 'evidence';
+  id: string;
+  label: string;
+  meta: string;
+  timestamp: string;
+}

@@ -12,6 +12,7 @@ export type { AuthorityAuditEntry, AuthorityStats, CreateAuthorityInput, UpdateA
 export type { SponsorStats, CreateSponsorInput, UpdateSponsorInput } from './clients/sponsors';
 export type { CampaignBudgetEntry, BudgetTransaction, CreateCampaignInput, UpdateCampaignInput, AddProgressInput, CertifyDeliverableInput } from './clients/campaigns';
 export type { IntentStats } from './clients/analytics';
+export type { ParticipationStats, EvidenceStats, ProjectHealthSummary, ActivityEvent } from './types/index';
 export type { FeatureFlag, SystemSetting, AuditLogEntry, ErrorLogEntry } from './clients/settings';
 export type { UserProfile } from './clients/user-profiles';
 export type { MediaRecord, UploadMediaResult } from './clients/media';

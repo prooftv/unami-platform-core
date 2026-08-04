@@ -22,6 +22,10 @@ import {
   fetchCampaignBudget,
   fetchSponsorStats,
   fetchRevenueAnalytics,
+  fetchParticipationStats,
+  fetchEvidenceStats,
+  fetchProjectHealthSummary,
+  fetchActivityStream,
 } from './providers/sections';
 
 export default async function DashboardPage() {
@@ -47,6 +51,10 @@ export default async function DashboardPage() {
     campaigns,
     sponsorStats,
     revenue,
+    participation,
+    evidence,
+    projectHealth,
+    activity,
   ] = await Promise.all([
     fetchDashboardMetrics(),
     fetchBroadcastQueue(),
@@ -66,6 +74,10 @@ export default async function DashboardPage() {
     fetchCampaignBudget(),
     fetchSponsorStats(),
     fetchRevenueAnalytics(),
+    fetchParticipationStats(),
+    fetchEvidenceStats(),
+    fetchProjectHealthSummary(),
+    fetchActivityStream(),
   ]);
 
   return (
@@ -77,6 +89,7 @@ export default async function DashboardPage() {
       audience={{ subscriberStats, dailyStats }}
       governance={{ modStats: modStatsFull, authorityEntries, authorityStats }}
       commercial={{ campaigns, sponsorStats, revenue }}
+      intelligence={{ participation, evidence, projectHealth, activity }}
       platform={{ metrics }}
     />
   );
