@@ -1,8 +1,28 @@
-# Moments Product Vision
+# Platform Product Vision
 
 This document locks in the product architecture, data ownership model, and roadmap.
 It exists to prevent engineering-first drift.
 Read it before starting any phase. Do not contradict it.
+
+---
+
+## What Unami Platform Core Is
+
+Unami Platform Core is the shared engineering foundation for a family of digital products.
+The platform is complete at v1.0.0. All future work is application validation.
+
+```
+                    Unami Platform Core v1.0
+                            │
+          ┌─────────────────┼─────────────────┐
+          │                 │                 │
+       Moments          Umkhandlu        Future Apps
+    (Phase 17)         (Phase 18)      (Phase 19–21)
+   Community           Intelligence    ITPMS · Schools
+   Communication       Dashboard       BeatsChain · Spree
+```
+
+The platform serves applications. Applications do not reshape the platform.
 
 ---
 
@@ -26,13 +46,14 @@ Moments is a community information platform with three surfaces and one operatio
                            │ subscribes via WhatsApp
                            ▼
                   WhatsApp delivery channel
-                  (activated in Phase 17D)
+                  (activated in Phase 17I)
 
 ┌─────────────────────────────────────────────────────────────┐
 │                      SUPABASE                               │
 │                  Operational Database                       │
 │  Moments · Broadcasts · Subscribers · Moderation            │
 │  Analytics · Campaigns · Sponsors · Authority               │
+│  Participation · Evidence · Institutional Memory            │
 └──────────────────────────┬──────────────────────────────────┘
                            │ operational data
                            ▼
@@ -46,9 +67,38 @@ Moments is a community information platform with three surfaces and one operatio
 
 ---
 
+## The Two-Source Model
+
+`apps/web` queries two separate data sources in one Next.js application.
+
+```
+              SANITY CMS                        SUPABASE
+                  │                                │
+    Editorial Content                    Operational Content
+    ─────────────────                    ───────────────────
+    Homepage composition                 Moments feed + detail
+    Featured stories                     Region + category pages
+    Sponsor pages                        Search
+    Campaign landing pages               Participation
+    About · Help · Privacy · Terms       Evidence
+    Authority editorial profiles         Broadcasts
+    SEO · Open Graph · media             Subscribers
+    Navigation structure                 Analytics
+                  │                                │
+                  └──────────────┬─────────────────┘
+                                 │
+                          apps/web (PWA)
+                    Same layout. Same design system.
+                    Two sources. One experience.
+```
+
+Neither source replaces the other. The boundary is defined in `CONTENT_OWNERSHIP.md`.
+
+---
+
 ## Responsibility Split
 
-### Sanity CMS owns
+### Sanity CMS owns — editorial, curated, presentation
 - Homepage composition — hero, featured stories, layout
 - Editorial content — long-form stories, announcements
 - Sponsor pages and campaign landing pages
@@ -58,7 +108,7 @@ Moments is a community information platform with three surfaces and one operatio
 - Media assets for editorial content
 - Navigation structure and featured categories
 
-### Supabase owns
+### Supabase owns — operational, records, evidence, intelligence
 - Moments — creation, scheduling, broadcasting
 - Broadcasts and delivery pipeline
 - Subscriber management and preferences
@@ -68,11 +118,21 @@ Moments is a community information platform with three surfaces and one operatio
 - Compliance and rate limiting
 - WhatsApp message processing
 - Campaigns and sponsor commercial data
+- Participation submissions and logs
+- Evidence attachments and environmental context
+- Institutional memory and record lineage
+- Commercial intelligence and project tracking
 
-### apps/web (PWA) consumes both
+### Edge Functions own — orchestration and business rules
+- All database access — no application code touches the database directly
+- Business rule enforcement (immutability, rate limiting, auth)
+- Webhook processing and delivery
+- Participation webhook routing
+- Evidence capture and verification
+
+### apps/web composes both
 - Editorial content from Sanity via GROQ queries
 - Operational moments from Supabase via `packages/api` → Edge Functions
-- These are two separate data sources. Neither replaces the other.
 - Same Next.js application. Same layout. Same design system.
 
 ### apps/admin manages
@@ -82,11 +142,11 @@ Moments is a community information platform with three surfaces and one operatio
 - System settings and feature flags
 - Authority profile management
 
-### WhatsApp is the delivery channel
-- Not the product. Not the first milestone.
+### WhatsApp is the delivery channel — not the product
 - Subscribers opt in via WhatsApp deep link on the PWA
 - Broadcasts are delivered via WhatsApp Cloud API
-- Reply handlers (HELP/STATUS/MYAUTHORITY) are built in Phase 17D — after the public product exists
+- Reply handlers (HELP/STATUS/MYAUTHORITY) are built in Phase 17I — last
+- WhatsApp is tested against the finished experience, not before it exists
 
 ---
 
@@ -97,11 +157,9 @@ Moments is a community information platform with three surfaces and one operatio
 3. `apps/web` queries Sanity directly via `@sanity/client` — no Edge Function proxy.
 4. The Sanity dataset is read-only from `apps/web`. All writes happen in Sanity Studio.
 5. Sanity Studio is a separate deployment — not inside this monorepo.
-6. Moment feed, detail, region, and category pages remain Supabase-driven — unchanged.
+6. Moment feed, detail, region, and category pages remain Supabase-driven — always.
 7. ISR + on-demand revalidation for all Sanity-driven pages.
-8. The PWA data flow:
-   - Editorial pages → Sanity GROQ
-   - Moment feed, detail, region, category → Supabase via `packages/api`
+8. The content ownership boundary is defined in `CONTENT_OWNERSHIP.md` — frozen before any CMS code.
 
 ---
 
@@ -115,63 +173,74 @@ Testing a broadcast against a product that doesn't exist.
 
 The right order:
 ```
-PWA → CMS → UX Polish → WhatsApp → Analytics → Hardening → Launch
+Content Ownership → Sanity → Governance Adaptation → Participation
+→ Evidence → Commercial → Intelligence Foundation → WhatsApp → Launch
 ```
 Every broadcast has somewhere meaningful to go.
 Every subscriber lands on a complete product.
 WhatsApp is tested against the finished experience.
+The intelligence layer exists before the dashboard is built.
 
 ---
 
 ## Phase 17 — Moments Product Completion
 
-### 17A — Public Experience (PWA) ✅
-Build the actual public product. Not a placeholder. The real Moments experience.
-Homepage, feed, story pages, categories, search, regional browsing, PWA, offline, install prompt, SEO.
+Ten sub-phases. Each builds on the last.
 
-### 17B — Sanity CMS Integration ⏳
-Introduce Sanity as the editorial layer.
-Schema, Studio, GROQ queries, `@sanity/client` in `apps/web`. No content yet — connection only.
-
-### 17C — Public UX Polish ⏳
-Connect editorial pages to Sanity. Make the product feel premium.
-Animations, loading states, transitions, accessibility, typography, responsive behaviour,
-empty states, error states, image optimisation, Open Graph, Lighthouse.
-
-### 17D — WhatsApp Production ⏳
-Activate the delivery channel. Production credentials, reply handlers, end-to-end testing.
-HELP · STATUS · MYAUTHORITY · opt-in · opt-out · broadcast verification · compliance.
-
-### 17E — Analytics ⏳
-Understand how people use the product. Only meaningful once users exist.
-Page analytics, subscriber funnels, broadcast funnels, regional analytics, sponsor analytics.
-
-### 17F — Production Hardening ⏳
-Harden everything before launch.
-Caching, rate limits, monitoring, security headers, performance budget, load testing, Lighthouse ≥ 90.
-
----
-
-## Phase 18 — Moments Launch
-
-Domain, Vercel deployments, Supabase paid plan, Sanity plan, WhatsApp Business Account verified,
-first real broadcast sent.
-
----
-
-## Ecosystem Roadmap (Post-Moments)
-
-Only after Moments is genuinely production-ready does the next application begin.
-Each application builds its own shell, navigation, and domain on top of the shared platform.
-None of them modify `packages/`.
-
-| Phase | Application | Description |
+| Phase | Name | What it delivers |
 |---|---|---|
-| 19 | Umkhandlu | Traditional authority and community governance platform |
-| 20 | ITPMS | Municipal ICT project management |
-| 21 | Schools Portal | Educational institution administration and communication |
-| 22 | BeatsChain | Music creator ecosystem — profiles, ISRC, marketplace |
-| 23 | Spree Operations | Commercial storefronts and merchant operations |
+| 17A | Public PWA Foundation | ✅ The real public product |
+| 17B | Content Ownership Constitution | Frozen boundary — Sanity vs Supabase |
+| 17C | Sanity Editorial Layer | CMS integration — only after ownership frozen |
+| 17D | Governance Adaptation | Participation, evidence, development moments |
+| 17E | Public Participation Engine | Consent-gated, webhook-delivered, never stored |
+| 17F | Evidence Layer | Media evidence, weather context, verification |
+| 17G | Commercial Layer | Full project tracking, certified deliverables |
+| 17H | Intelligence Foundation | Aggregations, KPIs, derived metrics — no dashboard yet |
+| 17I | WhatsApp Integration | End-to-end delivery — last |
+| 17J | Production Validation and Launch | Moments v2 is shipped |
+
+---
+
+## Phase 18 — Umkhandlu Intelligence Dashboard
+
+The first application built on top of the mature platform.
+Not another CMS. Not another admin. The control centre.
+
+Begins only after Phase 17J is complete.
+
+Consumes:
+- Multiple Umkhandlu governance nodes
+- Moments operational data
+- Future application nodes
+- Commercial intelligence
+- Evidence and participation
+- Institutional memory
+
+Produces:
+- Regional intelligence view
+- Cross-node aggregation
+- Infrastructure health
+- Participation trends
+- Commercial projections
+- Predictive analytics
+
+---
+
+## Platform Roadmap
+
+```
+Phase 16  Platform Independence          ✅ Complete
+Phase 17  Moments Product Completion     ⏳ Active
+Phase 18  Umkhandlu Intelligence Dashboard
+Phase 19  Multi-node Federation
+Phase 20  Commercial Intelligence
+Phase 21  National Institutional Memory
+```
+
+Future applications (Umkhandlu governance app, ITPMS, Schools Portal, BeatsChain, Spree)
+are scaffolded as concrete product requirements emerge — not on a fixed schedule.
+Each consumes `@unami/ui`, `@unami/shared`, `@unami/api`. None modify `packages/`.
 
 ---
 
@@ -179,9 +248,17 @@ None of them modify `packages/`.
 
 Before adding anything to `apps/web`, ask:
 
-1. Is this editorial content? → Sanity (Phase 17B+)
+1. Is this editorial content? → Sanity (Phase 17C+) — confirm against `CONTENT_OWNERSHIP.md`
 2. Is this operational data? → Supabase via `packages/api`
 3. Is this a platform capability? → It already exists in `packages/`
 4. Is this Moments-specific UI? → `apps/web/src/components/`
+
+Before adding anything to the platform, ask:
+
+1. Does it appear in more than one application?
+2. Is it free of domain vocabulary?
+3. Can it be described without referencing any specific application?
+
+If any answer is no — it belongs in the application domain, not the platform.
 
 If the answer is "I'm not sure" — stop and ask before writing.

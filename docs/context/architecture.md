@@ -1,9 +1,9 @@
 # Architecture Context
 
 ## Project
-Unami Platform Core v1.0 — a multi-application platform. Moments is the first product built on it.
-The platform layer is complete and application-agnostic.
-Active work is **Moments product completion** — not platform engineering.
+Unami Platform Core v1.0 — a multi-application platform. The platform is complete and frozen.
+Active work is **Moments product completion** (Phase 17) — not platform engineering.
+Phase 18 is the Umkhandlu Intelligence Dashboard — the first validation of multi-application federation.
 
 ## Repository
 https://github.com/prooftv/unami-platform-core
@@ -13,8 +13,8 @@ https://github.com/prooftv/unami-platform-core
 - Backend: Supabase Edge Functions (Deno)
 - Database: PostgreSQL via Supabase (26 tables, fully migrated)
 - Auth: Supabase Auth (JWT, RS256) + `@supabase/ssr` for Next.js
-- CMS: Sanity (Phase 17B — `apps/web` only)
-- Messaging: Meta WhatsApp Cloud API (Phase 17D)
+- CMS: Sanity (Phase 17C — `apps/web` only, after content ownership frozen in 17B)
+- Messaging: Meta WhatsApp Cloud API (Phase 17I — last)
 - Validation: Zod (shared between frontend and Edge Functions)
 - State: Zustand (vanilla store, SSR-safe)
 - Monorepo: Turborepo + pnpm workspaces
@@ -79,7 +79,7 @@ apps/admin or apps/web
       → Supabase DB (service role key, RLS enforced)
 ```
 
-`apps/web` also queries Sanity directly (Phase 17B+):
+`apps/web` also queries Sanity directly (Phase 17C+):
 ```
 apps/web
   → @sanity/client (GROQ queries)
@@ -94,29 +94,34 @@ Sanity is read-only from `apps/web`. All Sanity writes happen in Sanity Studio.
 ## Two-Source Model (apps/web)
 
 ```
-                SANITY CMS
-                     │
-      Editorial Content (Phase 17B+)
-      Homepage · Stories · Sponsors
-      Help · About · Privacy · Authority
-                     │
-          ┌──────────▼──────────┐
-          │    apps/web (PWA)   │
-          └──────────┬──────────┘
-                     │
-      Operational Content (Supabase)
-      Moments · Feed · Detail
-      Region · Category · Search
-                     │
-              packages/api
-                     │
-            supabase/functions
-                     │
-                  Supabase DB
+              SANITY CMS                        SUPABASE
+                  │                                │
+    Editorial Content (Phase 17C+)       Operational Content
+    ─────────────────────────────        ───────────────────
+    Homepage · Stories · Sponsors        Moments · Feed · Detail
+    Help · About · Privacy               Region · Category · Search
+    Authority editorial profiles         Participation · Evidence
+                  │                      Broadcasts · Analytics
+                  └──────────────┬───────────────────┘
+                                 │
+                          apps/web (PWA)
+                    Same layout. Same design system.
 ```
 
-These are two separate data sources in one Next.js application.
-Neither replaces the other. The design system and layout are shared.
+The boundary between these two sources is defined in `docs/context/CONTENT_OWNERSHIP.md`.
+That document is the Phase 17B deliverable. It is frozen before any CMS code is written.
+
+---
+
+## Content Ownership Boundary
+
+See `docs/context/CONTENT_OWNERSHIP.md` for the full classification.
+
+Summary:
+- **Sanity** — editorial, curated, presentation: homepage, stories, sponsor pages, static pages, SEO
+- **Supabase** — operational, records, evidence: moments, participation, evidence, analytics, intelligence
+- **Edge Functions** — orchestration: all database access, business rules, webhook routing
+- **apps/web** — composition: editorial + operational content in one Next.js application
 
 ---
 
@@ -181,7 +186,7 @@ No import from `apps/admin/domain`. The API package has no domain dependency.
 
 **Data access:**
 - `getPublicApiClient()` — anon key, calls `/moments/public` endpoints
-- `@sanity/client` — GROQ queries to Sanity CDN (Phase 17B+)
+- `@sanity/client` — GROQ queries to Sanity CDN (Phase 17C+, after 17B content ownership frozen)
 - No auth, no Supabase client, no `@supabase/ssr`
 
 ---
@@ -197,19 +202,31 @@ Assets: `media`, `moment_stats`
 Analytics: `analytics_events`, `marketing_compliance`, `budget_transactions`
 System: `system_settings`, `feature_flags`, `rate_limits`, `audit_logs`, `error_logs`
 
+Future tables (Phase 17D+) are classified in `docs/abstractions/umkhandlu/10_DATABASE_IMPACT.md`.
+No table is added until a concrete product requirement in an active phase demands it.
+
+---
+
+## Umkhandlu Abstraction Pack
+
+The governance domain has been distilled into 13 constitutional documents in `docs/abstractions/umkhandlu/`.
+These documents are the architectural reference for all governance, records, participation, evidence,
+and intelligence work from Phase 17D onward.
+
+The critical bridge: `09_PLATFORM_MAPPING.md` — classifies every concept as platform-generic or domain-specific.
+The implementation sequence: `12_IMPLEMENTATION_ROADMAP.md`.
+
 ---
 
 ## Current Phase
 
-**Phase 17B — Sanity CMS Integration**
+**Phase 17B — Content Ownership Constitution**
 
-Phase 17A (public PWA shell and information architecture) is complete.
-Next: introduce Sanity as the editorial layer for `apps/web`.
+Phase 17A (public PWA foundation) is complete.
+Phase 17B deliverable: `docs/context/CONTENT_OWNERSHIP.md` — the frozen boundary between Sanity and Supabase.
+No CMS code is written until this document is complete and committed.
 
-Sanity owns editorial content. Supabase owns operational data.
-These are complementary, not competing.
-
-Full roadmap: 17A ✅ → 17B → 17C → 17D → 17E → 17F → 18 (Launch)
+Full roadmap: 17A ✅ → 17B → 17C → 17D → 17E → 17F → 17G → 17H → 17I → 17J → 18
 
 ---
 
@@ -223,5 +240,5 @@ Full roadmap: 17A ✅ → 17B → 17C → 17D → 17E → 17F → 18 (Launch)
 
 ## What Is Active
 
-- Phase 17B: Sanity project setup, schema, Studio, `@sanity/client` in `apps/web`
-- Phase 17C (next): Connect editorial pages to Sanity, UX polish, ISR, Open Graph
+- Phase 17B: `CONTENT_OWNERSHIP.md` — freeze the Sanity/Supabase boundary
+- Phase 17C (next): Sanity project, schemas, Studio, `@sanity/client` in `apps/web`

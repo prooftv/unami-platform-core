@@ -167,11 +167,41 @@ The moment feed, detail, region, and category pages are always Supabase-driven.
 The homepage hero, featured stories, and static pages are always Sanity-driven (from Phase 17B).
 Neither source crosses into the other's domain.
 
-## D-030: Ecosystem expansion is post-Moments only
-No other application (Umkhandlu, ITPMS, Schools Portal, BeatsChain, Spree) is scaffolded
-until Moments has completed Phase 18 (Launch). Each future application builds its own shell,
-navigation, and domain on top of `@unami/ui`, `@unami/shared`, `@unami/api`.
-None of them modify `packages/`. The platform serves them — they do not reshape it.
+## D-030: No new application until Moments Phase 17J is complete
+No new platform application may begin until Moments has completed Phase 17J
+(Production Validation and Launch). After Moments is production-ready, subsequent
+applications must consume Unami Platform Core rather than extending it, unless a
+documented platform capability is genuinely missing and benefits more than one application.
+
+Each application builds its own shell, navigation, and domain on top of
+`@unami/ui`, `@unami/shared`, `@unami/api`. None of them modify `packages/`.
+The platform serves them — they do not reshape it.
+
+Phase 18 (Umkhandlu Intelligence Dashboard) is the first application after Moments.
+It is the first validation that the platform supports multiple applications without
+architectural changes.
+
+## D-032: Platform validation order
+Unami Platform Core reached platform completeness at v1.0.0. All future work follows
+a validation sequence:
+
+1. Complete the first product (Moments — Phase 17A through 17J).
+2. Validate the platform through a second application (Umkhandlu Intelligence Dashboard — Phase 18).
+3. Expand the platform only when validated application requirements reveal reusable capabilities
+   that genuinely benefit more than one application.
+
+This protects against speculative platform expansion. The platform grows from proven
+application requirements — not from anticipated future needs.
+
+The roadmap:
+```
+Phase 16  Platform Independence          ✅ Complete
+Phase 17  Moments Product Completion     ⏳ Active
+Phase 18  Umkhandlu Intelligence Dashboard
+Phase 19  Multi-node Federation
+Phase 20  Commercial Intelligence
+Phase 21  National Institutional Memory
+```
 
 ## D-031: Umkhandlu abstraction pack — knowledge before implementation
 The Umkhandlu governance domain has been distilled into a 13-document constitutional abstraction pack
