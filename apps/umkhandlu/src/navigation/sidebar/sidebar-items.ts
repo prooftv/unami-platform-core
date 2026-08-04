@@ -1,12 +1,14 @@
 import {
+  Activity,
+  BarChart3,
   BookOpen,
   Building2,
-  FileText,
+  Globe,
   LayoutDashboard,
-  MessageSquare,
+  Network,
+  Server,
   Settings,
   Shield,
-  Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -49,43 +51,45 @@ export const sidebarItems: NavGroup[] = [
   {
     id: 1,
     items: [
-      { id: 'dashboard', title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+      { id: 'overview', title: 'Overview', url: '/dashboard', icon: LayoutDashboard },
     ],
   },
   {
     id: 2,
-    label: 'Governance',
+    label: 'Nodes',
     items: [
-      { id: 'records', title: 'Records', url: '/records', icon: FileText },
-      { id: 'notices', title: 'Notices', url: '/notices', icon: MessageSquare },
+      { id: 'nodes', title: 'Registered Nodes', url: '/nodes', icon: Network },
+      { id: 'node-health', title: 'Node Health', url: '/nodes/health', icon: Activity, badge: 'soon' },
     ],
   },
   {
     id: 3,
-    label: 'Community',
+    label: 'Governance Intelligence',
     items: [
-      { id: 'participation', title: 'Participation', url: '/participation', icon: Users },
-      { id: 'evidence', title: 'Evidence', url: '/evidence', icon: Shield },
+      { id: 'records-analytics', title: 'Record Analytics', url: '/intelligence/records', icon: BarChart3, badge: 'soon' },
+      { id: 'notices-analytics', title: 'Notice Analytics', url: '/intelligence/notices', icon: Globe, badge: 'soon' },
+      { id: 'participation-analytics', title: 'Participation', url: '/intelligence/participation', icon: Shield, badge: 'soon' },
     ],
   },
   {
     id: 4,
-    label: 'Commercial',
+    label: 'Commercial Intelligence',
     items: [
-      { id: 'projects', title: 'Projects', url: '/projects', icon: Building2 },
+      { id: 'projects', title: 'Projects', url: '/intelligence/projects', icon: Building2, badge: 'soon' },
     ],
   },
   {
     id: 5,
-    label: 'Intelligence',
+    label: 'Institutional Memory',
     items: [
-      { id: 'intelligence', title: 'Intelligence', url: '/intelligence', icon: BookOpen },
+      { id: 'audit', title: 'Audit Trails', url: '/intelligence/audit', icon: BookOpen, badge: 'soon' },
     ],
   },
   {
     id: 6,
-    label: 'System',
+    label: 'Platform',
     items: [
+      { id: 'api-health', title: 'API Health', url: '/platform/health', icon: Server, badge: 'soon' },
       { id: 'settings', title: 'Settings', url: '/settings', icon: Settings },
     ],
   },
