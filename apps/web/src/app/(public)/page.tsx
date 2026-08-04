@@ -122,7 +122,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {heroMoment ? (
+      {heroMoment && (
         <section>
           <Link
             href={`/moments/${heroMoment.id}`}
@@ -148,16 +148,6 @@ export default async function HomePage() {
               </p>
             )}
           </Link>
-        </section>
-      ) : (
-        <section>
-          <div className="rounded-2xl border border-dashed bg-muted/30 p-12 text-center">
-            <p className="text-2xl font-bold tracking-tight">Community Moments</p>
-            <p className="mt-2 text-muted-foreground">Local news and updates from across South Africa.</p>
-            <Link href="/subscribe" className="mt-6 inline-flex items-center rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity">
-              Subscribe via WhatsApp
-            </Link>
-          </div>
         </section>
       )}
 

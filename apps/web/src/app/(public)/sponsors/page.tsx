@@ -7,13 +7,6 @@ export const metadata: Metadata = {
   description: 'Community partners and sponsors supporting Moments.',
 };
 
-const TIERS = [
-  { tier: 'Platinum', description: 'Our highest-tier community partners. Platinum sponsors support Moments at the national level.', color: 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600' },
-  { tier: 'Gold', description: 'Gold sponsors support regional content and community initiatives.', color: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' },
-  { tier: 'Silver', description: 'Silver sponsors support category-specific content.', color: 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700' },
-  { tier: 'Bronze', description: 'Bronze sponsors support local community moments.', color: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' },
-];
-
 export default async function SponsorsPage() {
   const sponsors = await getSponsorPages().catch(() => []);
 
@@ -49,19 +42,8 @@ export default async function SponsorsPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-6">
-          {TIERS.map(({ tier, description, color }) => (
-            <div key={tier} className={`rounded-xl border p-6 ${color}`}>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold">{tier} Partners</h2>
-                <span className="text-xs text-muted-foreground">Coming soon</span>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">{description}</p>
-              <div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
-                Sponsor profiles will appear here
-              </div>
-            </div>
-          ))}
+        <div className="rounded-xl border border-dashed py-16 text-center">
+          <p className="text-sm text-muted-foreground">Sponsor profiles coming soon.</p>
         </div>
       )}
 

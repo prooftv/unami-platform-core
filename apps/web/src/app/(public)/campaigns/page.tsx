@@ -45,21 +45,9 @@ export default async function CampaignsPage() {
           </div>
         </div>
       ) : (
-        <>
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight mb-4">Active Campaigns</h2>
-            <div className="rounded-xl border border-dashed py-16 text-center">
-              <p className="text-sm text-muted-foreground">Active campaigns will appear here.</p>
-              <p className="mt-1 text-xs text-muted-foreground">Campaign data will be connected in a future update.</p>
-            </div>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight mb-4">Past Campaigns</h2>
-            <div className="rounded-xl border border-dashed py-16 text-center">
-              <p className="text-sm text-muted-foreground">Completed campaigns will appear here.</p>
-            </div>
-          </div>
-        </>
+        <div className="rounded-xl border border-dashed py-16 text-center">
+          <p className="text-sm text-muted-foreground">No active campaigns at this time.</p>
+        </div>
       )}
     </div>
   );
