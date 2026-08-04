@@ -77,6 +77,7 @@ All ten sub-phases complete. Frozen. Ops gates remaining (see `docs/LAUNCH_CHECK
 - The node registry model defines which governance nodes the Control Centre connects to
 - New typed clients in `packages/api` are read-only intelligence clients — no create/update operations from the Control Centre
 - All intelligence concepts trace back to `docs/abstractions/umkhandlu/08_INTELLIGENCE_LAYER.md`
+- The node API contract is defined in `docs/context/GOVERNANCE_NODE_API.md` — read before Phase 18B
 - The platform mapping reference is `09_PLATFORM_MAPPING.md` — classifies every concept as platform or domain
 - The test: deleting Umkhandlu must leave `packages/` compiling without modification
 - Do not touch `apps/admin` or `apps/web` — Moments is frozen

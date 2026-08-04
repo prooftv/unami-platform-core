@@ -49,11 +49,12 @@ It does not require Platform Core to build CRUD screens for those concepts.
 ## What you must read before writing any code
 
 1. `PROJECT_STATUS.md` — current sub-phase, what is done and what is next
-2. `docs/context/decisions.md` — D-035 specifically — the architectural correction
-3. `docs/abstractions/umkhandlu/08_INTELLIGENCE_LAYER.md` — the intelligence architecture
-4. `docs/abstractions/umkhandlu/09_PLATFORM_MAPPING.md` — platform vs domain classification
-5. `docs/abstractions/umkhandlu/00_EXECUTIVE_SUMMARY.md` — the five-layer model
-6. `docs/context/product-vision.md` — Phase 18 description
+2. `docs/context/decisions.md` — D-035 and D-036 specifically
+3. `docs/context/GOVERNANCE_NODE_API.md` — the contract every node must implement (Phase 18B+)
+4. `docs/abstractions/umkhandlu/08_INTELLIGENCE_LAYER.md` — the intelligence architecture
+5. `docs/abstractions/umkhandlu/09_PLATFORM_MAPPING.md` — platform vs domain classification
+6. `docs/abstractions/umkhandlu/00_EXECUTIVE_SUMMARY.md` — the five-layer model
+7. `docs/context/product-vision.md` — Phase 18 description
 
 ---
 

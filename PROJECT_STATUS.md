@@ -337,6 +337,9 @@ What remains for 18A completion:
 Connect to the first governance node via read-only API. Data model alignment.
 The Control Centre queries a live node and displays what it knows.
 
+Constitutional reference: `docs/context/GOVERNANCE_NODE_API.md` — the contract every node must implement.
+Read this document before writing any Phase 18B code.
+
 **Definition of Done — all ten must be complete:**
 
 | Task | Status |
