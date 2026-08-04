@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getPublicApiClient } from '@/lib/api/client';
+import { ParticipationForm } from '@/components/ParticipationForm';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -29,9 +30,15 @@ export default async function MomentDetailPage({ params }: { params: Promise<{ i
   };
 
   const isConsultation = moment.momentType === 'consultation';
-  const deadlinePassed = moment.participationDeadline
-    ? new Date(moment.participationDeadline) < new Date()
-    : false;
+  const participationOpen =
+    isConsultation &&
+    moment.participationEnabled &&
+    (!moment.participationDeadline || new Date(moment.participationDeadline) > new Date());
+  const deadlinePassed =
+    isConsultation &&
+    moment.participationEnabled &&
+    !!moment.participationDeadline &&
+    new Date(moment.participationDeadline) < new Date();
 
   return (
     <article className="space-y-6 max-w-2xl">
@@ -56,15 +63,22 @@ export default async function MomentDetailPage({ params }: { params: Promise<{ i
       </div>
 
       {isConsultation && moment.participationEnabled && (
-        <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm">
-          <p className="font-medium text-foreground">Community responses open</p>
-          {moment.participationDeadline && !deadlinePassed && (
-            <p className="mt-0.5 text-muted-foreground">
-              Deadline: {new Date(moment.participationDeadline).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-            </p>
+        <div className="space-y-3">
+          {participationOpen && (
+            <>
+              {moment.participationDeadline && (
+                <p className="text-xs text-muted-foreground">
+                  Response window closes{' '}
+                  {new Date(moment.participationDeadline).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              )}
+              <ParticipationForm momentId={moment.id} momentTitle={moment.title} />
+            </>
           )}
           {deadlinePassed && (
-            <p className="mt-0.5 text-muted-foreground">Response window has closed.</p>
+            <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+              The response window for this consultation has closed.
+            </div>
           )}
         </div>
       )}

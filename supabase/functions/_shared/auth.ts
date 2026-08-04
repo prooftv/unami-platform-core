@@ -84,11 +84,12 @@ export async function logAudit(
 // ---------------------------------------------------------------------------
 
 const RATE_LIMITS: Record<string, { windowMs: number; max: number }> = {
-  '/webhook':   { windowMs: 60_000, max: 1000 },
-  '/moments':   { windowMs: 60_000, max: 60 },
-  '/broadcast': { windowMs: 60_000, max: 10 },
-  '/analytics': { windowMs: 60_000, max: 30 },
-  '/auth':      { windowMs: 60_000, max: 5 },
+  '/webhook':       { windowMs: 60_000, max: 1000 },
+  '/moments':       { windowMs: 60_000, max: 60 },
+  '/broadcast':     { windowMs: 60_000, max: 10 },
+  '/analytics':     { windowMs: 60_000, max: 30 },
+  '/auth':          { windowMs: 60_000, max: 5 },
+  '/participation': { windowMs: 60_000, max: 20 },
 };
 
 export async function checkRateLimit(

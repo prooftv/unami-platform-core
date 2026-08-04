@@ -461,9 +461,34 @@ Per-moment engagement counters. One row per moment.
 | comment_count | INTEGER | NOT NULL, default 0 | |
 | share_count | INTEGER | NOT NULL, default 0 | |
 | reaction_count | INTEGER | NOT NULL, default 0 | |
+| participation_count | INTEGER | NOT NULL, default 0 | Denormalised count of participation submissions |
 | updated_at | TIMESTAMPTZ | NOT NULL, auto-updated | |
 
 **RLS:** anon: read. service_role: all.
+
+---
+
+### participation_log
+
+Anonymised record of participation submissions. No personal data ever stored here.
+Personal data (name, contact) is delivered via webhook and never persisted.
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| id | UUID | PK, default gen_random_uuid() | |
+| moment_id | UUID | FK moments(id) ON DELETE CASCADE, NOT NULL | |
+| response_type | TEXT | NOT NULL, CHECK enum | comment/support/concern/question |
+| relationship | TEXT | NOT NULL, CHECK enum | resident/business/community/organisation/other |
+| popia_consent | BOOLEAN | NOT NULL | Must be true — server enforced |
+| submitted_at | TIMESTAMPTZ | NOT NULL, default NOW() | |
+
+**Rules:**
+- No `name`, `contact`, `phone`, or any PII column — ever.
+- Personal data is webhook-delivered only.
+- `popia_consent` is always `true` — server rejects submissions where it is false.
+- Entries are immutable — no updates, no deletes.
+
+**RLS:** anon: no access. service_role: all.
 
 ---
 
@@ -682,6 +707,7 @@ log_authority_action(p_authority_profile_id UUID, p_action TEXT, p_actor_id TEXT
 - No `admin_users` or `admin_sessions` — replaced by `admin_roles` + Supabase Auth.
 - No soft deletes — hard DELETE with CASCADE throughout.
 - No `daily_stats` materialised table yet — computed from `analytics_events` on demand.
+- No `participation_submissions` table — personal data is never stored. Webhook-delivered only.
 
 ---
 

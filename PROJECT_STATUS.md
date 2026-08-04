@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 17D — Governance Adaptation ✅ Complete |
+| Phase | Phase 17E — Public Participation Engine ✅ Complete |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `ae6cf5e` |
+| Last commit | `phase-17e-complete` (pending push) |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -37,7 +37,7 @@ The Umkhandlu Intelligence Dashboard is the second. It validates multi-applicati
 | Layer | Status |
 |---|---|
 | Database — 26 tables | ✅ Complete |
-| Edge Functions — 15 functions | ✅ Complete |
+| Edge Functions — 16 functions (+ participation) | ✅ Complete |
 | `packages/shared` — platform primitives | ✅ Frozen |
 | `packages/ui` — design system | ✅ Frozen |
 | `packages/api` — typed clients | ✅ Frozen |
@@ -347,7 +347,7 @@ unami-platform-core/
 │   ├── shared/         @unami/shared — platform primitives (frozen)
 │   └── api/            @unami/api — typed clients (frozen)
 ├── supabase/
-│   ├── functions/      15 Edge Functions (frozen)
+│   ├── functions/      16 Edge Functions (+ participation)
 │   └── migrations/
 │       └── 000_initial_schema.sql   ← baseline, immutable
 ├── docs/

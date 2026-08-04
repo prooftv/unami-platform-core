@@ -2,6 +2,7 @@ export { ApiError } from './http';
 export type { ApiConfig } from './http';
 export type * from './types/index';
 export type { PublicMoment, PublicListParams } from './clients/public-moments';
+export type { ParticipationResponseType, ParticipationRelationship, SubmitParticipationInput, ParticipationResult } from './clients/participation';
 export type { MomentType } from './types/index';
 
 export type { SubscriberStats } from './clients/subscribers';
@@ -15,6 +16,7 @@ export type { UserProfile } from './clients/user-profiles';
 export type { MediaRecord, UploadMediaResult } from './clients/media';
 
 import { createPublicMomentsClient } from './clients/public-moments';
+import { createPublicParticipationClient } from './clients/participation';
 import { createMomentsClient } from './clients/moments';
 import { createBroadcastsClient } from './clients/broadcasts';
 import { createAuthClient } from './clients/auth';
@@ -37,6 +39,7 @@ export interface ApiClientConfig {
 export function createPublicApiClient(config: ApiClientConfig) {
   return {
     moments: createPublicMomentsClient(config),
+    participation: createPublicParticipationClient(config),
   };
 }
 
