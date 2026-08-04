@@ -10,7 +10,7 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 18B — Governance Records |
+| Phase | Phase 18C — Notice Architecture |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
@@ -323,9 +323,17 @@ Read `12_IMPLEMENTATION_ROADMAP.md` and `09_PLATFORM_MAPPING.md` before writing 
 | `apps/umkhandlu` wired to `packages/api` typed clients | ✅ |
 | Typecheck clean, build passing | ✅ |
 
-### Phase 18B — Governance Records
+### Phase 18B — Governance Records ✅ Complete
 
-Full record CRUD, lineage chain, evidence attachments, status lifecycle, governance authority sign-off.
+| Task | Status |
+|---|---|
+| Records list page — paginated, filterable by status and type | ✅ |
+| Record detail page — content, metadata, lineage chain display | ✅ |
+| Create record form — type, title, content, origin notice linkage | ✅ |
+| Status transition UI — governance-gated, permanent | ✅ |
+| `getApiClient` helper — mirrors apps/admin pattern | ✅ |
+| Loading skeletons on all routes | ✅ |
+| Typecheck clean | ✅ |
 
 ### Phase 18C — Notice Architecture
 
