@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 17C — Sanity Editorial Layer |
+| Phase | Phase 17C — Sanity Editorial Layer ✅ Complete |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `b7fb7ba` |
+| Last commit | `6bb4769` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -118,16 +118,19 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 
 | Task | Status |
 |---|---|
-| Sanity project created | ⏳ Ops |
-| Sanity Studio deployed (Sanity-hosted) | ⏳ Ops |
+| Sanity project created — `g4t7r2a1` / `production` | ✅ |
 | `@sanity/client` added to `apps/web` | ✅ |
 | `apps/web/src/lib/sanity/client.ts` — typed Sanity client | ✅ |
-| `apps/web/src/lib/sanity/types.ts` — TypeScript types for all schemas | ✅ |
-| `apps/web/src/lib/sanity/queries.ts` — all GROQ queries | ✅ |
+| `apps/web/src/lib/sanity/types.ts` — TypeScript types for all 10 schemas | ✅ |
+| `apps/web/src/lib/sanity/queries.ts` — all GROQ queries with ISR tags | ✅ |
 | `apps/web/src/app/api/revalidate/route.ts` — on-demand revalidation webhook | ✅ |
-| `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`, `SANITY_REVALIDATE_SECRET` in `.env.example` | ✅ |
-| Sanity schemas defined in Studio: `homePage`, `featuredStory`, `sponsorPage`, `campaignPage`, `aboutPage`, `helpArticle`, `privacyPage`, `termsPage`, `authorityPage`, `siteSettings` | ⏳ Ops |
-| Sanity webhook configured → `/api/revalidate` | ⏳ Ops |
+| `apps/web/src/components/PortableText.tsx` — block content renderer | ✅ |
+| All env vars documented in `.env.example` incl. `SANITY_API_WRITE_TOKEN` | ✅ |
+| `apps/web` deployed → `https://unami-platform-core-web.vercel.app` | ✅ |
+| Sanity revalidation webhook → `/api/revalidate` configured | ✅ |
+| All 8 editorial pages wired to Sanity — no hardcoded content | ✅ |
+| 15 documents seeded via `apps/web/scripts/seed-sanity.mjs` | ✅ |
+| Sanity Studio deployed + 10 schemas defined | ⏳ Ops — remaining |
 
 ---
 
