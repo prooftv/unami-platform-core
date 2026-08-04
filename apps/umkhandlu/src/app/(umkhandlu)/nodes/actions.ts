@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { getOperatorSession, isSuperAdmin } from '@/lib/auth/operator';
 
 async function requireSuperAdmin() {
@@ -12,7 +12,7 @@ async function requireSuperAdmin() {
 
 export async function addNodeAction(formData: FormData) {
   await requireSuperAdmin();
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const name             = formData.get('name') as string;
   const authority        = formData.get('authority') as string;
@@ -40,7 +40,7 @@ export async function addNodeAction(formData: FormData) {
 
 export async function toggleNodeAction(id: string, active: boolean) {
   await requireSuperAdmin();
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { error } = await supabase
     .from('governance_nodes')
     .update({ active, updated_at: new Date().toISOString() })
@@ -52,7 +52,7 @@ export async function toggleNodeAction(id: string, active: boolean) {
 
 export async function deleteNodeAction(id: string) {
   await requireSuperAdmin();
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { error } = await supabase.from('governance_nodes').delete().eq('id', id);
   if (error) return { error: error.message };
   revalidatePath('/nodes');
