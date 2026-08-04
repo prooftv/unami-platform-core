@@ -15,6 +15,7 @@
 5. Read `docs/context/security-model.md` — auth and RBAC rules
 6. Check `docs/DATABASE_SCHEMA.md` before any schema changes
 7. Check `docs/context/CONTENT_OWNERSHIP.md` before any content or CMS decisions (Phase 17B+)
+8. Check `docs/context/COMMERCIAL_DOMAIN.md` before any commercial, campaign, or project decisions
 
 ## What this repository is now
 Unami Platform Core v1.0 is complete. This is application validation work — not platform engineering.

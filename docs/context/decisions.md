@@ -217,6 +217,28 @@ platform-generic or domain-specific and prevents architectural drift.
 The implementation sequence is defined in `12_IMPLEMENTATION_ROADMAP.md`.
 Phase 19 (Umkhandlu) begins only after Phase 18 is complete.
 
+## D-034: Commercial domain frozen — COMMERCIAL_DOMAIN.md is the constitutional reference
+
+The commercial domain has been distilled into a constitutional document:
+`docs/context/COMMERCIAL_DOMAIN.md`.
+
+This document defines the domain model, object hierarchy, platform boundaries, database
+ownership, and evolution path for the commercial capability across all Unami applications.
+
+Key decisions locked by this document:
+- `project_updates` is a separate table — not JSONB. Phase 18 addition.
+- `lessons_learned` is permanent institutional memory — written once at closure, never overwritten.
+- `content` on a campaign is the permanent project overview — written once, never overwritten.
+- `progress_log` is append-only — entries are never edited or deleted.
+- Reporting is derived from underlying records — never manually assembled.
+- Certification authority is domain-defined — the platform provides the model, applications define who certifies.
+- Missing columns (`contract_number`, `consulting_engineer`, `total_deliverables`, `reported` status)
+  are Phase 18 additions — not Phase 17 gaps.
+
+The commercial domain is platform-generic. Moments is the first implementation.
+Umkhandlu is the first application to use the full `csr` project tracking capability.
+No application owns the commercial domain. The platform owns it.
+
 ## D-033: Phase 17 engineering complete — ops gates remaining
 All Phase 17 engineering deliverables are complete as of commit `phase-17j-complete`.
 Moments v2 is feature-complete and production-ready from an engineering standpoint.

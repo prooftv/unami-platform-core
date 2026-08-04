@@ -20,8 +20,9 @@ Phase 18 is the first new application on the platform. It validates multi-applic
 4. `docs/abstractions/umkhandlu/10_DATABASE_IMPACT.md` — future table classification
 5. `docs/abstractions/umkhandlu/00_EXECUTIVE_SUMMARY.md` — the philosophy and five-layer model
 6. `docs/abstractions/umkhandlu/01_DOMAIN_MODEL.md` — complete domain map
-7. `docs/context/decisions.md` — decisions that must not be reversed
-8. `docs/DATABASE_SCHEMA.md` — before any schema changes
+7. `docs/context/COMMERCIAL_DOMAIN.md` — commercial capability constitutional reference
+8. `docs/context/decisions.md` — decisions that must not be reversed
+9. `docs/DATABASE_SCHEMA.md` — before any schema changes
 
 ---
 
