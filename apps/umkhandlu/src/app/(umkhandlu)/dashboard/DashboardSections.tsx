@@ -6,6 +6,7 @@ import {
   OverviewKPIs,
   NodeHealthListWidget,
   NodeCapabilityMatrixWidget,
+  CrossNodeWidget,
   type NodeWithHealth,
 } from './widgets/OverviewWidgets';
 import {
@@ -36,6 +37,7 @@ import type {
   ParticipationSummary,
   EvidenceSummary,
 } from '@unami/api';
+import type { NodeSnapshot } from '@/lib/nodes/fetcher';
 
 // ── Grid primitives ───────────────────────────────────────────────────────────
 
@@ -93,10 +95,13 @@ export function WidgetGridSkeleton({ cols = 2 }: { cols?: number }) {
 
 export type OverviewProps = {
   nodes: NodeWithHealth[];
+  records: RecordsSummary | null;
+  notices: NoticesSummary | null;
+  tcrs: TcrsSummary | null;
 };
 
 export type NodesProps = {
-  nodes: NodeWithHealth[];
+  snapshots: NodeSnapshot[];
 };
 
 export type GovernanceProps = {
@@ -121,11 +126,11 @@ export type PlatformProps = {
 
 // ── Section components ────────────────────────────────────────────────────────
 
-export function OverviewSection({ nodes }: OverviewProps) {
+export function OverviewSection({ nodes, records, notices, tcrs }: OverviewProps) {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <NodeStatusBanner nodes={nodes} />
-      <OverviewKPIs nodes={nodes} />
+      <OverviewKPIs nodes={nodes} records={records} notices={notices} tcrs={tcrs} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <NodeHealthListWidget nodes={nodes} />
         <NodeCapabilityMatrixWidget nodes={nodes} />
@@ -134,15 +139,10 @@ export function OverviewSection({ nodes }: OverviewProps) {
   );
 }
 
-export function NodesSection({ nodes }: NodesProps) {
+export function NodesSection({ snapshots }: NodesProps) {
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
-      <WidgetGrid>
-        <Col12><NodeHealthListWidget nodes={nodes} /></Col12>
-      </WidgetGrid>
-      <WidgetGrid>
-        <Col12><NodeCapabilityMatrixWidget nodes={nodes} /></Col12>
-      </WidgetGrid>
+      <CrossNodeWidget snapshots={snapshots} />
     </div>
   );
 }
@@ -189,9 +189,9 @@ export function MemorySection({ lineage, tcrs }: MemoryProps) {
   );
 }
 
-export function PlatformSection({ nodes }: PlatformProps) {
-  const healthy    = nodes.filter((n) => n.health?.status === 'healthy').length;
-  const degraded   = nodes.filter((n) => n.health?.status === 'degraded').length;
+export function PlatformSection({ nodes, participation, evidence }: PlatformProps) {
+  const healthy     = nodes.filter((n) => n.health?.status === 'healthy').length;
+  const degraded    = nodes.filter((n) => n.health?.status === 'degraded').length;
   const unreachable = nodes.filter((n) => n.health?.status === 'unreachable').length;
 
   return (
@@ -209,6 +209,50 @@ export function PlatformSection({ nodes }: PlatformProps) {
             </div>
           </div>
         </Col4>
+      </WidgetGrid>
+      <WidgetGrid>
+        <Col6>
+          <div className="rounded-lg border bg-card p-6 space-y-3">
+            <p className="text-sm font-semibold">Public Participation</p>
+            {participation === null ? (
+              <p className="text-sm text-muted-foreground">No data available</p>
+            ) : (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Total submissions</span><span className="font-medium">{participation.total}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Active notices</span><span className="font-medium">{participation.activeNotices}</span></div>
+                <div className="pt-1 border-t space-y-1.5">
+                  {Object.entries(participation.byType).map(([type, count]) => (
+                    <div key={type} className="flex justify-between">
+                      <span className="text-muted-foreground capitalize">{type}</span>
+                      <span>{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </Col6>
+        <Col6>
+          <div className="rounded-lg border bg-card p-6 space-y-3">
+            <p className="text-sm font-semibold">Evidence</p>
+            {evidence === null ? (
+              <p className="text-sm text-muted-foreground">No data available</p>
+            ) : (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Total items</span><span className="font-medium">{evidence.total}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">With weather context</span><span className="font-medium">{evidence.withWeatherContext}</span></div>
+                <div className="pt-1 border-t space-y-1.5">
+                  {Object.entries(evidence.byType).filter(([, c]) => c > 0).map(([type, count]) => (
+                    <div key={type} className="flex justify-between">
+                      <span className="text-muted-foreground capitalize">{type}</span>
+                      <span>{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </Col6>
       </WidgetGrid>
     </div>
   );

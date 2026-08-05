@@ -9,11 +9,18 @@ import { decodeEntities } from './OverviewWidgets';
 // ── Commercial KPIs ───────────────────────────────────────────────────────────
 
 export function CommercialKPIs({ summary }: { summary: CommercialSummary | null }) {
+  const costPerBeneficiary =
+    summary && summary.projects.totalBeneficiaries > 0
+      ? new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(
+          summary.projects.totalBudget / summary.projects.totalBeneficiaries,
+        )
+      : null;
+
   const kpis = [
-    { title: 'Total Projects',    value: summary?.projects.total ?? '—',        description: `${summary?.projects.byStatus.active ?? 0} active`,    icon: Briefcase },
-    { title: 'Total Beneficiaries', value: summary?.projects.totalBeneficiaries ?? '—', description: 'across active projects',                       icon: Users },
-    { title: 'Active Sponsors',   value: summary?.sponsors.active ?? '—',       description: `${summary?.sponsors.total ?? 0} total registered`,    icon: Building2 },
-    { title: 'Projects at Risk',  value: summary?.projects.byHealth.red ?? '—', description: `${summary?.projects.byHealth.amber ?? 0} amber`,      icon: TrendingUp },
+    { title: 'Total Projects',      value: summary?.projects.total ?? '—',               description: `${summary?.projects.byStatus.active ?? 0} active`,           icon: Briefcase },
+    { title: 'Total Beneficiaries', value: summary?.projects.totalBeneficiaries ?? '—', description: 'across active projects',                                      icon: Users },
+    { title: 'Cost per Beneficiary', value: costPerBeneficiary ?? '—',                  description: 'total budget ÷ beneficiaries',                               icon: TrendingUp },
+    { title: 'Active Sponsors',     value: summary?.sponsors.active ?? '—',             description: `${summary?.sponsors.total ?? 0} total registered`,            icon: Building2 },
   ];
 
   return (

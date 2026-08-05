@@ -84,6 +84,10 @@ export function Layer5OutputsWidget({ summary }: { summary: LineageSummary | nul
 // ── TCRS Summary Widget ───────────────────────────────────────────────────────
 
 export function TcrsSummaryWidget({ summary }: { summary: TcrsSummary | null }) {
+  const resolutionRate = summary && summary.total > 0
+    ? Math.round((summary.byResolutionState.resolved / summary.total) * 100)
+    : null;
+
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between border-b pb-3">
@@ -104,8 +108,16 @@ export function TcrsSummaryWidget({ summary }: { summary: TcrsSummary | null }) 
                 <Badge variant={state === 'escalated' ? 'destructive' : 'outline'}>{count}</Badge>
               </div>
             ))}
+            <div className="flex items-center justify-between text-sm pt-1 border-t">
+              <span className="text-muted-foreground">Resolution rate</span>
+              <span className={`text-sm font-medium ${
+                resolutionRate !== null && resolutionRate < 50 ? 'text-destructive' : ''
+              }`}>
+                {resolutionRate !== null ? `${resolutionRate}%` : '—'}
+              </span>
+            </div>
             {summary.averageResolutionDays !== undefined && (
-              <div className="flex items-center justify-between text-sm pt-1 border-t">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Avg. resolution</span>
                 <span className="text-sm font-medium">{summary.averageResolutionDays.toFixed(1)} days</span>
               </div>

@@ -170,6 +170,34 @@ export async function fetchAggregatedCommercial(): Promise<CommercialSummary | n
   }), { ...pairs[0].summary, recent: [] as CommercialSummary['recent'], projects: { ...pairs[0].summary.projects, total: 0, totalBudget: 0, totalBeneficiaries: 0, byStatus: { draft: 0, approved: 0, active: 0, completed: 0, reported: 0 }, byHealth: { green: 0, amber: 0, red: 0 } }, sponsors: { total: 0, active: 0 } });
 }
 
+export interface NodeSnapshot {
+  id: string;
+  name: string;
+  authority: string;
+  url: string;
+  health: import('@unami/api').NodeHealth | null;
+  records: RecordsSummary | null;
+  notices: NoticesSummary | null;
+  commercial: CommercialSummary | null;
+}
+
+export async function fetchNodeSnapshots(): Promise<NodeSnapshot[]> {
+  const nodes = await getRegisteredNodes();
+  if (nodes.length === 0) return [];
+  return Promise.all(
+    nodes.map(async (n) => {
+      const client = getNodeClient(n.url, n.api_key);
+      const [health, records, notices, commercial] = await Promise.all([
+        safe(() => client.health()),
+        safe(() => client.recordsSummary()),
+        safe(() => client.noticesSummary()),
+        safe(() => client.commercialSummary()),
+      ]);
+      return { id: n.id, name: n.name, authority: n.authority, url: n.url, health, records, notices, commercial };
+    }),
+  );
+}
+
 export async function fetchAggregatedLineage(): Promise<LineageSummary | null> {
   const nodes = await getRegisteredNodes();
   if (nodes.length === 0) return null;

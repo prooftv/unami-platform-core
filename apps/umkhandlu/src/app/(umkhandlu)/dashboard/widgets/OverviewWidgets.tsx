@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, AlertTriangle, Network, Activity, Globe, ShieldCheck } from 'lucide-react';
-import type { NodeHealth, GovernanceNodeIdentity } from '@unami/api';
+import type { NodeHealth, GovernanceNodeIdentity, RecordsSummary, NoticesSummary, TcrsSummary } from '@unami/api';
 
 function formatLocation(location: GovernanceNodeIdentity['location']): string {
   if (!location) return '';
@@ -94,28 +94,70 @@ export function NodeStatusBanner({ nodes }: { nodes: NodeWithHealth[] }) {
 
 // ── Overview KPIs ─────────────────────────────────────────────────────────────
 
-export function OverviewKPIs({ nodes }: { nodes: NodeWithHealth[] }) {
+export function OverviewKPIs({
+  nodes,
+  records,
+  notices,
+  tcrs,
+}: {
+  nodes: NodeWithHealth[];
+  records: RecordsSummary | null;
+  notices: NoticesSummary | null;
+  tcrs: TcrsSummary | null;
+}) {
   const healthy    = nodes.filter((n) => n.health?.status === 'healthy').length;
-  const totalRecs  = nodes.reduce((sum, n) => sum + (n.health?.recordCount ?? 0), 0);
-  const totalNotes = nodes.reduce((sum, n) => sum + (n.health?.noticeCount ?? 0), 0);
+
+  const adoptionRate = records && records.total > 0
+    ? Math.round((records.byStatus.adopted / records.total) * 100)
+    : null;
+
+  const escalationRate = tcrs && tcrs.total > 0
+    ? Math.round((tcrs.escalated / tcrs.total) * 100)
+    : null;
+
+  const statutoryPending = notices?.statutory.pendingProof ?? null;
 
   const kpis = [
-    { title: 'Connected Nodes',  value: nodes.length,  description: `${healthy} healthy`,          icon: Network },
-    { title: 'Node Health',      value: `${healthy}/${nodes.length}`, description: 'reporting healthy', icon: Activity },
-    { title: 'Total Records',    value: totalRecs,     description: 'across all nodes',             icon: ShieldCheck },
-    { title: 'Total Notices',    value: totalNotes,    description: 'across all nodes',             icon: Globe },
+    {
+      title: 'Connected Nodes',
+      value: nodes.length,
+      description: `${healthy} healthy`,
+      icon: Network,
+      alert: false,
+    },
+    {
+      title: 'Adoption Rate',
+      value: adoptionRate !== null ? `${adoptionRate}%` : '—',
+      description: `${records?.byStatus.adopted ?? 0} of ${records?.total ?? 0} records adopted`,
+      icon: ShieldCheck,
+      alert: adoptionRate !== null && adoptionRate < 50,
+    },
+    {
+      title: 'Statutory Pending',
+      value: statutoryPending !== null ? statutoryPending : '—',
+      description: 'notices awaiting proof of publication',
+      icon: Globe,
+      alert: statutoryPending !== null && statutoryPending > 0,
+    },
+    {
+      title: 'TCRS Escalation Rate',
+      value: escalationRate !== null ? `${escalationRate}%` : '—',
+      description: `${tcrs?.escalated ?? 0} of ${tcrs?.total ?? 0} conflicts escalated`,
+      icon: Activity,
+      alert: escalationRate !== null && escalationRate > 20,
+    },
   ];
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {kpis.map(({ title, value, description, icon: Icon }) => (
-        <Card key={title}>
+      {kpis.map(({ title, value, description, icon: Icon, alert }) => (
+        <Card key={title} className={alert ? 'border-destructive/50' : undefined}>
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">{title}</CardTitle>
-            <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+            <CardTitle className={`text-xs font-medium ${alert ? 'text-destructive' : 'text-muted-foreground'}`}>{title}</CardTitle>
+            <Icon className={`h-3.5 w-3.5 ${alert ? 'text-destructive' : 'text-muted-foreground'}`} />
           </CardHeader>
           <CardContent className="px-4 pb-3">
-            <p className="text-xl font-semibold">{value}</p>
+            <p className={`text-xl font-semibold ${alert ? 'text-destructive' : ''}`}>{value}</p>
             <p className="text-xs text-muted-foreground">{description}</p>
           </CardContent>
         </Card>
@@ -171,6 +213,127 @@ export function NodeHealthListWidget({ nodes }: { nodes: NodeWithHealth[] }) {
             ))}
           </ul>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Cross-Node Comparison Widget ─────────────────────────────────────────────
+
+import type { NodeSnapshot } from '@/lib/nodes/fetcher';
+
+const SNAP_STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  healthy:     'default',
+  degraded:    'secondary',
+  unreachable: 'destructive',
+};
+
+export function CrossNodeWidget({ snapshots }: { snapshots: NodeSnapshot[] }) {
+  if (snapshots.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="border-b pb-3">
+          <CardTitle className="text-sm font-semibold">Cross-Node Comparison</CardTitle>
+          <CardDescription className="text-xs mt-0.5">Per-node governance intelligence</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-6">No nodes registered</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const totals = {
+    records:       snapshots.reduce((s, n) => s + (n.records?.total ?? 0), 0),
+    adopted:       snapshots.reduce((s, n) => s + (n.records?.byStatus.adopted ?? 0), 0),
+    notices:       snapshots.reduce((s, n) => s + (n.notices?.total ?? 0), 0),
+    statutory:     snapshots.reduce((s, n) => s + (n.notices?.statutory.total ?? 0), 0),
+    pendingProof:  snapshots.reduce((s, n) => s + (n.notices?.statutory.pendingProof ?? 0), 0),
+    projects:      snapshots.reduce((s, n) => s + (n.commercial?.projects.total ?? 0), 0),
+    beneficiaries: snapshots.reduce((s, n) => s + (n.commercial?.projects.totalBeneficiaries ?? 0), 0),
+  };
+
+  return (
+    <Card>
+      <CardHeader className="border-b pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-sm font-semibold">Cross-Node Comparison</CardTitle>
+            <CardDescription className="text-xs mt-0.5">
+              {snapshots.length} node{snapshots.length !== 1 ? 's' : ''} — governance intelligence side by side
+            </CardDescription>
+          </div>
+          <Network className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/40">
+                <th className="text-left font-medium text-muted-foreground px-4 py-2.5">Node</th>
+                <th className="text-center font-medium text-muted-foreground px-3 py-2.5">Status</th>
+                <th className="text-center font-medium text-muted-foreground px-3 py-2.5">Records</th>
+                <th className="text-center font-medium text-muted-foreground px-3 py-2.5">Adopted %</th>
+                <th className="text-center font-medium text-muted-foreground px-3 py-2.5">Notices</th>
+                <th className="text-center font-medium text-muted-foreground px-3 py-2.5">Pending Proof</th>
+                <th className="text-center font-medium text-muted-foreground px-3 py-2.5">Projects</th>
+                <th className="text-center font-medium text-muted-foreground px-3 py-2.5">Beneficiaries</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {snapshots.map((node) => {
+                const adoptPct = node.records && node.records.total > 0
+                  ? Math.round((node.records.byStatus.adopted / node.records.total) * 100)
+                  : null;
+                const pendingProof = node.notices?.statutory.pendingProof ?? null;
+                return (
+                  <tr key={node.id} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{node.name}</div>
+                      <div className="text-xs text-muted-foreground">{node.authority}</div>
+                    </td>
+                    <td className="text-center px-3 py-3">
+                      <Badge variant={SNAP_STATUS_VARIANT[node.health?.status ?? 'unreachable']}>
+                        {node.health?.status ?? 'unreachable'}
+                      </Badge>
+                    </td>
+                    <td className="text-center px-3 py-3 font-medium">{node.records?.total ?? '—'}</td>
+                    <td className="text-center px-3 py-3">
+                      {adoptPct !== null ? (
+                        <span className={adoptPct < 50 ? 'text-destructive font-medium' : 'text-green-600 dark:text-green-400 font-medium'}>
+                          {adoptPct}%
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="text-center px-3 py-3 font-medium">{node.notices?.total ?? '—'}</td>
+                    <td className="text-center px-3 py-3">
+                      {pendingProof !== null ? (
+                        <span className={pendingProof > 0 ? 'text-destructive font-medium' : ''}>
+                          {pendingProof}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="text-center px-3 py-3 font-medium">{node.commercial?.projects.total ?? '—'}</td>
+                    <td className="text-center px-3 py-3">{node.commercial?.projects.totalBeneficiaries ?? '—'}</td>
+                  </tr>
+                );
+              })}
+              <tr className="bg-muted/40 font-semibold border-t-2">
+                <td className="px-4 py-2.5 text-muted-foreground text-xs uppercase tracking-wide">Total ({snapshots.length})</td>
+                <td />
+                <td className="text-center px-3 py-2.5">{totals.records}</td>
+                <td className="text-center px-3 py-2.5 text-xs text-muted-foreground">
+                  {totals.records > 0 ? `${Math.round((totals.adopted / totals.records) * 100)}%` : '—'}
+                </td>
+                <td className="text-center px-3 py-2.5">{totals.notices}</td>
+                <td className="text-center px-3 py-2.5">{totals.pendingProof > 0 ? <span className="text-destructive">{totals.pendingProof}</span> : totals.pendingProof}</td>
+                <td className="text-center px-3 py-2.5">{totals.projects}</td>
+                <td className="text-center px-3 py-2.5">{totals.beneficiaries}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </CardContent>
     </Card>
   );
