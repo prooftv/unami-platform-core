@@ -9,6 +9,7 @@ import {
   Server,
   Settings,
   Shield,
+  GitCompare,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -69,6 +70,7 @@ export const sidebarItems: NavGroup[] = [
       { id: 'records-analytics', title: 'Record Analytics', url: '/intelligence/records', icon: BarChart3 },
       { id: 'notices-analytics', title: 'Notice Analytics', url: '/intelligence/notices', icon: Globe },
       { id: 'participation-analytics', title: 'Participation', url: '/intelligence/participation', icon: Shield },
+      { id: 'cross-node', title: 'Cross-Node View', url: '/intelligence/nodes', icon: GitCompare },
     ],
   },
   {

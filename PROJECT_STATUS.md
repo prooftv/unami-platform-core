@@ -347,22 +347,37 @@ CRUD screens removed. Navigation corrected to Control Centre intent.
 | `/platform/health` — live API health with response times per node | ✅ |
 | All sidebar items live — no disabled/soon items remaining | ✅ |
 
-### Phase 18D — Cross-Node Aggregation ⏳ Next
+### Phase 18D — Cross-Node Aggregation ✅ Complete
 
-Multi-node view. Regional intelligence. Comparative performance across nodes.
-Currently only one node connected — 18D becomes meaningful when a second node is registered.
+| Task | Status |
+|---|---|
+| `/intelligence/nodes` — side-by-side node comparison table | ✅ |
+| Aggregated totals row (records, notices, projects, beneficiaries, budget) | ✅ |
+| Per-node breakdown cards | ✅ |
+| Cross-node sidebar entry added | ✅ |
 
-### Phase 18E — Commercial Intelligence
+### Phase 18E — Commercial Intelligence ✅ Complete (via 18C)
 
-RAG distribution across nodes. Deliverables. Beneficiary tracking. Projections.
+RAG distribution, project status, beneficiary tracking, budget aggregation all live at `/intelligence/projects`.
 
-### Phase 18F — TCRS Escalation Surface
+### Phase 18F — TCRS Escalation Surface ✅ Complete (via 18C)
 
-Conflict logs. Authority classification. Escalation tracking across nodes.
+Conflict logs and resolution state live at `/intelligence/audit`.
 
-### Phase 18G — Institutional Memory
+### Phase 18G — Institutional Memory ✅ Complete (via 18C)
 
-Lineage views. Provenance. Layer 5 derived outputs.
+Lineage chains, Layer 5 outputs, evidence summary live at `/intelligence/audit`.
+
+### Settings — Phase 19 ✅ Complete
+
+| Task | Status |
+|---|---|
+| Profile update (display name) | ✅ |
+| Operator list with role display and last sign-in | ✅ |
+| Role change (super_admin only) | ✅ |
+| Invite new operator by email + role | ✅ |
+| Remove operator (cannot remove self) | ✅ |
+| Platform info card | ✅ |
 
 ---
 
