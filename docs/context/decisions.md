@@ -379,3 +379,42 @@ They must not be consumed by any application until the shell framework milestone
 This work is a dedicated platform milestone — not an unplanned refactor.
 It is scheduled after Phase 16 (package rename) is complete.
 `apps/admin` remains the reference implementation that the shell framework will be extracted from.
+
+## D-038: Governance Node API contract v1.0 — field names are canonical
+
+The live node at `umkhandlu.unamifoundation.org` defines the authoritative field names.
+All type definitions in `packages/api/src/clients/governance-node.ts` and all
+aggregation logic in `apps/umkhandlu/src/lib/nodes/fetcher.ts` must match the live contract.
+
+Canonical field names confirmed against live node (commit `4b713d9`):
+- `RecordsSummary.recent` — not `recentActivity`
+- `CommercialSummary.recent` — not `recentActivity`
+- All summary objects use `timestamp` — not `generatedAt`
+- `TcrsSummary.byResolutionState` includes `partial` between `pending` and `resolved`
+- `RecordActivityItem.status` is `string | null` — not a fixed enum
+
+When a second node is onboarded, its API must conform to this contract.
+The contract is defined in `docs/context/GOVERNANCE_NODE_API.md`.
+Field name drift between the contract document and the TypeScript types is a build error, not a warning.
+
+## D-039: Platform application onboarding pattern — shell parity is required
+
+Every application built on Unami Platform Core must implement the full shell feature set
+that `apps/admin` (Moments) established as the reference implementation.
+
+Required shell features for every application:
+- `PreferencesStoreProvider` in root layout — wraps the entire app
+- `getPreference()` server action reads `sidebar_variant` + `sidebar_collapsible` from cookies at layout render
+- `AppSidebar` uses `isSynced` pattern — sidebar variant/collapsible driven by preferences store after hydration
+- `LayoutControls` in header — theme preset, font, theme mode, page layout, sidebar style, sidebar collapse
+- `ThemeSwitcher` in header — quick light/dark/system cycle button
+- `SearchDialog` in header — ⌘J command palette over all sidebar navigation items
+- `data-content-layout` CSS selectors on `SidebarInset` — centered/full-width layout support
+- `data-navbar-style` CSS selectors on header — sticky/scroll navbar behaviour
+- `Avatar`/`AvatarFallback` in `nav-user.tsx` — not a plain div
+- Full shadcn component set: `avatar`, `command`, `alert`, `progress`, `switch`, `tabs`, `input-group`
+
+This pattern was validated in Phase 18 when `apps/umkhandlu` was brought to full parity with `apps/admin`.
+Future applications (`apps/spree`, `apps/schools`, etc.) must implement this pattern from scaffold.
+The test: a new operator switching between Moments and the Control Centre should experience
+identical shell behaviour — same preferences, same keyboard shortcuts, same layout controls.

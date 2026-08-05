@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 18C — Node Health View (complete) — 18D next |
+| Phase | Phase 18 — Complete (18A–18G) |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `d48a906` |
+| Last commit | `4b713d9` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -333,6 +333,7 @@ CRUD screens removed. Navigation corrected to Control Centre intent.
 | Node identity, health, records, notices, commercial, participation, evidence, lineage, tcrs | ✅ |
 | All summaries displayed in Control Centre — no write capability | ✅ |
 | `GOVERNANCE_NODE_REGISTRY.md` constitutional document written (D-037) | ✅ |
+| **Contract v1.0 alignment** — field names corrected to live node: `recent` (not `recentActivity`), `timestamp` (not `generatedAt`), TCRS `partial` state added | ✅ |
 
 ### Phase 18C — Node Health View ✅ Complete
 
@@ -379,6 +380,25 @@ Lineage chains, Layer 5 outputs, evidence summary live at `/intelligence/audit`.
 | Remove operator (cannot remove self) | ✅ |
 | Platform info card | ✅ |
 
+### Dashboard Parity — Shell Alignment ✅ Complete
+
+Control Centre shell brought to full parity with Moments admin. Validates the platform onboarding pattern.
+
+| Task | Status |
+|---|---|
+| `ThemeSwitcher` added to header (light/dark/system cycle) | ✅ |
+| `SearchDialog` added to header (⌘J command palette over all sidebar items) | ✅ |
+| `AppSidebar` uses `isSynced` preferences pattern — sidebar variant/collapsible driven by store | ✅ |
+| Layout reads `sidebar_variant` + `sidebar_collapsible` from cookies server-side (`getPreference`) | ✅ |
+| `PreferencesStoreProvider` moved to root layout (matches admin pattern) | ✅ |
+| `server-actions.ts` added (`getPreference`, `setValueToCookie`, `getValueFromCookie`) | ✅ |
+| Centered content layout support added (`data-content-layout` CSS selectors) | ✅ |
+| Navbar sticky/scroll behaviour wired (`data-navbar-style` CSS selectors) | ✅ |
+| `nav-user.tsx` uses `Avatar`/`AvatarFallback` (matches admin) | ✅ |
+| Missing shadcn components added: `avatar`, `command`, `alert`, `progress`, `switch`, `tabs`, `input-group` | ✅ |
+| `cmdk` dependency added to `package.json` | ✅ |
+| Typecheck: zero errors | ✅ |
+
 ---
 
 ## Platform Roadmap (Post-Phase 18)
@@ -386,7 +406,7 @@ Lineage chains, Layer 5 outputs, evidence summary live at `/intelligence/audit`.
 ```
 Phase 16  Platform Independence          ✅ Complete
 Phase 17  Moments Product Completion     ✅ Engineering Complete (ops gates remaining)
-Phase 18  Unami Control Centre                ⏳ Active (18A — cleanup pending)
+Phase 18  Unami Control Centre           ✅ Complete (18A–18G + settings + shell parity)
 Phase 19  Multi-node Federation
 Phase 20  Commercial Intelligence
 Phase 21  National Institutional Memory

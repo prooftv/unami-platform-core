@@ -3,6 +3,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeBootScript } from '@/scripts/theme-boot';
 import { PREFERENCE_DEFAULTS } from '@/lib/preferences/preferences-config';
+import { PreferencesStoreProvider } from '@/stores/preferences/preferences-provider';
 import { fontVars } from '@/lib/fonts/registry';
 import './globals.css';
 
@@ -31,8 +32,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${fontVars} min-h-screen antialiased`}>
         <TooltipProvider>
-          {children}
-          <Toaster />
+          <PreferencesStoreProvider initialValues={PREFERENCE_DEFAULTS}>
+            {children}
+            <Toaster />
+          </PreferencesStoreProvider>
         </TooltipProvider>
       </body>
     </html>

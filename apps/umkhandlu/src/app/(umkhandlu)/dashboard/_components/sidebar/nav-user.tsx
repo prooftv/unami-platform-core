@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { EllipsisVertical, LogOut, Shield } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,9 +41,9 @@ export function NavUser({ name, email, role }: { name: string; email: string; ro
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-xs font-medium">
-                {getInitials(name || email)}
-              </div>
+              <Avatar className="h-8 w-8 rounded-lg grayscale">
+                <AvatarFallback className="rounded-lg">{getInitials(name || email)}</AvatarFallback>
+              </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{name || email}</span>
                 <span className="truncate text-muted-foreground text-xs">{ROLE_LABELS[role] ?? role}</span>
@@ -58,9 +59,9 @@ export function NavUser({ name, email, role }: { name: string; email: string; ro
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-xs font-medium">
-                  {getInitials(name || email)}
-                </div>
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarFallback className="rounded-lg">{getInitials(name || email)}</AvatarFallback>
+                </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{name || email}</span>
                   <span className="truncate text-muted-foreground text-xs">{email}</span>
