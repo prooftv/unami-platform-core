@@ -9,6 +9,8 @@ import type {
   TcrsSummary,
   ParticipationSummary,
   EvidenceSummary,
+  OperatorsSummary,
+  GovernanceNodeIdentity,
 } from '@unami/api';
 
 export interface GovernanceNodeRow {
@@ -288,4 +290,42 @@ export async function fetchAggregatedEvidence(): Promise<EvidenceSummary | null>
       other:    acc.byType.other    + r.byType.other,
     },
   }));
+}
+
+export interface NodeOperatorsSummary {
+  nodeId: string;
+  nodeName: string;
+  nodeAuthority: string;
+  summary: OperatorsSummary;
+}
+
+export async function fetchAllNodeOperators(): Promise<NodeOperatorsSummary[]> {
+  const nodes = await getRegisteredNodes();
+  if (nodes.length === 0) return [];
+  const results = await Promise.all(
+    nodes.map(async (n) => {
+      const summary = await safe(() => getNodeClient(n.url, n.api_key).operatorsSummary());
+      if (!summary) return null;
+      return { nodeId: n.id, nodeName: n.name, nodeAuthority: n.authority, summary };
+    }),
+  );
+  return results.filter((r): r is NodeOperatorsSummary => r !== null);
+}
+
+export async function fetchNodeIdentity(nodeId: string): Promise<{ node: GovernanceNodeRow; identity: GovernanceNodeIdentity; operators: OperatorsSummary | null } | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('governance_nodes')
+    .select('*')
+    .eq('id', nodeId)
+    .single();
+  if (error || !data) return null;
+  const node = data as GovernanceNodeRow;
+  const client = getNodeClient(node.url, node.api_key);
+  const [identity, operators] = await Promise.all([
+    safe(() => client.identity()),
+    safe(() => client.operatorsSummary()),
+  ]);
+  if (!identity) return null;
+  return { node, identity, operators };
 }

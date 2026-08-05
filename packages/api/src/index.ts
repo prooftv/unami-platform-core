@@ -23,6 +23,7 @@ export type {
   GovernanceNodeIdentity, NodeHealth,
   RecordsSummary, NoticesSummary, ParticipationSummary,
   EvidenceSummary, CommercialSummary, TcrsSummary, LineageSummary,
+  OperatorsSummary, NodeOperator,
   GovernanceNodeClient,
 } from './clients/governance-node';
 

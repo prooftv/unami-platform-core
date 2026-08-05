@@ -1,10 +1,11 @@
+import Link from 'next/link';
 import { PageHeader } from '@unami/ui';
 import { getAllNodes } from '@/lib/nodes/fetcher';
 import { getOperatorSession, isSuperAdmin } from '@/lib/auth/operator';
 import { getNodeClient } from '@/lib/api/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Cpu, CheckCircle2, AlertTriangle, WifiOff } from 'lucide-react';
+import { MapPin, Cpu, CheckCircle2, AlertTriangle, WifiOff, ExternalLink } from 'lucide-react';
 import { NodeActions } from './_components/NodeActions';
 import { AddNodeForm } from './_components/AddNodeForm';
 import type { NodeHealth } from '@unami/api';
@@ -141,8 +142,26 @@ export default async function NodesPage() {
                 )}
 
                 {isAdmin && (
-                  <div className="pt-1 border-t">
+                  <div className="pt-1 border-t flex items-center justify-between">
+                    <Link
+                      href={`/nodes/${node.id}`}
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      View profile
+                    </Link>
                     <NodeActions id={node.id} active={node.active} />
+                  </div>
+                )}
+                {!isAdmin && (
+                  <div className="pt-1 border-t">
+                    <Link
+                      href={`/nodes/${node.id}`}
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      View profile
+                    </Link>
                   </div>
                 )}
               </CardContent>

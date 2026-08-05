@@ -215,6 +215,29 @@ export interface LineageSummary {
   timestamp: string;
 }
 
+// ─── Operators ───────────────────────────────────────────────────────────────
+
+export interface NodeOperator {
+  id: string;
+  name: string;
+  operatorRole: string;
+  organisation: string | null;
+  sanityUserId: string | null;
+  active: boolean;
+  assignedSince: string | null;
+  assignedUntil: string | null;
+  notes: string | null;
+}
+
+export interface OperatorsSummary {
+  total: number;
+  active: number;
+  inactive: number;
+  byRole: Record<string, number>;
+  operators: NodeOperator[];
+  timestamp: string;
+}
+
 // ─── Client factory ───────────────────────────────────────────────────────────
 
 /**
@@ -271,6 +294,11 @@ export function createGovernanceNodeClient(config: ApiConfig) {
     /** GET /api/intelligence/lineage/summary — requires `institutional-memory` capability */
     lineageSummary(): Promise<LineageSummary> {
       return apiFetch(config, `${base}/lineage/summary`);
+    },
+
+    /** GET /api/intelligence/operators — operator registry for this node */
+    operatorsSummary(): Promise<OperatorsSummary> {
+      return apiFetch(config, `${base}/operators`);
     },
   };
 }
