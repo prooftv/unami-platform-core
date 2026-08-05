@@ -5,8 +5,8 @@ import { getNodeClient } from '@/lib/api/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Cpu, CheckCircle2, AlertTriangle, WifiOff } from 'lucide-react';
-import { NodeActions } from './NodeActions';
-import { AddNodeForm } from './AddNodeForm';
+import { NodeActions } from './_components/NodeActions';
+import { AddNodeForm } from './_components/AddNodeForm';
 import type { NodeHealth } from '@unami/api';
 
 const STATUS_ICON = {

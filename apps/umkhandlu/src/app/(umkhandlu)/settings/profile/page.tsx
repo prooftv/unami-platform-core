@@ -1,6 +1,6 @@
 import { getOperatorSession } from '@/lib/auth/operator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ProfileForm } from '../ProfileForm';
+import { ProfileForm } from '../_components/ProfileForm';
 
 export default async function ProfilePage() {
   const session = await getOperatorSession();

@@ -1,7 +1,7 @@
 import { getOperatorSession, isSuperAdmin } from '@/lib/auth/operator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { OperatorList } from '../OperatorList';
-import { InviteOperatorForm } from '../InviteOperatorForm';
+import { OperatorList } from '../_components/OperatorList';
+import { InviteOperatorForm } from '../_components/InviteOperatorForm';
 
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
