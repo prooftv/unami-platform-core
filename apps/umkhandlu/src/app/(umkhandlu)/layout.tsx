@@ -31,7 +31,7 @@ export default async function UmkhandluLayout({ children }: { children: ReactNod
   return (
     <SidebarProvider
       defaultOpen={defaultOpen}
-      style={{ '--sidebar-width': 'calc(var(--spacing) * 64)' } as React.CSSProperties}
+      style={{ '--sidebar-width': 'calc(var(--spacing) * 68)' } as React.CSSProperties}
     >
       <AppSidebar user={user} variant={variant} collapsible={collapsible} />
       <SidebarInset
@@ -40,6 +40,7 @@ export default async function UmkhandluLayout({ children }: { children: ReactNod
           '[html[data-content-layout=centered]_&>*]:w-full',
           '[html[data-content-layout=centered]_&>*]:max-w-screen-2xl',
           'peer-data-[variant=inset]:border',
+          '[--dashboard-header-height:--spacing(12)]',
           'min-w-0 overflow-x-clip',
         )}
       >
@@ -64,7 +65,7 @@ export default async function UmkhandluLayout({ children }: { children: ReactNod
             </div>
           </div>
         </header>
-        <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-4 md:p-6">
+        <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-4 has-data-[content-padding=false]:p-0 md:p-6 md:has-data-[content-padding=false]:p-0">
           {children}
         </div>
       </SidebarInset>
