@@ -1,15 +1,8 @@
 import {
   Activity,
-  BarChart3,
-  BookOpen,
-  Building2,
-  Globe,
   LayoutDashboard,
   Network,
-  Server,
   Settings,
-  Shield,
-  GitCompare,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -52,46 +45,21 @@ export const sidebarItems: NavGroup[] = [
   {
     id: 1,
     items: [
-      { id: 'overview', title: 'Overview', url: '/dashboard', icon: LayoutDashboard },
+      { id: 'overview', title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
     ],
   },
   {
     id: 2,
     label: 'Nodes',
     items: [
-      { id: 'nodes', title: 'Registered Nodes', url: '/nodes', icon: Network },
-      { id: 'node-health', title: 'Node Health', url: '/nodes/health', icon: Activity },
+      { id: 'nodes',       title: 'Registered Nodes', url: '/nodes',        icon: Network },
+      { id: 'node-health', title: 'Node Health',       url: '/nodes/health', icon: Activity },
     ],
   },
   {
     id: 3,
-    label: 'Governance Intelligence',
-    items: [
-      { id: 'records-analytics', title: 'Record Analytics', url: '/intelligence/records', icon: BarChart3 },
-      { id: 'notices-analytics', title: 'Notice Analytics', url: '/intelligence/notices', icon: Globe },
-      { id: 'participation-analytics', title: 'Participation', url: '/intelligence/participation', icon: Shield },
-      { id: 'cross-node', title: 'Cross-Node View', url: '/intelligence/nodes', icon: GitCompare },
-    ],
-  },
-  {
-    id: 4,
-    label: 'Commercial Intelligence',
-    items: [
-      { id: 'projects', title: 'Projects', url: '/intelligence/projects', icon: Building2 },
-    ],
-  },
-  {
-    id: 5,
-    label: 'Institutional Memory',
-    items: [
-      { id: 'audit', title: 'Audit Trails', url: '/intelligence/audit', icon: BookOpen },
-    ],
-  },
-  {
-    id: 6,
     label: 'Platform',
     items: [
-      { id: 'api-health', title: 'API Health', url: '/platform/health', icon: Server },
       { id: 'settings', title: 'Settings', url: '/settings', icon: Settings },
     ],
   },
