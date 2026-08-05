@@ -126,21 +126,27 @@ export default async function NoticeAnalyticsPage() {
               <p className="text-sm text-muted-foreground text-center py-6">No recent activity</p>
             ) : (
               <ul className="divide-y">
-                {summary.recentActivity.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between py-3 text-sm gap-2">
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-medium truncate">{decodeEntities(item.title)}</span>
-                      <span className="text-xs text-muted-foreground capitalize">
-                        {item.type.replace(/-/g, ' ')} · {new Date(item.createdAt).toLocaleDateString()}
-                        {item.commentDeadline && ` · deadline ${new Date(item.commentDeadline).toLocaleDateString()}`}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {item.isStatutory && <Badge variant="secondary">statutory</Badge>}
-                      {item.status && <Badge variant="outline">{item.status}</Badge>}
-                    </div>
-                  </li>
-                ))}
+                {summary.recentActivity.map((item) => {
+                  const href = item.nodeUrl ? `${item.nodeUrl}/notices/${item.id}` : undefined;
+                  const Title = href
+                    ? <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium truncate hover:underline">{decodeEntities(item.title)}</a>
+                    : <span className="font-medium truncate">{decodeEntities(item.title)}</span>;
+                  return (
+                    <li key={item.id} className="flex items-center justify-between py-3 text-sm gap-2">
+                      <div className="flex flex-col min-w-0">
+                        {Title}
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {item.type.replace(/-/g, ' ')} · {new Date(item.createdAt).toLocaleDateString()}
+                          {item.commentDeadline && ` · deadline ${new Date(item.commentDeadline).toLocaleDateString()}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {item.isStatutory && <Badge variant="secondary">statutory</Badge>}
+                        {item.status && <Badge variant="outline">{item.status}</Badge>}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>

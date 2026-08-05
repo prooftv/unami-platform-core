@@ -80,12 +80,14 @@ export async function fetchRegisteredNodes(): Promise<NodeWithHealth[]> {
 export async function fetchAggregatedRecords(): Promise<RecordsSummary | null> {
   const nodes = await getRegisteredNodes();
   if (nodes.length === 0) return null;
-  const results = await Promise.all(
-    nodes.map((n) => safe(() => getNodeClient(n.url, n.api_key).recordsSummary())),
-  );
-  const valid = results.filter((r): r is RecordsSummary => r !== null);
-  if (valid.length === 0) return null;
-  return valid.reduce((acc, r) => ({
+  const pairs = (await Promise.all(
+    nodes.map(async (n) => {
+      const r = await safe(() => getNodeClient(n.url, n.api_key).recordsSummary());
+      return r ? { nodeUrl: n.url, summary: r } : null;
+    }),
+  )).filter((p): p is { nodeUrl: string; summary: RecordsSummary } => p !== null);
+  if (pairs.length === 0) return null;
+  return pairs.reduce((acc, { nodeUrl, summary: r }) => ({
     ...r,
     total: acc.total + r.total,
     byStatus: {
@@ -95,19 +97,21 @@ export async function fetchAggregatedRecords(): Promise<RecordsSummary | null> {
       resolved: acc.byStatus.resolved + r.byStatus.resolved,
       rejected: acc.byStatus.rejected + r.byStatus.rejected,
     },
-    recent: [...acc.recent, ...r.recent].slice(0, 10),
-  }));
+    recent: [...acc.recent, ...r.recent.map((i) => ({ ...i, nodeUrl }))].slice(0, 10),
+  }), { ...pairs[0].summary, recent: [] as RecordsSummary['recent'], total: 0, byStatus: { pending: 0, adopted: 0, approved: 0, resolved: 0, rejected: 0 } });
 }
 
 export async function fetchAggregatedNotices(): Promise<NoticesSummary | null> {
   const nodes = await getRegisteredNodes();
   if (nodes.length === 0) return null;
-  const results = await Promise.all(
-    nodes.map((n) => safe(() => getNodeClient(n.url, n.api_key).noticesSummary())),
-  );
-  const valid = results.filter((r): r is NoticesSummary => r !== null);
-  if (valid.length === 0) return null;
-  return valid.reduce((acc, r) => ({
+  const pairs = (await Promise.all(
+    nodes.map(async (n) => {
+      const r = await safe(() => getNodeClient(n.url, n.api_key).noticesSummary());
+      return r ? { nodeUrl: n.url, summary: r } : null;
+    }),
+  )).filter((p): p is { nodeUrl: string; summary: NoticesSummary } => p !== null);
+  if (pairs.length === 0) return null;
+  return pairs.reduce((acc, { nodeUrl, summary: r }) => ({
     ...r,
     total: acc.total + r.total,
     byStatus: {
@@ -124,24 +128,26 @@ export async function fetchAggregatedNotices(): Promise<NoticesSummary | null> {
       open:         acc.statutory.open         + r.statutory.open,
       pendingProof: acc.statutory.pendingProof + r.statutory.pendingProof,
     },
-    recentActivity: [...acc.recentActivity, ...r.recentActivity].slice(0, 10),
-  }));
+    recentActivity: [...acc.recentActivity, ...r.recentActivity.map((i) => ({ ...i, nodeUrl }))].slice(0, 10),
+  }), { ...pairs[0].summary, recentActivity: [] as NoticesSummary['recentActivity'], total: 0, byStatus: { draft: 0, published: 0, open: 0, closed: 0, approved: 0, rejected: 0, withdrawn: 0 }, statutory: { total: 0, open: 0, pendingProof: 0 } });
 }
 
 export async function fetchAggregatedCommercial(): Promise<CommercialSummary | null> {
   const nodes = await getRegisteredNodes();
   if (nodes.length === 0) return null;
-  const results = await Promise.all(
-    nodes.map((n) => safe(() => getNodeClient(n.url, n.api_key).commercialSummary())),
-  );
-  const valid = results.filter((r): r is CommercialSummary => r !== null);
-  if (valid.length === 0) return null;
-  return valid.reduce((acc, r) => ({
+  const pairs = (await Promise.all(
+    nodes.map(async (n) => {
+      const r = await safe(() => getNodeClient(n.url, n.api_key).commercialSummary());
+      return r ? { nodeUrl: n.url, summary: r } : null;
+    }),
+  )).filter((p): p is { nodeUrl: string; summary: CommercialSummary } => p !== null);
+  if (pairs.length === 0) return null;
+  return pairs.reduce((acc, { nodeUrl, summary: r }) => ({
     ...r,
     projects: {
       ...r.projects,
-      total:             acc.projects.total             + r.projects.total,
-      totalBudget:       acc.projects.totalBudget       + r.projects.totalBudget,
+      total:              acc.projects.total              + r.projects.total,
+      totalBudget:        acc.projects.totalBudget        + r.projects.totalBudget,
       totalBeneficiaries: acc.projects.totalBeneficiaries + r.projects.totalBeneficiaries,
       byStatus: {
         draft:     acc.projects.byStatus.draft     + r.projects.byStatus.draft,
@@ -160,8 +166,8 @@ export async function fetchAggregatedCommercial(): Promise<CommercialSummary | n
       total:  acc.sponsors.total  + r.sponsors.total,
       active: acc.sponsors.active + r.sponsors.active,
     },
-    recent: [...acc.recent, ...r.recent].slice(0, 10),
-  }));
+    recent: [...acc.recent, ...r.recent.map((i) => ({ ...i, nodeUrl }))].slice(0, 10),
+  }), { ...pairs[0].summary, recent: [] as CommercialSummary['recent'], projects: { ...pairs[0].summary.projects, total: 0, totalBudget: 0, totalBeneficiaries: 0, byStatus: { draft: 0, approved: 0, active: 0, completed: 0, reported: 0 }, byHealth: { green: 0, amber: 0, red: 0 } }, sponsors: { total: 0, active: 0 } });
 }
 
 export async function fetchAggregatedLineage(): Promise<LineageSummary | null> {

@@ -98,17 +98,23 @@ export default async function RecordAnalyticsPage() {
               <p className="text-sm text-muted-foreground text-center py-6">No recent activity</p>
             ) : (
               <ul className="divide-y">
-                {summary.recent.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between py-3 text-sm gap-2">
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-medium truncate">{decodeEntities(item.title)}</span>
-                      <span className="text-xs text-muted-foreground capitalize">
-                        {item.type.replace(/-/g, ' ')} · {new Date(item.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <Badge variant="outline">{item.status ?? '—'}</Badge>
-                  </li>
-                ))}
+                {summary.recent.map((item) => {
+                  const href = item.nodeUrl ? `${item.nodeUrl}/records/${item.id}` : undefined;
+                  const Title = href
+                    ? <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium truncate hover:underline">{decodeEntities(item.title)}</a>
+                    : <span className="font-medium truncate">{decodeEntities(item.title)}</span>;
+                  return (
+                    <li key={item.id} className="flex items-center justify-between py-3 text-sm gap-2">
+                      <div className="flex flex-col min-w-0">
+                        {Title}
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {item.type.replace(/-/g, ' ')} · {new Date(item.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {item.status && <Badge variant="outline">{item.status}</Badge>}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>

@@ -51,6 +51,7 @@ export interface RecordActivityItem {
   type: string;
   status: string | null;
   createdAt: string;
+  nodeUrl?: string;
 }
 
 export interface RecordsSummary {
@@ -75,6 +76,7 @@ export interface NoticeActivityItem {
   isStatutory: boolean;
   commentDeadline: string | null;
   createdAt: string;
+  nodeUrl?: string;
 }
 
 export interface NoticesSummary {
@@ -146,6 +148,7 @@ export interface CommercialActivityItem {
   status: string;
   health: string | null;
   updatedAt: string;
+  nodeUrl?: string;
 }
 
 export interface CommercialSummary {

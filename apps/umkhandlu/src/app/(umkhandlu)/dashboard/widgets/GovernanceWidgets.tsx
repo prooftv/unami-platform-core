@@ -114,15 +114,20 @@ export function RecentRecordsWidget({ summary }: { summary: RecordsSummary | nul
           <p className="text-sm text-muted-foreground text-center py-6">No recent activity</p>
         ) : (
           <ul className="space-y-2 pt-1">
-            {items.map((item) => (
-              <li key={item.id} className="flex items-center justify-between text-sm">
-                <div className="flex flex-col min-w-0 mr-2">
-                  <span className="truncate font-medium">{decodeEntities(item.title)}</span>
-                  <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
-                </div>
-                {item.status && <Badge variant="outline">{item.status}</Badge>}
-              </li>
-            ))}
+            {items.map((item) => {
+              const href = item.nodeUrl ? `${item.nodeUrl}/records/${item.id}` : undefined;
+              return (
+                <li key={item.id} className="flex items-center justify-between text-sm">
+                  <div className="flex flex-col min-w-0 mr-2">
+                    {href
+                      ? <a href={href} target="_blank" rel="noopener noreferrer" className="truncate font-medium hover:underline">{decodeEntities(item.title)}</a>
+                      : <span className="truncate font-medium">{decodeEntities(item.title)}</span>}
+                    <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
+                  </div>
+                  {item.status && <Badge variant="outline">{item.status}</Badge>}
+                </li>
+              );
+            })}
           </ul>
         )}
       </CardContent>
@@ -148,18 +153,23 @@ export function RecentNoticesWidget({ summary }: { summary: NoticesSummary | nul
           <p className="text-sm text-muted-foreground text-center py-6">No recent activity</p>
         ) : (
           <ul className="space-y-2 pt-1">
-            {items.map((item) => (
-              <li key={item.id} className="flex items-center justify-between text-sm">
-                <div className="flex flex-col min-w-0 mr-2">
-                  <span className="truncate font-medium">{decodeEntities(item.title)}</span>
-                  <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {item.isStatutory && <Badge variant="secondary">statutory</Badge>}
-                  {item.status && <Badge variant="outline">{item.status}</Badge>}
-                </div>
-              </li>
-            ))}
+            {items.map((item) => {
+              const href = item.nodeUrl ? `${item.nodeUrl}/notices/${item.id}` : undefined;
+              return (
+                <li key={item.id} className="flex items-center justify-between text-sm">
+                  <div className="flex flex-col min-w-0 mr-2">
+                    {href
+                      ? <a href={href} target="_blank" rel="noopener noreferrer" className="truncate font-medium hover:underline">{decodeEntities(item.title)}</a>
+                      : <span className="truncate font-medium">{decodeEntities(item.title)}</span>}
+                    <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {item.isStatutory && <Badge variant="secondary">statutory</Badge>}
+                    {item.status && <Badge variant="outline">{item.status}</Badge>}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </CardContent>
