@@ -31,7 +31,7 @@ export function NavMain({ items }: { items: readonly NavGroup[] }) {
 
   const isItemActive = (item: NavMainItem) => {
     if (hasSubItems(item)) return item.subItems.some((sub) => path.startsWith(sub.url));
-    return path.startsWith(item.url);
+    return path === item.url;
   };
 
   const isSubItemActive = (url: string) => path === url;
