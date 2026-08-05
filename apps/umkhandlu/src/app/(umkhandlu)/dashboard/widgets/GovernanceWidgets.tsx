@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { FileText, Bell, Scale, CheckCircle2 } from 'lucide-react';
 import type { RecordsSummary, NoticesSummary } from '@unami/api';
+import { decodeEntities } from './OverviewWidgets';
 
 // ── Governance KPIs ───────────────────────────────────────────────────────────
 
@@ -116,10 +117,10 @@ export function RecentRecordsWidget({ summary }: { summary: RecordsSummary | nul
             {items.map((item) => (
               <li key={item.id} className="flex items-center justify-between text-sm">
                 <div className="flex flex-col min-w-0 mr-2">
-                  <span className="truncate font-medium">{item.title}</span>
+                  <span className="truncate font-medium">{decodeEntities(item.title)}</span>
                   <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
                 </div>
-                <Badge variant="outline">{item.status}</Badge>
+                {item.status && <Badge variant="outline">{item.status}</Badge>}
               </li>
             ))}
           </ul>
@@ -150,12 +151,12 @@ export function RecentNoticesWidget({ summary }: { summary: NoticesSummary | nul
             {items.map((item) => (
               <li key={item.id} className="flex items-center justify-between text-sm">
                 <div className="flex flex-col min-w-0 mr-2">
-                  <span className="truncate font-medium">{item.title}</span>
+                  <span className="truncate font-medium">{decodeEntities(item.title)}</span>
                   <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {item.isStatutory && <Badge variant="secondary">statutory</Badge>}
-                  <Badge variant="outline">{item.status}</Badge>
+                  {item.status && <Badge variant="outline">{item.status}</Badge>}
                 </div>
               </li>
             ))}

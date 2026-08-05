@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Briefcase, Users, Building2, TrendingUp } from 'lucide-react';
 
+function decodeEntities(str: string): string {
+  return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+}
+
 const HEALTH_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   green: 'default',
   amber: 'secondary',
@@ -119,7 +123,7 @@ export default async function ProjectsPage() {
                 {summary.recent.map((item) => (
                   <li key={item.id} className="flex items-center justify-between py-3 text-sm gap-2">
                     <div className="flex flex-col min-w-0">
-                      <span className="font-medium truncate">{item.title}</span>
+                      <span className="font-medium truncate">{decodeEntities(item.title)}</span>
                       <span className="text-xs text-muted-foreground capitalize">
                         {item.type} · {new Date(item.updatedAt).toLocaleDateString()}
                       </span>
@@ -128,7 +132,7 @@ export default async function ProjectsPage() {
                       {item.health && (
                         <Badge variant={HEALTH_VARIANT[item.health] ?? 'outline'}>{item.health}</Badge>
                       )}
-                      <Badge variant="outline">{item.status}</Badge>
+                      {item.status && <Badge variant="outline">{item.status}</Badge>}
                     </div>
                   </li>
                 ))}

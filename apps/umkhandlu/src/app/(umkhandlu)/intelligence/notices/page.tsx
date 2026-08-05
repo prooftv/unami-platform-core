@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Bell, Scale } from 'lucide-react';
 
+function decodeEntities(str: string): string {
+  return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+}
+
 export default async function NoticeAnalyticsPage() {
   const summary = await fetchAggregatedNotices();
 
@@ -125,7 +129,7 @@ export default async function NoticeAnalyticsPage() {
                 {summary.recentActivity.map((item) => (
                   <li key={item.id} className="flex items-center justify-between py-3 text-sm gap-2">
                     <div className="flex flex-col min-w-0">
-                      <span className="font-medium truncate">{item.title}</span>
+                      <span className="font-medium truncate">{decodeEntities(item.title)}</span>
                       <span className="text-xs text-muted-foreground capitalize">
                         {item.type.replace(/-/g, ' ')} · {new Date(item.createdAt).toLocaleDateString()}
                         {item.commentDeadline && ` · deadline ${new Date(item.commentDeadline).toLocaleDateString()}`}
@@ -133,7 +137,7 @@ export default async function NoticeAnalyticsPage() {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {item.isStatutory && <Badge variant="secondary">statutory</Badge>}
-                      <Badge variant="outline">{item.status}</Badge>
+                      {item.status && <Badge variant="outline">{item.status}</Badge>}
                     </div>
                   </li>
                 ))}

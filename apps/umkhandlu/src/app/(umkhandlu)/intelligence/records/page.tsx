@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { FileText, CheckCircle2 } from 'lucide-react';
 
+function decodeEntities(str: string): string {
+  return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+}
+
 export default async function RecordAnalyticsPage() {
   const summary = await fetchAggregatedRecords();
 
@@ -97,12 +101,12 @@ export default async function RecordAnalyticsPage() {
                 {summary.recent.map((item) => (
                   <li key={item.id} className="flex items-center justify-between py-3 text-sm gap-2">
                     <div className="flex flex-col min-w-0">
-                      <span className="font-medium truncate">{item.title}</span>
+                      <span className="font-medium truncate">{decodeEntities(item.title)}</span>
                       <span className="text-xs text-muted-foreground capitalize">
                         {item.type.replace(/-/g, ' ')} · {new Date(item.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <Badge variant="outline">{item.status ?? 'no status'}</Badge>
+                    <Badge variant="outline">{item.status ?? '—'}</Badge>
                   </li>
                 ))}
               </ul>

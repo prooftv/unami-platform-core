@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Briefcase, Users, TrendingUp, Building2 } from 'lucide-react';
 import type { CommercialSummary } from '@unami/api';
+import { decodeEntities } from './OverviewWidgets';
 
 // ── Commercial KPIs ───────────────────────────────────────────────────────────
 
@@ -116,14 +117,14 @@ export function RecentCommercialActivityWidget({ summary }: { summary: Commercia
             {items.map((item) => (
               <li key={item.id} className="flex items-center justify-between text-sm">
                 <div className="flex flex-col min-w-0 mr-2">
-                  <span className="truncate font-medium">{item.title}</span>
+                  <span className="truncate font-medium">{decodeEntities(item.title)}</span>
                   <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {item.health && (
                     <Badge variant={HEALTH_VARIANT[item.health] ?? 'outline'}>{item.health}</Badge>
                   )}
-                  <Badge variant="outline">{item.status}</Badge>
+                  {item.status && <Badge variant="outline">{item.status}</Badge>}
                 </div>
               </li>
             ))}
