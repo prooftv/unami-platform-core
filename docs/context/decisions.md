@@ -167,6 +167,23 @@ The moment feed, detail, region, and category pages are always Supabase-driven.
 The homepage hero, featured stories, and static pages are always Sanity-driven (from Phase 17B).
 Neither source crosses into the other's domain.
 
+## D-037: Node registry — registration is not ownership
+
+The Control Centre's Supabase database stores registration metadata only:
+node URL, API key, capabilities, and polling status (`governance_nodes`).
+It stores aggregated intelligence snapshots (`node_snapshots` — Phase 18C).
+It never stores governance content: records, notices, evidence, participation, or people.
+
+Registering a node means: the Control Centre knows where to find it and how to authenticate.
+It does not mean: the Control Centre owns or hosts any of its data.
+
+The constitutional reference is `docs/context/GOVERNANCE_NODE_REGISTRY.md`.
+
+The test: if the Control Centre's Supabase database were deleted entirely, every governance
+node would continue operating without interruption. The asymmetry is intentional and permanent.
+
+---
+
 ## D-036: Node sovereignty — the Control Centre observes, it does not govern
 
 Every deployed application node is sovereign over its own operational data.
