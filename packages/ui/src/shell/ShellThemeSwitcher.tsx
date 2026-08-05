@@ -20,7 +20,7 @@ export function ShellThemeSwitcher() {
     <button
       onClick={cycle}
       aria-label={`Current theme: ${themeMode}. Click to cycle`}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Monitor className="hidden [html[data-theme-mode=system]_&]:block h-4 w-4" />
       <Sun className="hidden dark:block [html[data-theme-mode=system]_&]:hidden h-4 w-4" />
