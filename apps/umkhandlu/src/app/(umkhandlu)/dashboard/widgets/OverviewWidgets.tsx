@@ -5,6 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, AlertTriangle, Network, Activity, Globe, ShieldCheck } from 'lucide-react';
 import type { NodeHealth, GovernanceNodeIdentity } from '@unami/api';
 
+function formatLocation(location: GovernanceNodeIdentity['location']): string {
+  if (!location) return '';
+  if (typeof location === 'string') return location;
+  return [location.municipality, location.province].filter(Boolean).join(', ');
+}
+
 // ── Node Status Banner ────────────────────────────────────────────────────────
 
 type BannerState = 'operational' | 'degraded' | 'attention';
@@ -136,7 +142,7 @@ export function NodeHealthListWidget({ nodes }: { nodes: NodeWithHealth[] }) {
               <li key={identity.id} className="flex items-center justify-between text-sm">
                 <div className="flex flex-col min-w-0 mr-2">
                   <span className="font-medium truncate">{identity.name}</span>
-                  <span className="text-xs text-muted-foreground truncate">{identity.location}</span>
+                  <span className="text-xs text-muted-foreground truncate">{formatLocation(identity.location)}</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {health ? (

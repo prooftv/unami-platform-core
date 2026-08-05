@@ -17,7 +17,7 @@ export interface GovernanceNodeIdentity {
   id: string;
   name: string;
   authority: string;
-  location: string;
+  location: string | { province?: string; municipality?: string };
   version: string;
   contractVersion: string;
   capabilities: NodeCapability[];
