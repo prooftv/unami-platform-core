@@ -23,7 +23,9 @@
   "dependencies": {
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "cmdk": "^1.1.1",
     "lucide-react": "^0.400.0",
+    "radix-ui": "^1.6.7",
     "recharts": "^3.10.1",
     "tailwind-merge": "^2.3.0",
     "zustand": "^4.5.0"

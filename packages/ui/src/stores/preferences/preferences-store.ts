@@ -1,49 +1,49 @@
-import { createStore } from "zustand/vanilla";
+import { createStore } from 'zustand/vanilla';
 
-import type { FontKey } from "../../fonts/registry";
-import type { ContentLayoutValue, NavbarStyle, SidebarCollapsible, SidebarVariant } from "../../theme/layout";
-import { PREFERENCE_DEFAULTS } from "../../theme/preferences-config";
-import type { ResolvedThemeMode, ThemeMode, ThemePreset } from "../../theme/theme";
+import { applyPreference } from '../../theme/preference-runtime';
+import {
+  PREFERENCE_DEFAULTS,
+  PREFERENCE_KEYS,
+  type PreferenceKey,
+  type PreferenceValueMap,
+} from '../../theme/preferences-config';
+import { persistPreference } from '../../theme/preferences-storage';
+import type { ResolvedThemeMode } from '../../theme/theme';
 
 export type PreferencesState = {
-  themeMode: ThemeMode;
+  values: PreferenceValueMap;
   resolvedThemeMode: ResolvedThemeMode;
-  themePreset: ThemePreset;
-  font: FontKey;
-  contentLayout: ContentLayoutValue;
-  navbarStyle: NavbarStyle;
-  sidebarVariant: SidebarVariant;
-  sidebarCollapsible: SidebarCollapsible;
-  setThemeMode: (mode: ThemeMode) => void;
-  setResolvedThemeMode: (mode: ResolvedThemeMode) => void;
-  setThemePreset: (preset: ThemePreset) => void;
-  setFont: (font: FontKey) => void;
-  setContentLayoutValue: (layout: ContentLayoutValue) => void;
-  setNavbarStyle: (style: NavbarStyle) => void;
-  setSidebarVariant: (variant: SidebarVariant) => void;
-  setSidebarCollapsible: (mode: SidebarCollapsible) => void;
   isSynced: boolean;
-  setIsSynced: (val: boolean) => void;
+  setPreference: <K extends PreferenceKey>(key: K, value: PreferenceValueMap[K]) => void;
+  resetPreferences: () => void;
 };
 
-export const createPreferencesStore = (init?: Partial<PreferencesState>) =>
-  createStore<PreferencesState>()((set) => ({
-    themeMode: init?.themeMode ?? PREFERENCE_DEFAULTS.theme_mode,
-    resolvedThemeMode: init?.resolvedThemeMode ?? "light",
-    themePreset: init?.themePreset ?? PREFERENCE_DEFAULTS.theme_preset,
-    font: init?.font ?? PREFERENCE_DEFAULTS.font,
-    contentLayout: init?.contentLayout ?? PREFERENCE_DEFAULTS.content_layout,
-    navbarStyle: init?.navbarStyle ?? PREFERENCE_DEFAULTS.navbar_style,
-    sidebarVariant: init?.sidebarVariant ?? PREFERENCE_DEFAULTS.sidebar_variant,
-    sidebarCollapsible: init?.sidebarCollapsible ?? PREFERENCE_DEFAULTS.sidebar_collapsible,
-    setThemeMode: (mode) => set({ themeMode: mode }),
-    setResolvedThemeMode: (mode) => set({ resolvedThemeMode: mode }),
-    setThemePreset: (preset) => set({ themePreset: preset }),
-    setFont: (font) => set({ font }),
-    setContentLayoutValue: (layout) => set({ contentLayout: layout }),
-    setNavbarStyle: (style) => set({ navbarStyle: style }),
-    setSidebarVariant: (variant) => set({ sidebarVariant: variant }),
-    setSidebarCollapsible: (mode) => set({ sidebarCollapsible: mode }),
-    isSynced: init?.isSynced ?? false,
-    setIsSynced: (val) => set({ isSynced: val }),
+export const createPreferencesStore = (initialValues: Partial<PreferenceValueMap> = {}) => {
+  const values: PreferenceValueMap = { ...PREFERENCE_DEFAULTS, ...initialValues };
+
+  return createStore<PreferencesState>()((set) => ({
+    values,
+    resolvedThemeMode: values.theme_mode === 'dark' ? 'dark' : 'light',
+    isSynced: false,
+
+    setPreference: (key, value) => {
+      const resolvedThemeMode = applyPreference(key, value);
+      set((state) => ({
+        values: { ...state.values, [key]: value } as PreferenceValueMap,
+        ...(resolvedThemeMode ? { resolvedThemeMode } : {}),
+      }));
+      persistPreference(key, value);
+    },
+
+    resetPreferences: () => {
+      let resolvedThemeMode: ResolvedThemeMode = 'light';
+      for (const key of PREFERENCE_KEYS) {
+        const value = PREFERENCE_DEFAULTS[key];
+        const resolved = applyPreference(key, value);
+        if (resolved) resolvedThemeMode = resolved;
+        persistPreference(key, value);
+      }
+      set({ values: { ...PREFERENCE_DEFAULTS }, resolvedThemeMode });
+    },
   }));
+};

@@ -1,49 +1,119 @@
-import type { FontKey } from "../fonts/registry";
-import type { ContentLayoutValue, NavbarStyle, SidebarCollapsible, SidebarVariant } from "./layout";
-import type { ThemeMode, ThemePreset } from "./theme";
+import type { FontKey } from '../fonts/registry';
+import {
+  CONTENT_LAYOUT_VALUES,
+  NAVBAR_STYLE_VALUES,
+  SIDEBAR_COLLAPSIBLE_VALUES,
+  SIDEBAR_VARIANT_VALUES,
+} from './layout';
+import { THEME_MODE_VALUES, THEME_PRESET_VALUES } from './theme';
 
-export type PreferencePersistence = "none" | "client-cookie" | "server-cookie" | "localStorage";
+export type PreferencePersistence = 'none' | 'client-cookie' | 'server-cookie' | 'localStorage';
+
+type LayoutPersistence = Exclude<PreferencePersistence, 'localStorage'>;
+
+type PreferenceDefinition<
+  Values extends readonly string[],
+  Persistence extends PreferencePersistence,
+  Attribute extends `data-${string}`,
+> = {
+  values: Values;
+  defaultValue: Values[number];
+  persistence: Persistence;
+  attribute: Attribute;
+};
+
+function definePreference<
+  const Values extends readonly string[],
+  const Persistence extends PreferencePersistence,
+  const Attribute extends `data-${string}`,
+>(definition: PreferenceDefinition<Values, Persistence, Attribute>) {
+  return definition;
+}
+
+function defineSSRPreference<
+  const Values extends readonly string[],
+  const Persistence extends LayoutPersistence,
+  const Attribute extends `data-${string}`,
+>(definition: PreferenceDefinition<Values, Persistence, Attribute>) {
+  return definition;
+}
+
+// fontKeys is a runtime value — apps pass it in via PREFERENCE_REGISTRY override or we use a stable fallback
+const FONT_KEYS = [
+  'geist', 'inter', 'notoSans', 'nunitoSans', 'figtree', 'roboto', 'raleway',
+  'dmSans', 'publicSans', 'outfit', 'geistMono', 'jetBrainsMono', 'notoSerif',
+  'robotoSlab', 'merriweather', 'lora', 'playfairDisplay',
+] as const satisfies readonly FontKey[];
+
+export const PREFERENCE_REGISTRY = {
+  theme_mode: definePreference({
+    values: THEME_MODE_VALUES,
+    defaultValue: 'light',
+    persistence: 'client-cookie',
+    attribute: 'data-theme-mode',
+  }),
+  theme_preset: definePreference({
+    values: THEME_PRESET_VALUES,
+    defaultValue: 'default',
+    persistence: 'client-cookie',
+    attribute: 'data-theme-preset',
+  }),
+  font: definePreference({
+    values: FONT_KEYS,
+    defaultValue: 'geist',
+    persistence: 'client-cookie',
+    attribute: 'data-font',
+  }),
+  content_layout: definePreference({
+    values: CONTENT_LAYOUT_VALUES,
+    defaultValue: 'centered',
+    persistence: 'client-cookie',
+    attribute: 'data-content-layout',
+  }),
+  navbar_style: definePreference({
+    values: NAVBAR_STYLE_VALUES,
+    defaultValue: 'sticky',
+    persistence: 'client-cookie',
+    attribute: 'data-navbar-style',
+  }),
+  sidebar_variant: defineSSRPreference({
+    values: SIDEBAR_VARIANT_VALUES,
+    defaultValue: 'sidebar',
+    persistence: 'client-cookie',
+    attribute: 'data-sidebar-variant',
+  }),
+  sidebar_collapsible: defineSSRPreference({
+    values: SIDEBAR_COLLAPSIBLE_VALUES,
+    defaultValue: 'icon',
+    persistence: 'client-cookie',
+    attribute: 'data-sidebar-collapsible',
+  }),
+} as const;
+
+export type PreferenceKey = keyof typeof PREFERENCE_REGISTRY;
 
 export type PreferenceValueMap = {
-  theme_mode: ThemeMode;
-  theme_preset: ThemePreset;
-  font: FontKey;
-  content_layout: ContentLayoutValue;
-  navbar_style: NavbarStyle;
-  sidebar_variant: SidebarVariant;
-  sidebar_collapsible: SidebarCollapsible;
+  [K in PreferenceKey]: (typeof PREFERENCE_REGISTRY)[K]['values'][number];
 };
 
-export type PreferenceKey = keyof PreferenceValueMap;
+export const PREFERENCE_KEYS = Object.freeze(Object.keys(PREFERENCE_REGISTRY) as PreferenceKey[]);
 
-export const LAYOUT_CRITICAL_KEYS = ["sidebar_variant", "sidebar_collapsible"] as const;
-export type LayoutCriticalKey = (typeof LAYOUT_CRITICAL_KEYS)[number];
-export type NonCriticalKey = Exclude<PreferenceKey, LayoutCriticalKey>;
+export function getPreferencePersistence(key: PreferenceKey): PreferencePersistence {
+  return PREFERENCE_REGISTRY[key].persistence;
+}
 
-type LayoutCriticalPersistence = Exclude<PreferencePersistence, "localStorage">;
+export const PREFERENCE_DEFAULTS = Object.fromEntries(
+  PREFERENCE_KEYS.map((key) => [key, PREFERENCE_REGISTRY[key].defaultValue]),
+) as PreferenceValueMap;
 
-type PreferencePersistenceConfig = {
-  [K in LayoutCriticalKey]: LayoutCriticalPersistence;
-} & {
-  [K in NonCriticalKey]: PreferencePersistence;
-};
-
-export const PREFERENCE_DEFAULTS: PreferenceValueMap = {
-  theme_mode: "light",
-  theme_preset: "default",
-  font: "geist",
-  content_layout: "centered",
-  navbar_style: "sticky",
-  sidebar_variant: "inset",
-  sidebar_collapsible: "icon",
-};
-
-export const PREFERENCE_PERSISTENCE: PreferencePersistenceConfig = {
-  theme_mode: "client-cookie",
-  theme_preset: "client-cookie",
-  font: "client-cookie",
-  content_layout: "client-cookie",
-  navbar_style: "client-cookie",
-  sidebar_variant: "client-cookie",
-  sidebar_collapsible: "client-cookie",
-};
+export function parsePreference<K extends PreferenceKey>(
+  key: K,
+  rawValue: string | null | undefined,
+): PreferenceValueMap[K] {
+  const definition = PREFERENCE_REGISTRY[key];
+  const allowedValues = definition.values as readonly string[];
+  if (rawValue && allowedValues.includes(rawValue)) {
+    return rawValue as PreferenceValueMap[K];
+  }
+  return definition.defaultValue as PreferenceValueMap[K];
+}

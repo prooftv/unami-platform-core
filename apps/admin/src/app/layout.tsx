@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { fontVars } from "@/lib/fonts/registry";
-import { PREFERENCE_DEFAULTS } from "@/lib/preferences/preferences-config";
+import { PREFERENCE_DEFAULTS } from "@unami/ui";
 import { ThemeBootScript } from "@/scripts/theme-boot";
-import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provider";
+import { PreferencesStoreProvider } from "@unami/ui";
 import "./globals.css";
 
 export const metadata: Metadata = {

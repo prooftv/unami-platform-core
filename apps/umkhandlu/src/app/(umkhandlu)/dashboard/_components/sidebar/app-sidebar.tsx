@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { APP_CONFIG } from '@/config/app-config';
 import { sidebarItems } from '@/navigation/sidebar/sidebar-items';
-import { usePreferencesStore } from '@/stores/preferences/preferences-provider';
+import { usePreferencesStore } from '@unami/ui';
 import { NavMain } from './nav-main';
 import { NavUser } from './nav-user';
 

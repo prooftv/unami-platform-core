@@ -1,4 +1,4 @@
-import { PREFERENCE_REGISTRY } from '@/lib/preferences/preferences-config';
+import { PREFERENCE_REGISTRY } from '@unami/ui';
 
 export function ThemeBootScript() {
   const registry = JSON.stringify(PREFERENCE_REGISTRY);

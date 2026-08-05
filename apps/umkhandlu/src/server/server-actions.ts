@@ -7,7 +7,7 @@ import {
   type PreferenceKey,
   type PreferenceValueMap,
   parsePreference,
-} from '@/lib/preferences/preferences-config';
+} from '@unami/ui';
 
 export async function getValueFromCookie(key: string): Promise<string | undefined> {
   const cookieStore = await cookies();

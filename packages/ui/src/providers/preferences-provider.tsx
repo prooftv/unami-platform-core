@@ -1,107 +1,80 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, use, useEffect, useState } from 'react';
+import { type StoreApi, useStore } from 'zustand';
 
-import { type StoreApi, useStore } from "zustand";
-
-import { type FontKey, FONT_CONFIG } from "../fonts/registry";
 import {
-  CONTENT_LAYOUT_VALUES,
-  NAVBAR_STYLE_VALUES,
-  SIDEBAR_COLLAPSIBLE_VALUES,
-  SIDEBAR_VARIANT_VALUES,
-} from "../theme/layout";
-import { THEME_MODE_VALUES, THEME_PRESET_VALUES } from "../theme/theme";
-import { applyThemeMode, subscribeToSystemTheme } from "../theme/theme-utils";
-import { createPreferencesStore, type PreferencesState } from "../stores/preferences/preferences-store";
+  PREFERENCE_DEFAULTS,
+  PREFERENCE_KEYS,
+  PREFERENCE_REGISTRY,
+  type PreferenceKey,
+  type PreferenceValueMap,
+  parsePreference,
+} from '../theme/preferences-config';
+import { applyThemeMode, subscribeToSystemTheme } from '../theme/theme-utils';
+import { createPreferencesStore, type PreferencesState } from '../stores/preferences/preferences-store';
 
 const PreferencesStoreContext = createContext<StoreApi<PreferencesState> | null>(null);
 
-const FONT_VALUES = Object.keys(FONT_CONFIG) as FontKey[];
-
-function getSafeValue<T extends string>(raw: string | null, allowed: readonly T[]): T | undefined {
-  if (!raw) return undefined;
-  return allowed.includes(raw as T) ? (raw as T) : undefined;
+function readDomPreference<K extends PreferenceKey>(key: K): PreferenceValueMap[K] {
+  const definition = PREFERENCE_REGISTRY[key];
+  const rawValue = document.documentElement.getAttribute(definition.attribute);
+  return parsePreference(key, rawValue);
 }
 
-function readDomState(): Partial<PreferencesState> {
-  const root = document.documentElement;
-  const themeModeAttr = getSafeValue(root.getAttribute("data-theme-mode"), THEME_MODE_VALUES);
-  const resolvedMode = root.classList.contains("dark") ? "dark" : "light";
-
-  return {
-    themeMode: themeModeAttr ?? resolvedMode,
-    resolvedThemeMode: resolvedMode,
-    themePreset: getSafeValue(root.getAttribute("data-theme-preset"), THEME_PRESET_VALUES),
-    font: getSafeValue(root.getAttribute("data-font"), FONT_VALUES),
-    contentLayout: getSafeValue(root.getAttribute("data-content-layout"), CONTENT_LAYOUT_VALUES),
-    navbarStyle: getSafeValue(root.getAttribute("data-navbar-style"), NAVBAR_STYLE_VALUES),
-    sidebarVariant: getSafeValue(root.getAttribute("data-sidebar-variant"), SIDEBAR_VARIANT_VALUES),
-    sidebarCollapsible: getSafeValue(root.getAttribute("data-sidebar-collapsible"), SIDEBAR_COLLAPSIBLE_VALUES),
-  };
+function readDomPreferences(): PreferenceValueMap {
+  const values = { ...PREFERENCE_DEFAULTS };
+  function assign<K extends PreferenceKey>(key: K) { values[key] = readDomPreference(key); }
+  for (const key of PREFERENCE_KEYS) assign(key);
+  return values;
 }
 
-export const PreferencesStoreProvider = ({
+export function PreferencesStoreProvider({
   children,
-  themeMode,
-  themePreset,
-  font,
-  contentLayout,
-  navbarStyle,
+  initialValues,
 }: {
   children: React.ReactNode;
-  themeMode: PreferencesState["themeMode"];
-  themePreset: PreferencesState["themePreset"];
-  font: PreferencesState["font"];
-  contentLayout: PreferencesState["contentLayout"];
-  navbarStyle: PreferencesState["navbarStyle"];
-}) => {
-  const [store] = useState<StoreApi<PreferencesState>>(() =>
-    createPreferencesStore({ themeMode, themePreset, font, contentLayout, navbarStyle }),
-  );
-
-  const domSnapshotRef = useRef<Partial<PreferencesState> | null>(null);
+  initialValues: PreferenceValueMap;
+}) {
+  const [store] = useState<StoreApi<PreferencesState>>(() => createPreferencesStore(initialValues));
 
   useEffect(() => {
-    const domState = readDomState();
-    domSnapshotRef.current = domState;
-    store.setState((prev) => ({ ...prev, ...domState, isSynced: true }));
+    store.setState({
+      values: readDomPreferences(),
+      resolvedThemeMode: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+      isSynced: true,
+    });
   }, [store]);
 
   useEffect(() => {
     let unsubscribeMedia: (() => void) | undefined;
 
-    const applyFromMode = (mode: PreferencesState["themeMode"]) => {
+    const subscribeForMode = (mode: PreferenceValueMap['theme_mode']) => {
       unsubscribeMedia?.();
-      const resolved = applyThemeMode(mode);
-      store.setState((prev) => ({ ...prev, resolvedThemeMode: resolved }));
-
-      if (mode === "system") {
+      unsubscribeMedia = undefined;
+      if (mode === 'system') {
         unsubscribeMedia = subscribeToSystemTheme(() => {
-          const next = applyThemeMode("system");
-          store.setState((prev) => ({ ...prev, resolvedThemeMode: next }));
+          store.setState({ resolvedThemeMode: applyThemeMode('system') });
         });
       }
     };
 
-    const startMode = domSnapshotRef.current?.themeMode ?? store.getState().themeMode;
-    applyFromMode(startMode);
+    subscribeForMode(store.getState().values.theme_mode);
 
-    const unsubscribeStore = store.subscribe((s, p) => {
-      if (s.themeMode !== p.themeMode) applyFromMode(s.themeMode);
+    const unsubscribeStore = store.subscribe((state, prev) => {
+      if (state.values.theme_mode !== prev.values.theme_mode) {
+        subscribeForMode(state.values.theme_mode);
+      }
     });
 
-    return () => {
-      unsubscribeMedia?.();
-      unsubscribeStore();
-    };
+    return () => { unsubscribeMedia?.(); unsubscribeStore(); };
   }, [store]);
 
   return <PreferencesStoreContext.Provider value={store}>{children}</PreferencesStoreContext.Provider>;
-};
+}
 
-export const usePreferencesStore = <T,>(selector: (state: PreferencesState) => T): T => {
-  const store = useContext(PreferencesStoreContext);
-  if (!store) throw new Error("Missing PreferencesStoreProvider");
+export function usePreferencesStore<T>(selector: (state: PreferencesState) => T): T {
+  const store = use(PreferencesStoreContext) as StoreApi<PreferencesState> | null;
+  if (!store) throw new Error('Missing PreferencesStoreProvider');
   return useStore(store, selector);
-};
+}
