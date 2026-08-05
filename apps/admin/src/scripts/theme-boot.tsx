@@ -5,7 +5,7 @@
  * Runs early in <head> to apply the correct data attributes before hydration,
  * preventing layout or theme flicker and keeping RootLayout fully static.
  */
-import { PREFERENCE_REGISTRY } from "@/lib/preferences/preferences-config";
+import { PREFERENCE_REGISTRY } from "@unami/ui";
 
 export function ThemeBootScript() {
   const registry = JSON.stringify(PREFERENCE_REGISTRY);
