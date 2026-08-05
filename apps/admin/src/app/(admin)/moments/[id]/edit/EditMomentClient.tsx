@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,28 +14,14 @@ import { PageHeader } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
 import { Region, Category, UrgencyLevel } from '@/domain/moments';
 import { Language } from '@unami/shared';
-import { createApiClient } from '@unami/api';
-import { getToken } from '@/lib/auth/token';
 import type { MomentWithSponsor, Sponsor } from '@unami/api';
+import { updateMomentAction, scheduleMomentAction } from '../../_actions/moment-actions';
+import { STATUS_VARIANT, URGENCY_DESCRIPTIONS } from '../../_lib/moment-utils';
 
 const REGIONS = Object.values(Region);
 const CATEGORIES = Object.values(Category);
 const LANGUAGES = Object.values(Language);
 const URGENCY_LEVELS = Object.values(UrgencyLevel);
-
-const URGENCY_DESCRIPTIONS: Record<string, string> = {
-  low: 'Routine community update',
-  medium: 'Notable — elevated visibility',
-  high: 'Important — prioritised delivery',
-  urgent: 'Critical — immediate broadcast',
-};
-
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  draft: 'secondary',
-  scheduled: 'outline',
-  broadcasted: 'default',
-  cancelled: 'destructive',
-};
 
 interface Props {
   moment: MomentWithSponsor;
@@ -44,8 +30,8 @@ interface Props {
 
 export function EditMomentClient({ moment, sponsors }: Props) {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
-  const [scheduling, setScheduling] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [pendingAction, setPendingAction] = useState<'save' | 'schedule' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -67,19 +53,13 @@ export function EditMomentClient({ moment, sponsors }: Props) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSponsoredToggle(checked: boolean) {
-    setForm((prev) => ({ ...prev, isSponsored: checked, sponsorId: checked ? prev.sponsorId : '' }));
-  }
-
-  async function handleSave(e: React.FormEvent) {
+  function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (form.isSponsored && !form.sponsorId) { setError('Select a sponsor for sponsored content'); return; }
-    setSaving(true);
     setError(null);
-    try {
-      const token = await getToken();
-      const api = createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
-      await api.moments.update(moment.id, {
+    setPendingAction('save');
+    startTransition(async () => {
+      const res = await updateMomentAction(moment.id, {
         title: form.title,
         content: form.content,
         region: form.region,
@@ -92,35 +72,26 @@ export function EditMomentClient({ moment, sponsors }: Props) {
         sponsorId: form.isSponsored && form.sponsorId ? form.sponsorId : null,
         pwaLink: form.pwaLink || null,
       });
+      setPendingAction(null);
+      if (res.error) { setError(res.error); return; }
       router.push(`/moments/${moment.id}`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
-  async function handleSchedule() {
+  function handleSchedule() {
     if (!form.scheduledAt) { setError('Select a date and time to schedule'); return; }
     if (moment.status !== 'draft') { setError('Only draft moments can be scheduled'); return; }
-    setScheduling(true);
     setError(null);
-    try {
-      const token = await getToken();
-      const api = createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
-      await api.moments.schedule(moment.id, { scheduledAt: new Date(form.scheduledAt).toISOString() });
+    setPendingAction('schedule');
+    startTransition(async () => {
+      const res = await scheduleMomentAction(moment.id, new Date(form.scheduledAt).toISOString());
+      setPendingAction(null);
+      if (res.error) { setError(res.error); return; }
       router.push(`/moments/${moment.id}`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to schedule');
-    } finally {
-      setScheduling(false);
-    }
+    });
   }
 
   const charCount = form.content.length;
-  const charWarning = charCount > 1800;
 
   return (
     <div className="space-y-6">
@@ -138,38 +109,18 @@ export function EditMomentClient({ moment, sponsors }: Props) {
 
       <form onSubmit={handleSave}>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-
-          {/* ── Left column: form cards ── */}
           <div className="space-y-6">
             <Card>
               <CardHeader><CardTitle>Content</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="title"
-                    value={form.title}
-                    onChange={(e) => set('title', e.target.value)}
-                    required
-                    minLength={3}
-                    maxLength={200}
-                  />
+                  <Input id="title" value={form.title} onChange={(e) => set('title', e.target.value)} required minLength={3} maxLength={200} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="content">Content <span className="text-destructive">*</span></Label>
-                  <Textarea
-                    id="content"
-                    value={form.content}
-                    onChange={(e) => set('content', e.target.value)}
-                    required
-                    minLength={10}
-                    maxLength={2000}
-                    rows={7}
-                    className="resize-none"
-                  />
-                  <p className={`text-xs text-right ${charWarning ? 'text-destructive' : 'text-muted-foreground'}`}>
-                    {charCount}/2000
-                  </p>
+                  <Textarea id="content" value={form.content} onChange={(e) => set('content', e.target.value)} required minLength={10} maxLength={2000} rows={7} className="resize-none" />
+                  <p className={`text-xs text-right ${charCount > 1800 ? 'text-destructive' : 'text-muted-foreground'}`}>{charCount}/2000</p>
                 </div>
               </CardContent>
             </Card>
@@ -213,36 +164,23 @@ export function EditMomentClient({ moment, sponsors }: Props) {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="pwaLink">PWA Link</Label>
-                  <Input
-                    id="pwaLink"
-                    value={form.pwaLink}
-                    onChange={(e) => set('pwaLink', e.target.value)}
-                    type="url"
-                    placeholder="https://..."
-                  />
+                  <Input id="pwaLink" value={form.pwaLink} onChange={(e) => set('pwaLink', e.target.value)} type="url" placeholder="https://..." />
                 </div>
                 {moment.status === 'draft' && (
                   <div className="space-y-1.5">
                     <Label htmlFor="scheduledAt">Schedule for</Label>
-                    <Input
-                      id="scheduledAt"
-                      value={form.scheduledAt}
-                      onChange={(e) => set('scheduledAt', e.target.value)}
-                      type="datetime-local"
-                    />
+                    <Input id="scheduledAt" value={form.scheduledAt} onChange={(e) => set('scheduledAt', e.target.value)} type="datetime-local" />
                   </div>
                 )}
                 <div className="flex flex-col gap-3 pt-1">
                   {(['publishToPwa', 'publishToWhatsapp'] as const).map((field) => (
                     <div key={field} className="flex items-center gap-3">
                       <Switch id={field} checked={form[field]} onCheckedChange={(v) => set(field, v)} />
-                      <Label htmlFor={field} className="font-normal">
-                        {field === 'publishToPwa' ? 'Publish to PWA' : 'Publish to WhatsApp'}
-                      </Label>
+                      <Label htmlFor={field} className="font-normal">{field === 'publishToPwa' ? 'Publish to PWA' : 'Publish to WhatsApp'}</Label>
                     </div>
                   ))}
                   <div className="flex items-center gap-3">
-                    <Switch id="isSponsored" checked={form.isSponsored} onCheckedChange={handleSponsoredToggle} />
+                    <Switch id="isSponsored" checked={form.isSponsored} onCheckedChange={(v) => setForm((p) => ({ ...p, isSponsored: v, sponsorId: v ? p.sponsorId : '' }))} />
                     <Label htmlFor="isSponsored" className="font-normal">Sponsored content</Label>
                   </div>
                 </div>
@@ -259,8 +197,7 @@ export function EditMomentClient({ moment, sponsors }: Props) {
                     <SelectContent>
                       {sponsors.length === 0
                         ? <SelectItem value="" disabled>No active sponsors</SelectItem>
-                        : sponsors.map((s) => <SelectItem key={s.id} value={s.id}>{s.displayName} ({s.tier})</SelectItem>)
-                      }
+                        : sponsors.map((s) => <SelectItem key={s.id} value={s.id}>{s.displayName} ({s.tier})</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">Links revenue attribution and compliance records</p>
@@ -271,53 +208,42 @@ export function EditMomentClient({ moment, sponsors }: Props) {
             <div className="flex justify-end gap-2 pb-8">
               <Button type="button" variant="outline" onClick={() => router.push(`/moments/${moment.id}`)}>Cancel</Button>
               {moment.status === 'draft' && form.scheduledAt && (
-                <Button type="button" variant="secondary" onClick={handleSchedule} disabled={scheduling}>
-                  {scheduling ? 'Scheduling...' : 'Save & Schedule'}
+                <Button type="button" variant="secondary" onClick={handleSchedule} disabled={isPending && pendingAction === 'schedule'}>
+                  {isPending && pendingAction === 'schedule' ? 'Scheduling...' : 'Save & Schedule'}
                 </Button>
               )}
-              <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button>
+              <Button type="submit" disabled={isPending && pendingAction === 'save'}>
+                {isPending && pendingAction === 'save' ? 'Saving...' : 'Save Changes'}
+              </Button>
             </div>
           </div>
 
-          {/* ── Right column: sticky sidebar ── */}
           <div className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
-
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-sm">Status</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">State</span>
-                    <Badge variant={STATUS_VARIANT[moment.status] ?? 'secondary'} className="capitalize">
-                      {moment.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Urgency</span>
-                    <span className="font-medium capitalize">{form.urgencyLevel}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Region</span>
-                    <span className="font-medium">{form.region}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Category</span>
-                    <span className="font-medium">{form.category}</span>
-                  </div>
+                  {[
+                    { label: 'State', value: <Badge variant={STATUS_VARIANT[moment.status] ?? 'secondary'} className="capitalize">{moment.status}</Badge> },
+                    { label: 'Urgency', value: <span className="font-medium capitalize">{form.urgencyLevel}</span> },
+                    { label: 'Region', value: <span className="font-medium">{form.region}</span> },
+                    { label: 'Category', value: <span className="font-medium">{form.category}</span> },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{label}</span>
+                      {value}
+                    </div>
+                  ))}
                   {moment.broadcastedAt && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Broadcast</span>
-                      <span className="text-xs font-medium">
-                        {new Date(moment.broadcastedAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </span>
+                      <span className="text-xs font-medium">{new Date(moment.broadcastedAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                     </div>
                   )}
                   {form.scheduledAt && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Scheduled</span>
-                      <span className="text-xs font-medium">
-                        {new Date(form.scheduledAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                      <span className="text-xs font-medium">{new Date(form.scheduledAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   )}
                 </CardContent>
@@ -343,10 +269,8 @@ export function EditMomentClient({ moment, sponsors }: Props) {
                   </CardContent>
                 </Card>
               )}
-
             </div>
           </div>
-
         </div>
       </form>
     </div>

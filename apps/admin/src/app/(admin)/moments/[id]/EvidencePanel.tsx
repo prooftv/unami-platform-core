@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,9 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Paperclip, FileText, Image, Upload } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { createApiClient } from '@unami/api';
-import { getToken } from '@/lib/auth/token';
 import type { EvidenceRecord } from '@unami/api';
+import { uploadEvidenceAction } from '../_actions/moment-actions';
+import { formatBytes } from '../_lib/moment-utils';
 
 const ACCEPTED = '.jpg,.jpeg,.png,.webp,.pdf,.doc,.docx';
 
@@ -21,12 +20,6 @@ const FILE_ICON: Record<string, LucideIcon> = {
   document: FileText,
 };
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 interface Props {
   momentId: string;
   initialEvidence: EvidenceRecord[];
@@ -34,37 +27,21 @@ interface Props {
 }
 
 export function EvidencePanel({ momentId, initialEvidence, canUpload }: Props) {
-  const router = useRouter();
-  const [, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [evidence, setEvidence] = useState<EvidenceRecord[]>(initialEvidence);
-  const [uploading, setUploading] = useState(false);
+  const [evidence] = useState<EvidenceRecord[]>(initialEvidence);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [title, setTitle] = useState('');
 
-  function getApi(token: string) {
-    return createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
-  }
-
-  async function handleUpload(e: React.FormEvent) {
+  function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const file = fileRef.current?.files?.[0];
-    if (!file || !title.trim()) return;
-
-    setUploading(true);
+    const formData = new FormData(e.currentTarget);
+    formData.set('momentId', momentId);
     setError(null);
-    try {
-      const token = await getToken();
-      const record = await getApi(token).evidence.upload({ momentId, title: title.trim(), file });
-      setEvidence((prev) => [...prev, record]);
-      setTitle('');
-      if (fileRef.current) fileRef.current.value = '';
-      startTransition(() => router.refresh());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
-      setUploading(false);
-    }
+    startTransition(async () => {
+      const res = await uploadEvidenceAction(momentId, formData);
+      if (res.error) { setError(res.error); return; }
+      e.currentTarget?.reset();
+    });
   }
 
   return (
@@ -73,9 +50,7 @@ export function EvidencePanel({ momentId, initialEvidence, canUpload }: Props) {
         <CardTitle className="flex items-center gap-2">
           <Paperclip className="h-4 w-4" />
           Evidence
-          {evidence.length > 0 && (
-            <Badge variant="secondary" className="ml-auto">{evidence.length}</Badge>
-          )}
+          {evidence.length > 0 && <Badge variant="secondary" className="ml-auto">{evidence.length}</Badge>}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -96,12 +71,7 @@ export function EvidencePanel({ momentId, initialEvidence, canUpload }: Props) {
                       {formatBytes(item.fileSize)} · {new Date(item.createdAt).toLocaleDateString('en-ZA')}
                     </p>
                   </div>
-                  <a
-                    href={item.publicUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary hover:underline shrink-0"
-                  >
+                  <a href={item.publicUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline shrink-0">
                     View
                   </a>
                 </li>
@@ -114,20 +84,14 @@ export function EvidencePanel({ momentId, initialEvidence, canUpload }: Props) {
           <form onSubmit={handleUpload} className="space-y-3 pt-2 border-t">
             <div className="space-y-1.5">
               <Label htmlFor="evidence-title">Title <span className="text-destructive">*</span></Label>
-              <Input
-                id="evidence-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Site photograph, Attendance register"
-                required
-                minLength={2}
-              />
+              <Input id="evidence-title" name="title" placeholder="e.g. Site photograph, Attendance register" required minLength={2} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="evidence-file">File <span className="text-destructive">*</span></Label>
               <input
                 id="evidence-file"
                 ref={fileRef}
+                name="file"
                 type="file"
                 accept={ACCEPTED}
                 required
@@ -136,9 +100,9 @@ export function EvidencePanel({ momentId, initialEvidence, canUpload }: Props) {
               <p className="text-xs text-muted-foreground">JPG, PNG, WEBP, PDF, DOC, DOCX · max 10 MB</p>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" size="sm" disabled={uploading}>
+            <Button type="submit" size="sm" disabled={isPending}>
               <Upload className="h-4 w-4 mr-2" />
-              {uploading ? 'Uploading...' : 'Attach evidence'}
+              {isPending ? 'Uploading...' : 'Attach evidence'}
             </Button>
           </form>
         )}

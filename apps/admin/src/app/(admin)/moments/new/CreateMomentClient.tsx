@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,9 +14,9 @@ import { PageHeader } from '@unami/ui';
 import { ArrowLeft } from 'lucide-react';
 import { Region, Category, UrgencyLevel, MomentType, MOMENT_TYPE_LABELS, MOMENT_TYPE_DESCRIPTIONS } from '@/domain/moments';
 import { Language } from '@unami/shared';
-import { createApiClient } from '@unami/api';
-import { getToken } from '@/lib/auth/token';
 import type { Sponsor } from '@unami/api';
+import { createMomentAction } from '../_actions/moment-actions';
+import { URGENCY_DESCRIPTIONS } from '../_lib/moment-utils';
 
 const REGIONS = Object.values(Region);
 const CATEGORIES = Object.values(Category);
@@ -24,18 +24,11 @@ const LANGUAGES = Object.values(Language);
 const URGENCY_LEVELS = Object.values(UrgencyLevel);
 const MOMENT_TYPES = Object.values(MomentType);
 
-const URGENCY_DESCRIPTIONS: Record<string, string> = {
-  low: 'Routine community update',
-  medium: 'Notable — elevated visibility',
-  high: 'Important — prioritised delivery',
-  urgent: 'Critical — immediate broadcast',
-};
-
 interface Props { sponsors: Sponsor[]; }
 
 export function CreateMomentClient({ sponsors }: Props) {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -60,23 +53,16 @@ export function CreateMomentClient({ sponsors }: Props) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSponsoredToggle(checked: boolean) {
-    setForm((prev) => ({ ...prev, isSponsored: checked, sponsorId: checked ? prev.sponsorId : '' }));
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (form.isSponsored && !form.sponsorId) { setError('Select a sponsor for sponsored content'); return; }
-    setSaving(true);
     setError(null);
-    try {
-      const token = await getToken();
-      const api = createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
-      await api.moments.create({
+    startTransition(async () => {
+      const res = await createMomentAction({
         title: form.title,
         content: form.content,
-        region: form.region as typeof REGIONS[number],
-        category: form.category as typeof CATEGORIES[number],
+        region: form.region,
+        category: form.category,
         language: form.language,
         urgencyLevel: form.urgencyLevel,
         momentType: form.momentType,
@@ -90,19 +76,13 @@ export function CreateMomentClient({ sponsors }: Props) {
         sponsorId: form.isSponsored && form.sponsorId ? form.sponsorId : null,
         pwaLink: form.pwaLink || null,
         scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : null,
-        mediaUrls: [],
       });
+      if (res.error) { setError(res.error); return; }
       router.push('/moments');
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create moment');
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   const charCount = form.content.length;
-  const charWarning = charCount > 1800;
 
   return (
     <div className="space-y-6">
@@ -120,40 +100,18 @@ export function CreateMomentClient({ sponsors }: Props) {
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-
-          {/* ── Left column: form cards ── */}
           <div className="space-y-6">
             <Card>
               <CardHeader><CardTitle>Content</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="title"
-                    value={form.title}
-                    onChange={(e) => set('title', e.target.value)}
-                    required
-                    minLength={3}
-                    maxLength={200}
-                    placeholder="Enter a clear, descriptive title"
-                  />
+                  <Input id="title" value={form.title} onChange={(e) => set('title', e.target.value)} required minLength={3} maxLength={200} placeholder="Enter a clear, descriptive title" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="content">Content <span className="text-destructive">*</span></Label>
-                  <Textarea
-                    id="content"
-                    value={form.content}
-                    onChange={(e) => set('content', e.target.value)}
-                    required
-                    minLength={10}
-                    maxLength={2000}
-                    rows={7}
-                    className="resize-none"
-                    placeholder="Write the moment content (max 2000 characters)"
-                  />
-                  <p className={`text-xs text-right ${charWarning ? 'text-destructive' : 'text-muted-foreground'}`}>
-                    {charCount}/2000
-                  </p>
+                  <Textarea id="content" value={form.content} onChange={(e) => set('content', e.target.value)} required minLength={10} maxLength={2000} rows={7} className="resize-none" placeholder="Write the moment content (max 2000 characters)" />
+                  <p className={`text-xs text-right ${charCount > 1800 ? 'text-destructive' : 'text-muted-foreground'}`}>{charCount}/2000</p>
                 </div>
               </CardContent>
             </Card>
@@ -191,16 +149,9 @@ export function CreateMomentClient({ sponsors }: Props) {
                 </div>
                 <div className="space-y-1.5 col-span-2">
                   <Label>Moment Type</Label>
-                  <Select value={form.momentType} onValueChange={(v) => {
-                    set('momentType', v);
-                    if (v !== 'consultation') set('participationEnabled', false);
-                  }}>
+                  <Select value={form.momentType} onValueChange={(v) => { set('momentType', v); if (v !== 'consultation') set('participationEnabled', false); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {MOMENT_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>{MOMENT_TYPE_LABELS[t]}</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectContent>{MOMENT_TYPES.map((t) => <SelectItem key={t} value={t}>{MOMENT_TYPE_LABELS[t]}</SelectItem>)}</SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">{MOMENT_TYPE_DESCRIPTIONS[form.momentType as MomentType]}</p>
                 </div>
@@ -212,44 +163,27 @@ export function CreateMomentClient({ sponsors }: Props) {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="pwaLink">PWA Link</Label>
-                  <Input
-                    id="pwaLink"
-                    value={form.pwaLink}
-                    onChange={(e) => set('pwaLink', e.target.value)}
-                    type="url"
-                    placeholder="https://..."
-                  />
+                  <Input id="pwaLink" value={form.pwaLink} onChange={(e) => set('pwaLink', e.target.value)} type="url" placeholder="https://..." />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="scheduledAt">Schedule</Label>
                   <p className="text-xs text-muted-foreground">Leave empty to save as draft</p>
-                  <Input
-                    id="scheduledAt"
-                    value={form.scheduledAt}
-                    onChange={(e) => set('scheduledAt', e.target.value)}
-                    type="datetime-local"
-                  />
+                  <Input id="scheduledAt" value={form.scheduledAt} onChange={(e) => set('scheduledAt', e.target.value)} type="datetime-local" />
                 </div>
                 <div className="flex flex-col gap-3 pt-1">
                   {(['publishToPwa', 'publishToWhatsapp'] as const).map((field) => (
                     <div key={field} className="flex items-center gap-3">
                       <Switch id={field} checked={form[field]} onCheckedChange={(v) => set(field, v)} />
-                      <Label htmlFor={field} className="font-normal">
-                        {field === 'publishToPwa' ? 'Publish to PWA' : 'Publish to WhatsApp'}
-                      </Label>
+                      <Label htmlFor={field} className="font-normal">{field === 'publishToPwa' ? 'Publish to PWA' : 'Publish to WhatsApp'}</Label>
                     </div>
                   ))}
                   <div className="flex items-center gap-3">
-                    <Switch id="isSponsored" checked={form.isSponsored} onCheckedChange={handleSponsoredToggle} />
+                    <Switch id="isSponsored" checked={form.isSponsored} onCheckedChange={(v) => setForm((p) => ({ ...p, isSponsored: v, sponsorId: v ? p.sponsorId : '' }))} />
                     <Label htmlFor="isSponsored" className="font-normal">Sponsored content</Label>
                   </div>
                   {form.momentType === 'consultation' && (
                     <div className="flex items-center gap-3">
-                      <Switch
-                        id="participationEnabled"
-                        checked={form.participationEnabled}
-                        onCheckedChange={(v) => set('participationEnabled', v)}
-                      />
+                      <Switch id="participationEnabled" checked={form.participationEnabled} onCheckedChange={(v) => set('participationEnabled', v)} />
                       <Label htmlFor="participationEnabled" className="font-normal">Enable community responses</Label>
                     </div>
                   )}
@@ -257,23 +191,18 @@ export function CreateMomentClient({ sponsors }: Props) {
               </CardContent>
             </Card>
 
-              {form.momentType === 'consultation' && form.participationEnabled && (
+            {form.momentType === 'consultation' && form.participationEnabled && (
               <Card>
                 <CardHeader><CardTitle>Community Responses</CardTitle></CardHeader>
                 <CardContent className="space-y-1.5">
                   <Label htmlFor="participationDeadline">Response deadline</Label>
                   <p className="text-xs text-muted-foreground">Leave empty for no deadline</p>
-                  <Input
-                    id="participationDeadline"
-                    value={form.participationDeadline}
-                    onChange={(e) => set('participationDeadline', e.target.value)}
-                    type="datetime-local"
-                  />
+                  <Input id="participationDeadline" value={form.participationDeadline} onChange={(e) => set('participationDeadline', e.target.value)} type="datetime-local" />
                 </CardContent>
               </Card>
-              )}
+            )}
 
-              {form.isSponsored && (
+            {form.isSponsored && (
               <Card>
                 <CardHeader><CardTitle>Sponsor Attribution</CardTitle></CardHeader>
                 <CardContent className="space-y-1.5">
@@ -283,8 +212,7 @@ export function CreateMomentClient({ sponsors }: Props) {
                     <SelectContent>
                       {sponsors.length === 0
                         ? <SelectItem value="" disabled>No active sponsors</SelectItem>
-                        : sponsors.map((s) => <SelectItem key={s.id} value={s.id}>{s.displayName} ({s.tier})</SelectItem>)
-                      }
+                        : sponsors.map((s) => <SelectItem key={s.id} value={s.id}>{s.displayName} ({s.tier})</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">Links revenue attribution and compliance records</p>
@@ -294,43 +222,31 @@ export function CreateMomentClient({ sponsors }: Props) {
 
             <div className="flex justify-end gap-2 pb-8">
               <Button type="button" variant="outline" onClick={() => router.push('/moments')}>Cancel</Button>
-              <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save as Draft'}</Button>
+              <Button type="submit" disabled={isPending}>{isPending ? 'Saving...' : 'Save as Draft'}</Button>
             </div>
           </div>
 
-          {/* ── Right column: sticky sidebar ── */}
           <div className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
-
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-sm">Status</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">State</span>
-                    <Badge variant="secondary">Draft</Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Type</span>
-                    <span className="font-medium">{MOMENT_TYPE_LABELS[form.momentType as MomentType]}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Urgency</span>
-                    <span className="font-medium capitalize">{form.urgencyLevel}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Region</span>
-                    <span className="font-medium">{form.region}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Category</span>
-                    <span className="font-medium">{form.category}</span>
-                  </div>
+                  {[
+                    { label: 'State', value: <Badge variant="secondary">Draft</Badge> },
+                    { label: 'Type', value: <span className="font-medium">{MOMENT_TYPE_LABELS[form.momentType as MomentType]}</span> },
+                    { label: 'Urgency', value: <span className="font-medium capitalize">{form.urgencyLevel}</span> },
+                    { label: 'Region', value: <span className="font-medium">{form.region}</span> },
+                    { label: 'Category', value: <span className="font-medium">{form.category}</span> },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{label}</span>
+                      {value}
+                    </div>
+                  ))}
                   {form.scheduledAt && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Scheduled</span>
-                      <span className="font-medium text-xs">
-                        {new Date(form.scheduledAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                      <span className="font-medium text-xs">{new Date(form.scheduledAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   )}
                 </CardContent>
@@ -357,10 +273,8 @@ export function CreateMomentClient({ sponsors }: Props) {
                   <p><span className="font-medium text-foreground">Scheduled</span> — broadcast at the set time</p>
                 </CardContent>
               </Card>
-
             </div>
           </div>
-
         </div>
       </form>
     </div>

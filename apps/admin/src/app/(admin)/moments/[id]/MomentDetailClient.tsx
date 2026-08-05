@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,18 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PageHeader } from '@unami/ui';
 import { Send, Pencil, XCircle } from 'lucide-react';
-import { createApiClient } from '@unami/api';
-import { getToken } from '@/lib/auth/token';
 import type { MomentWithSponsor, AdminSession, BroadcastWithMoment, EvidenceRecord } from '@unami/api';
+import { broadcastMomentAction, cancelMomentAction } from '../_actions/moment-actions';
+import { STATUS_VARIANT, BROADCAST_VARIANT, canEditMoment, canBroadcastMoment, canCancelMoment } from '../_lib/moment-utils';
 import { EvidencePanel } from './EvidencePanel';
-
-const STATUS_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
-  draft: 'outline', scheduled: 'secondary', broadcasted: 'default', cancelled: 'destructive',
-};
-
-const BROADCAST_VARIANT: Record<string, 'outline' | 'secondary' | 'destructive' | 'default'> = {
-  pending: 'outline', processing: 'secondary', completed: 'default', failed: 'destructive',
-};
 
 interface Props {
   moment: MomentWithSponsor;
@@ -31,46 +23,35 @@ interface Props {
 
 export function MomentDetailClient({ moment, session, broadcasts, stats, evidence }: Props) {
   const router = useRouter();
-  const [broadcasting, setBroadcasting] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [action, setAction] = useState<'broadcast' | 'cancel' | null>(null);
 
-  const canEdit = (session.role === 'superadmin' || session.role === 'content_admin') && (moment.status === 'draft' || moment.status === 'scheduled');
-  const canBroadcast = (session.role === 'superadmin' || session.role === 'content_admin') && (moment.status === 'draft' || moment.status === 'scheduled');
-  const canCancel = (session.role === 'superadmin' || session.role === 'content_admin') && (moment.status === 'draft' || moment.status === 'scheduled');
+  const canEdit = canEditMoment(session, moment.status);
+  const canBroadcast = canBroadcastMoment(session, moment.status);
+  const canCancel = canCancelMoment(session, moment.status);
 
-  async function handleBroadcast() {
+  function handleBroadcast() {
     if (!confirm(`Broadcast "${moment.title}" to subscribers? This cannot be undone.`)) return;
-    setBroadcasting(true);
-    setError(null);
-    try {
-      const token = await getToken();
-      const api = createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
-      const res = await api.broadcasts.trigger(moment.id);
-      setFeedback(`Broadcast complete — ${res.successCount} of ${res.recipientCount} delivered`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Broadcast failed');
-    } finally {
-      setBroadcasting(false);
-    }
+    setAction('broadcast');
+    startTransition(async () => {
+      const res = await broadcastMomentAction(moment.id);
+      if (res.error) { setError(res.error); }
+      else { setFeedback(`Broadcast complete — ${res.successCount} of ${res.recipientCount} delivered`); router.refresh(); }
+      setAction(null);
+    });
   }
 
-  async function handleCancel() {
+  function handleCancel() {
     if (!confirm(`Cancel "${moment.title}"? This cannot be undone.`)) return;
-    setCancelling(true);
-    setError(null);
-    try {
-      const token = await getToken();
-      const api = createApiClient({ baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1', token });
-      await api.moments.cancel(moment.id);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Cancel failed');
-    } finally {
-      setCancelling(false);
-    }
+    setAction('cancel');
+    startTransition(async () => {
+      const res = await cancelMomentAction(moment.id);
+      if (res.error) { setError(res.error); }
+      else { router.refresh(); }
+      setAction(null);
+    });
   }
 
   return (
@@ -86,13 +67,13 @@ export function MomentDetailClient({ moment, session, broadcasts, stats, evidenc
               </Button>
             )}
             {canCancel && (
-              <Button variant="outline" size="sm" onClick={handleCancel} disabled={cancelling}>
-                <XCircle className="h-4 w-4 mr-2" />{cancelling ? 'Cancelling...' : 'Cancel'}
+              <Button variant="outline" size="sm" onClick={handleCancel} disabled={isPending && action === 'cancel'}>
+                <XCircle className="h-4 w-4 mr-2" />{isPending && action === 'cancel' ? 'Cancelling...' : 'Cancel'}
               </Button>
             )}
             {canBroadcast && (
-              <Button size="sm" onClick={handleBroadcast} disabled={broadcasting}>
-                <Send className="h-4 w-4 mr-2" />{broadcasting ? 'Broadcasting...' : 'Broadcast'}
+              <Button size="sm" onClick={handleBroadcast} disabled={isPending && action === 'broadcast'}>
+                <Send className="h-4 w-4 mr-2" />{isPending && action === 'broadcast' ? 'Broadcasting...' : 'Broadcast'}
               </Button>
             )}
           </div>
