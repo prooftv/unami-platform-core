@@ -58,7 +58,7 @@ export const sidebarItems: NavGroup[] = [
   },
   {
     id: 3,
-    label: 'Platform',
+    label: 'System',
     items: [
       { id: 'settings', title: 'Settings', url: '/settings', icon: Settings },
     ],
