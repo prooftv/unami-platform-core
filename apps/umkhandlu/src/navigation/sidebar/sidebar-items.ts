@@ -59,37 +59,37 @@ export const sidebarItems: NavGroup[] = [
     label: 'Nodes',
     items: [
       { id: 'nodes', title: 'Registered Nodes', url: '/nodes', icon: Network },
-      { id: 'node-health', title: 'Node Health', url: '/nodes/health', icon: Activity, badge: 'soon' },
+      { id: 'node-health', title: 'Node Health', url: '/nodes/health', icon: Activity },
     ],
   },
   {
     id: 3,
     label: 'Governance Intelligence',
     items: [
-      { id: 'records-analytics', title: 'Record Analytics', url: '/intelligence/records', icon: BarChart3, badge: 'soon' },
-      { id: 'notices-analytics', title: 'Notice Analytics', url: '/intelligence/notices', icon: Globe, badge: 'soon' },
-      { id: 'participation-analytics', title: 'Participation', url: '/intelligence/participation', icon: Shield, badge: 'soon' },
+      { id: 'records-analytics', title: 'Record Analytics', url: '/intelligence/records', icon: BarChart3 },
+      { id: 'notices-analytics', title: 'Notice Analytics', url: '/intelligence/notices', icon: Globe },
+      { id: 'participation-analytics', title: 'Participation', url: '/intelligence/participation', icon: Shield },
     ],
   },
   {
     id: 4,
     label: 'Commercial Intelligence',
     items: [
-      { id: 'projects', title: 'Projects', url: '/intelligence/projects', icon: Building2, badge: 'soon' },
+      { id: 'projects', title: 'Projects', url: '/intelligence/projects', icon: Building2 },
     ],
   },
   {
     id: 5,
     label: 'Institutional Memory',
     items: [
-      { id: 'audit', title: 'Audit Trails', url: '/intelligence/audit', icon: BookOpen, badge: 'soon' },
+      { id: 'audit', title: 'Audit Trails', url: '/intelligence/audit', icon: BookOpen, badge: 'soon', disabled: true },
     ],
   },
   {
     id: 6,
     label: 'Platform',
     items: [
-      { id: 'api-health', title: 'API Health', url: '/platform/health', icon: Server, badge: 'soon' },
+      { id: 'api-health', title: 'API Health', url: '/platform/health', icon: Server, badge: 'soon', disabled: true },
       { id: 'settings', title: 'Settings', url: '/settings', icon: Settings },
     ],
   },
