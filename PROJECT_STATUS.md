@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 18A — Foundation (direction corrected, cleanup pending) |
+| Phase | Phase 18C — Node Health View (complete) — 18D next |
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `phase-17j-complete` |
+| Last commit | `d48a906` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -317,52 +317,40 @@ Read `08_INTELLIGENCE_LAYER.md` and `09_PLATFORM_MAPPING.md` before writing any 
                     Institutional Memory
 ```
 
-### Phase 18A — Foundation ⚠️ Partially complete — direction corrected
+### Phase 18A — Foundation ✅ Complete
 
-The scaffold, shell, navigation, domain structure, platform tables (`records`, `notices`),
-Edge Functions, and `packages/api` clients are correct and remain.
+Scaffold, shell, navigation, domain structure, platform tables, node registry model, API contract defined.
+CRUD screens removed. Navigation corrected to Control Centre intent.
 
-What was built incorrectly: CRUD screens (records list, record detail, create record,
-notices list, notice detail, create notice). These duplicate the existing Umkhandlu
-repository and must be removed before 18B begins.
-
-What remains for 18A completion:
-- Remove CRUD screens from `apps/umkhandlu`
-- Define the node registry model
-- Define the read-only node API contract (what a node must expose to the Control Centre)
-- Correct the navigation to reflect Control Centre intent
-
-### Phase 18B — Node Connection
-
-Connect to the first governance node via read-only API. Data model alignment.
-The Control Centre queries a live node and displays what it knows.
-
-Constitutional reference: `docs/context/GOVERNANCE_NODE_API.md` — the contract every node must implement.
-Read this document before writing any Phase 18B code.
-
-**Definition of Done — all ten must be complete:**
+### Phase 18B — Node Connection ✅ Complete
 
 | Task | Status |
 |---|---|
-| Define the Governance Node API contract (what a node must expose) | ⏳ |
-| Register `umkhandlu.unamifoundation.org` as the first node | ⏳ |
-| Authenticate the connection (read-only, node-issued credentials) | ⏳ |
-| Read node metadata (name, description, deployment status) | ⏳ |
-| Read node health (last seen, response time, error rate) | ⏳ |
-| Read governance summaries (record counts by type and status) | ⏳ |
-| Read notice summaries (notice counts by type and status) | ⏳ |
-| Read commercial summaries (project counts, RAG distribution) | ⏳ |
-| Read participation summaries (counts, deadline compliance) | ⏳ |
-| Display all summaries in the Control Centre — no write capability exists | ⏳ |
+| Governance Node API contract defined (`GOVERNANCE_NODE_API.md`) | ✅ |
+| Node registry in Supabase (`governance_nodes` table) | ✅ |
+| `umkhandlu.unamifoundation.org` registered as first node | ✅ |
+| Read-only authentication (node-issued Bearer key) | ✅ |
+| Node identity, health, records, notices, commercial, participation, evidence, lineage, tcrs | ✅ |
+| All summaries displayed in Control Centre — no write capability | ✅ |
+| `GOVERNANCE_NODE_REGISTRY.md` constitutional document written (D-037) | ✅ |
 
-### Phase 18C — Node Health View
+### Phase 18C — Node Health View ✅ Complete
 
-Per-node health dashboard. Record/notice/project counts. Status distributions.
-The operator sees the live state of a connected node.
+| Task | Status |
+|---|---|
+| `/nodes/health` — per-node health, record/notice counts, version, response | ✅ |
+| `/intelligence/records` — 15 records, by status, by type, recent activity | ✅ |
+| `/intelligence/notices` — 8 notices, statutory breakdown, by type, recent activity | ✅ |
+| `/intelligence/participation` — by submission type, by relationship | ✅ |
+| `/intelligence/projects` — 2 projects, R40M budget, 100 beneficiaries, RAG health | ✅ |
+| `/intelligence/audit` — lineage chains, Layer 5 outputs, evidence summary | ✅ |
+| `/platform/health` — live API health with response times per node | ✅ |
+| All sidebar items live — no disabled/soon items remaining | ✅ |
 
-### Phase 18D — Cross-Node Aggregation
+### Phase 18D — Cross-Node Aggregation ⏳ Next
 
 Multi-node view. Regional intelligence. Comparative performance across nodes.
+Currently only one node connected — 18D becomes meaningful when a second node is registered.
 
 ### Phase 18E — Commercial Intelligence
 

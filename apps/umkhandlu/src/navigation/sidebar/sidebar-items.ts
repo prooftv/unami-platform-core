@@ -82,14 +82,14 @@ export const sidebarItems: NavGroup[] = [
     id: 5,
     label: 'Institutional Memory',
     items: [
-      { id: 'audit', title: 'Audit Trails', url: '/intelligence/audit', icon: BookOpen, badge: 'soon', disabled: true },
+      { id: 'audit', title: 'Audit Trails', url: '/intelligence/audit', icon: BookOpen },
     ],
   },
   {
     id: 6,
     label: 'Platform',
     items: [
-      { id: 'api-health', title: 'API Health', url: '/platform/health', icon: Server, badge: 'soon', disabled: true },
+      { id: 'api-health', title: 'API Health', url: '/platform/health', icon: Server },
       { id: 'settings', title: 'Settings', url: '/settings', icon: Settings },
     ],
   },
