@@ -22,3 +22,8 @@ VALUES (
   'First governance node. Phase 18B.'
 )
 ON CONFLICT (url) DO NOTHING;
+
+-- Grant read access to anon and authenticated roles
+-- RLS is disabled but Postgres table privileges still apply
+GRANT SELECT ON public.governance_nodes TO anon;
+GRANT SELECT ON public.governance_nodes TO authenticated;
