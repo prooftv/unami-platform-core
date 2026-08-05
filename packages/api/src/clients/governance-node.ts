@@ -51,6 +51,7 @@ export interface RecordActivityItem {
   type: string;
   status: string | null;
   createdAt: string;
+  // nodeUrl not used for linking — node frontend uses slugs, not UUIDs
   nodeUrl?: string;
 }
 
@@ -76,6 +77,7 @@ export interface NoticeActivityItem {
   isStatutory: boolean;
   commentDeadline: string | null;
   createdAt: string;
+  // nodeUrl not used for linking — node frontend uses slugs, not UUIDs
   nodeUrl?: string;
 }
 
