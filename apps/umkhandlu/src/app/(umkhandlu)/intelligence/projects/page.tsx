@@ -112,11 +112,11 @@ export default async function ProjectsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {!summary?.recentActivity.length ? (
+            {!summary?.recent.length ? (
               <p className="text-sm text-muted-foreground text-center py-6">No recent activity</p>
             ) : (
               <ul className="divide-y">
-                {summary.recentActivity.map((item) => (
+                {summary.recent.map((item) => (
                   <li key={item.id} className="flex items-center justify-between py-3 text-sm gap-2">
                     <div className="flex flex-col min-w-0">
                       <span className="font-medium truncate">{item.title}</span>

@@ -98,7 +98,7 @@ export function ProjectStatusWidget({ summary }: { summary: CommercialSummary | 
 // ── Recent Commercial Activity ────────────────────────────────────────────────
 
 export function RecentCommercialActivityWidget({ summary }: { summary: CommercialSummary | null }) {
-  const items = summary?.recentActivity ?? [];
+  const items = summary?.recent ?? [];
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between border-b pb-3">

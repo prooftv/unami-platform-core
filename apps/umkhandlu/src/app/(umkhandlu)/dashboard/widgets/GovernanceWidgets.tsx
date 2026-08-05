@@ -98,7 +98,7 @@ export function NoticesSummaryWidget({ summary }: { summary: NoticesSummary | nu
 // ── Recent Records Activity ───────────────────────────────────────────────────
 
 export function RecentRecordsWidget({ summary }: { summary: RecordsSummary | null }) {
-  const items = summary?.recentActivity ?? [];
+  const items = summary?.recent ?? [];
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between border-b pb-3">

@@ -95,7 +95,7 @@ export async function fetchAggregatedRecords(): Promise<RecordsSummary | null> {
       resolved: acc.byStatus.resolved + r.byStatus.resolved,
       rejected: acc.byStatus.rejected + r.byStatus.rejected,
     },
-    recentActivity: [...acc.recentActivity, ...r.recentActivity].slice(0, 10),
+    recent: [...acc.recent, ...r.recent].slice(0, 10),
   }));
 }
 
@@ -160,7 +160,7 @@ export async function fetchAggregatedCommercial(): Promise<CommercialSummary | n
       total:  acc.sponsors.total  + r.sponsors.total,
       active: acc.sponsors.active + r.sponsors.active,
     },
-    recentActivity: [...acc.recentActivity, ...r.recentActivity].slice(0, 10),
+    recent: [...acc.recent, ...r.recent].slice(0, 10),
   }));
 }
 
@@ -198,6 +198,7 @@ export async function fetchAggregatedTcrs(): Promise<TcrsSummary | null> {
     escalated: acc.escalated + r.escalated,
     byResolutionState: {
       pending:   acc.byResolutionState.pending   + r.byResolutionState.pending,
+      partial:   acc.byResolutionState.partial   + r.byResolutionState.partial,
       resolved:  acc.byResolutionState.resolved  + r.byResolutionState.resolved,
       escalated: acc.byResolutionState.escalated + r.byResolutionState.escalated,
     },

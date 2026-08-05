@@ -49,7 +49,7 @@ export interface RecordActivityItem {
   id: string;
   title: string;
   type: string;
-  status: string;
+  status: string | null;
   createdAt: string;
 }
 
@@ -63,8 +63,8 @@ export interface RecordsSummary {
     rejected: number;
   };
   byType: Record<string, number>;
-  recentActivity: RecordActivityItem[];
-  generatedAt: string;
+  recent: RecordActivityItem[];
+  timestamp: string;
 }
 
 export interface NoticeActivityItem {
@@ -96,7 +96,7 @@ export interface NoticesSummary {
     averageCommentPeriodDays?: number;
   };
   recentActivity: NoticeActivityItem[];
-  generatedAt: string;
+  timestamp: string;
 }
 
 // ─── Participation ────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ export interface ParticipationSummary {
     other: number;
   };
   activeNotices: number;
-  generatedAt: string;
+  timestamp: string;
 }
 
 // ─── Evidence ─────────────────────────────────────────────────────────────────
@@ -134,7 +134,7 @@ export interface EvidenceSummary {
   };
   withWeatherContext: number;
   totalSizeBytes?: number;
-  generatedAt: string;
+  timestamp: string;
 }
 
 // ─── Commercial ───────────────────────────────────────────────────────────────
@@ -177,8 +177,8 @@ export interface CommercialSummary {
     total: number;
     active: number;
   };
-  recentActivity: CommercialActivityItem[];
-  generatedAt: string;
+  recent: CommercialActivityItem[];
+  timestamp: string;
 }
 
 // ─── TCRS ─────────────────────────────────────────────────────────────────────
@@ -187,12 +187,13 @@ export interface TcrsSummary {
   total: number;
   byResolutionState: {
     pending: number;
+    partial: number;
     resolved: number;
     escalated: number;
   };
   escalated: number;
   averageResolutionDays?: number;
-  generatedAt: string;
+  timestamp: string;
 }
 
 // ─── Institutional memory ─────────────────────────────────────────────────────
@@ -206,7 +207,7 @@ export interface LineageSummary {
     proofOfPublication: number;
     journeyMaps: number;
   };
-  generatedAt: string;
+  timestamp: string;
 }
 
 // ─── Client factory ───────────────────────────────────────────────────────────
