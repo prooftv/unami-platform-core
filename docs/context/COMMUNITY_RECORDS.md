@@ -233,6 +233,18 @@ PUT  /records/:id/status             Transition status (auth — content_admin+)
 No DELETE route. Records are immutable once created.
 No PUT route for content — only status transitions after creation.
 
+**Application boundary rule:**
+The Edge Function is a platform capability. It validates the record payload against platform rules.
+It does not know what a Community Meeting, Community Concern, or Infrastructure Update is.
+It knows only that `type` must be a non-empty string and that the payload is structurally valid.
+
+The mapping from display labels to type values belongs in `apps/admin/src/domain/moments/`.
+The same principle applies to Umkhandlu — its domain owns `minutes`, `resolution`, `land-allocation`.
+Neither application's vocabulary leaks into the Edge Function.
+
+The test: the Edge Function must compile and operate correctly if both `apps/admin` and `apps/umkhandlu`
+are deleted. It has no knowledge of either application's type vocabulary.
+
 **Validation (in Edge Function, not DB):**
 - `type` must be one of the 8 Moments types
 - `moment_id` must reference a moment that exists and is `broadcasted`

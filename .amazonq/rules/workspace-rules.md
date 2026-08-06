@@ -36,37 +36,32 @@ Do not begin a new phase until the previous phase is complete and documented.
 - Fix bugs only — no speculative improvements to infrastructure
 
 ## Current priority
-Phase 18 — Unami Control Centre. Active.
+Phase 17D — Community Records. Active.
 
-Moments (Phase 17) is engineering-complete and frozen. Do not touch `apps/admin`, `apps/web`,
-or any Moments Edge Functions unless a production bug requires it.
+Phase 17 engineering is resuming. Moments was marked engineering-complete at 17J but Phase 17D
+(Community Records) was not yet implemented. Implementation follows COMMUNITY_RECORDS.md exactly.
 
-Phase 18 is the first new application on the platform. It validates multi-application federation.
-The constitutional reference is `docs/abstractions/umkhandlu/` (13 documents).
-Read `12_IMPLEMENTATION_ROADMAP.md` and `09_PLATFORM_MAPPING.md` before writing any code.
+Implementation sequence (do not skip steps):
+1. ✅ DATABASE_SCHEMA.md updated
+2. ✅ Migration 008 written
+3. ⏳ Edge Function — `supabase/functions/records/index.ts`
+4. ⏳ API client — `packages/api/src/clients/records.ts`
+5. ⏳ Admin UI — records section on moment detail, create form, status transitions
+6. ⏳ Public PWA — Community Timeline on moment detail, record detail page
 
-Phase 18 sub-phases (in order — do not skip):
-- **18A** ⚠️ Foundation — scaffold correct (cleanup: remove CRUD screens, define node registry, define node API contract)
-- **18B** Node Connection — connect to first governance node via read-only API, data model alignment
-- **18C** Node Health View — per-node health dashboard, record/notice/project counts, status distributions
-- **18D** Cross-Node Aggregation — multi-node view, regional intelligence, comparative performance
-- **18E** Commercial Intelligence — RAG distribution, deliverables, beneficiary tracking, projections
-- **18F** TCRS Escalation Surface — conflict logs, authority classification, escalation tracking
-- **18G** Institutional Memory — lineage views, provenance, Layer 5 derived outputs
+Phase 18 (Unami Control Centre) resumes after Phase 17D is complete.
 
-## Phase 17 — Moments Product Completion ✅ Engineering Complete
-All ten sub-phases complete. Frozen. Ops gates remaining (see `docs/LAUNCH_CHECKLIST.md`).
-
+## Phase 17 — Moments Product Completion ⏳ Active (17D in progress)
 - **17A** ✅ Public PWA Foundation
 - **17B** ✅ Content Ownership Constitution
 - **17C** ✅ Sanity Editorial Layer
-- **17D** ✅ Governance Adaptation
-- **17E** ✅ Public Participation Engine
-- **17F** ✅ Evidence Layer
-- **17G** ✅ Commercial Layer
-- **17H** ✅ Intelligence Foundation
-- **17I** ✅ WhatsApp Integration
-- **17J** ✅ Production Validation — engineering complete, ops pending
+- **17D** ⏳ Community Records — migration done, Edge Function next
+- **17E** ⏳ Public Participation Engine
+- **17F** ⏳ Evidence Layer
+- **17G** ⏳ Commercial Layer
+- **17H** ⏳ Intelligence Foundation
+- **17I** ⏳ WhatsApp Integration
+- **17J** ⏳ Production Validation
 
 ## Phase 18 rules — Unami Control Centre
 - `apps/umkhandlu` is the Unami Control Centre — a read-oriented intelligence application, not a governance editor
