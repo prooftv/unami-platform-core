@@ -13,9 +13,10 @@
 3. Read `docs/context/architecture.md` — layer boundaries, data flow, current phase
 4. Read `docs/context/decisions.md` — decisions that must not be reversed
 5. Read `docs/context/security-model.md` — auth and RBAC rules
-6. Check `docs/DATABASE_SCHEMA.md` before any schema changes
-7. Check `docs/context/CONTENT_OWNERSHIP.md` before any content or CMS decisions (Phase 17B+)
-8. Check `docs/context/COMMERCIAL_DOMAIN.md` before any commercial, campaign, or project decisions
+6. Read `docs/context/ECOSYSTEM.md` — canonical ecosystem diagram, repository boundaries, ownership rules
+7. Check `docs/DATABASE_SCHEMA.md` before any schema changes
+8. Check `docs/context/CONTENT_OWNERSHIP.md` before any content or CMS decisions (Phase 17B+)
+9. Check `docs/context/COMMERCIAL_DOMAIN.md` before any commercial, campaign, or project decisions
 
 ## What this repository is now
 Unami Platform Core v1.0 is complete. This is application validation work — not platform engineering.
