@@ -133,3 +133,42 @@ export async function uploadEvidenceAction(momentId: string, formData: FormData)
     return { error: err instanceof Error ? err.message : 'Upload failed' };
   }
 }
+
+// ── Community Records ─────────────────────────────────────────────────────────
+
+export async function createRecordAction(momentId: string, payload: {
+  type: string;
+  title: string;
+  content: string;
+  approvedBy?: string | null;
+  parentRecordId?: string | null;
+}): Promise<{ error?: string; id?: string }> {
+  const api = await getApiClient();
+  if (!api) return { error: 'Not authenticated' };
+  try {
+    const res = await api.records.create({
+      type:           payload.type,
+      title:          payload.title,
+      content:        payload.content,
+      approvedBy:     payload.approvedBy ?? null,
+      parentRecordId: payload.parentRecordId ?? null,
+      momentId,
+    });
+    revalidatePath(`/moments/${momentId}`);
+    return { id: res.data.id };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to create record' };
+  }
+}
+
+export async function transitionRecordStatusAction(momentId: string, recordId: string, status: string): Promise<{ error?: string }> {
+  const api = await getApiClient();
+  if (!api) return { error: 'Not authenticated' };
+  try {
+    await api.records.transitionStatus(recordId, status as import('@unami/api').RecordStatus);
+    revalidatePath(`/moments/${momentId}`);
+    return {};
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to transition status' };
+  }
+}

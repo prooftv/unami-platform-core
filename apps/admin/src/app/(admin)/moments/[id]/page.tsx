@@ -10,11 +10,12 @@ export default async function MomentDetailPage({ params }: { params: Promise<{ i
   const api = await getApiClient();
   if (!api) redirect('/dashboard');
 
-  const [moment, broadcastsResult, stats, evidenceResult] = await Promise.all([
+  const [moment, broadcastsResult, stats, evidenceResult, recordsResult] = await Promise.all([
     api.moments.get(id).catch(() => null),
     api.broadcasts.list({ limit: 10, page: 1, momentId: id }).catch(() => null),
     api.moments.stats(id).catch(() => null),
     api.evidence.list(id).catch(() => [] as import('@unami/api').EvidenceRecord[]),
+    api.records.list({ momentId: id, limit: 50 }).catch(() => null),
   ]);
 
   if (!moment) notFound();
@@ -26,6 +27,7 @@ export default async function MomentDetailPage({ params }: { params: Promise<{ i
       broadcasts={broadcastsResult?.data ?? []}
       stats={stats}
       evidence={evidenceResult}
+      records={recordsResult?.data ?? []}
     />
   );
 }

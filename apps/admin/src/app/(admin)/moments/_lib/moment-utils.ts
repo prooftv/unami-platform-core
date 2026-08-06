@@ -1,4 +1,7 @@
 import type { AdminSession } from '@unami/api';
+import { RECORD_ELIGIBLE_MOMENT_TYPES } from '@/domain/moments/enums';
+
+export { RECORD_ELIGIBLE_MOMENT_TYPES };
 
 // ── Badge variants ────────────────────────────────────────────────────────────
 

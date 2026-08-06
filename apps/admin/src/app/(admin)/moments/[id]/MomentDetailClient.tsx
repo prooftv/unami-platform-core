@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PageHeader } from '@unami/ui';
 import { Send, Pencil, XCircle } from 'lucide-react';
-import type { MomentWithSponsor, AdminSession, BroadcastWithMoment, EvidenceRecord } from '@unami/api';
+import type { MomentWithSponsor, AdminSession, BroadcastWithMoment, EvidenceRecord, PlatformRecord } from '@unami/api';
 import { broadcastMomentAction, cancelMomentAction } from '../_actions/moment-actions';
-import { STATUS_VARIANT, BROADCAST_VARIANT, canEditMoment, canBroadcastMoment, canCancelMoment } from '../_lib/moment-utils';
+import { STATUS_VARIANT, BROADCAST_VARIANT, canEditMoment, canBroadcastMoment, canCancelMoment, RECORD_ELIGIBLE_MOMENT_TYPES } from '../_lib/moment-utils';
 import { EvidencePanel } from './EvidencePanel';
+import { RecordsPanel } from './RecordsPanel';
 
 interface Props {
   moment: MomentWithSponsor;
@@ -19,9 +20,10 @@ interface Props {
   broadcasts: BroadcastWithMoment[];
   stats: { viewCount: number; commentCount: number; shareCount: number; reactionCount: number; updatedAt: string } | null;
   evidence: EvidenceRecord[];
+  records: PlatformRecord[];
 }
 
-export function MomentDetailClient({ moment, session, broadcasts, stats, evidence }: Props) {
+export function MomentDetailClient({ moment, session, broadcasts, stats, evidence, records }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -189,6 +191,14 @@ export function MomentDetailClient({ moment, session, broadcasts, stats, evidenc
           initialEvidence={evidence}
           canUpload={session.role === 'superadmin' || session.role === 'content_admin'}
         />
+
+        {RECORD_ELIGIBLE_MOMENT_TYPES.has(moment.momentType) && (
+          <RecordsPanel
+            momentId={moment.id}
+            initialRecords={records}
+            canManage={session.role === 'superadmin' || session.role === 'content_admin'}
+          />
+        )}
       </div>
     </div>
   );

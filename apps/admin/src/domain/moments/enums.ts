@@ -213,3 +213,64 @@ export const AuthorityProfileStatus = {
   EXPIRED: 'expired',
 } as const;
 export type AuthorityProfileStatus = (typeof AuthorityProfileStatus)[keyof typeof AuthorityProfileStatus];
+
+// ---------------------------------------------------------------------------
+// Community Records — Moments vocabulary for platform records.type
+// The platform records table accepts any string. These are the 8 Moments types.
+// ---------------------------------------------------------------------------
+
+export const CommunityRecordType = {
+  COMMUNITY_MEETING:          'community-meeting',
+  COMMUNITY_DECISION:         'community-decision',
+  COMMUNITY_REPORT:           'community-report',
+  COMMUNITY_CONCERN:          'community-concern',
+  COMMUNITY_OUTCOME:          'community-outcome',
+  INFRASTRUCTURE_UPDATE:      'infrastructure-update',
+  INFRASTRUCTURE_COMPLETION:  'infrastructure-completion',
+  COMMUNITY_POLICY:           'community-policy',
+} as const;
+export type CommunityRecordType = (typeof CommunityRecordType)[keyof typeof CommunityRecordType];
+
+export const COMMUNITY_RECORD_TYPE_LABELS: Record<CommunityRecordType, string> = {
+  'community-meeting':         'Community Meeting',
+  'community-decision':        'Community Decision',
+  'community-report':          'Community Report',
+  'community-concern':         'Community Concern',
+  'community-outcome':         'Community Outcome',
+  'infrastructure-update':     'Infrastructure Update',
+  'infrastructure-completion': 'Infrastructure Completion',
+  'community-policy':          'Community Policy',
+};
+
+export const CommunityRecordStatus = {
+  PENDING:  'pending',
+  ADOPTED:  'adopted',
+  APPROVED: 'approved',
+  RESOLVED: 'resolved',
+  REJECTED: 'rejected',
+} as const;
+export type CommunityRecordStatus = (typeof CommunityRecordStatus)[keyof typeof CommunityRecordStatus];
+
+export const COMMUNITY_RECORD_STATUS_VARIANT: Record<CommunityRecordStatus, 'outline' | 'secondary' | 'default' | 'destructive'> = {
+  pending:  'outline',
+  adopted:  'default',
+  approved: 'default',
+  resolved: 'secondary',
+  rejected: 'destructive',
+};
+
+// Status transitions available from pending — the only mutable state
+export const COMMUNITY_RECORD_TRANSITIONS: Record<CommunityRecordType, CommunityRecordStatus[]> = {
+  'community-meeting':         ['adopted'],
+  'community-decision':        ['approved', 'rejected'],
+  'community-report':          ['adopted'],
+  'community-concern':         ['resolved', 'rejected'],
+  'community-outcome':         ['resolved'],
+  'infrastructure-update':     ['adopted'],
+  'infrastructure-completion': ['approved'],
+  'community-policy':          ['adopted', 'approved'],
+};
+
+// Moment types that can have Community Records attached
+export const RECORD_ELIGIBLE_MOMENT_TYPES = new Set(['community', 'infrastructure', 'consultation']);
+
