@@ -380,6 +380,24 @@ This work is a dedicated platform milestone — not an unplanned refactor.
 It is scheduled after Phase 16 (package rename) is complete.
 `apps/admin` remains the reference implementation that the shell framework will be extracted from.
 
+## D-040: Derived views never become source data
+
+Intelligence and aggregated views are always derived at query time from underlying facts.
+They are never stored as a separate table or materialised as source data.
+
+This applies to:
+- Community Timeline — assembled from records, evidence, participation_log, campaigns by moment_id
+- Commercial Dashboard — derived from campaigns, budget_transactions, deliverables_certified
+- Control Centre intelligence — derived from node API responses at request time
+- Institutional Memory views — derived from records lineage chains
+
+The rule: if a view can be reconstructed from existing facts, it must not be stored separately.
+Storing derived data creates synchronisation debt, duplication risk, and false authority.
+
+The only exception: `node_snapshots` in the Control Centre — a time-series cache of external
+node state that cannot be reconstructed after the fact. Snapshots are explicitly labelled as
+cache, not source data, and are never used as the authoritative record of node state.
+
 ## D-038: Governance Node API contract v1.0 — field names are canonical
 
 The live node at `umkhandlu.unamifoundation.org` defines the authoritative field names.

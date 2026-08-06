@@ -822,7 +822,8 @@ Institutional memory nodes with lineage. The governance equivalent of a moment.
 | authority_id | TEXT | nullable | Governance authority identifier |
 | approved_by | TEXT | nullable | Person who approved |
 | parent_record_id | UUID | FK records(id) ON DELETE SET NULL, nullable | Lineage chain |
-| origin_notice_id | UUID | FK notices(id) ON DELETE SET NULL, nullable | Origin notice |
+| origin_notice_id | UUID | FK notices(id) ON DELETE SET NULL, nullable | Origin notice — used by Umkhandlu and governance nodes |
+| moment_id | UUID | FK moments(id) ON DELETE SET NULL, nullable | Originating moment — used by Moments only. Optional. |
 | weather_context | JSONB | nullable | WeatherSnapshot — auto-captured |
 | created_by | TEXT | NOT NULL | Admin user ID |
 | created_at | TIMESTAMPTZ | NOT NULL, default NOW() | |
@@ -832,8 +833,9 @@ Institutional memory nodes with lineage. The governance equivalent of a moment.
 - Records are immutable once status reaches terminal state (adopted/approved/resolved/rejected).
 - New records reference old ones via `parent_record_id` — the chain is never broken.
 - `weather_context` is auto-captured, never manually entered.
+- `moment_id` is set on creation and never changed. Null is permitted — orphan records are allowed but discouraged.
 
-**RLS:** anon: no access. authenticated: read. service_role: all.
+**RLS:** anon: SELECT where linked moment is `broadcasted` and `publish_to_pwa = true`. authenticated: read. service_role: all.
 
 ---
 
