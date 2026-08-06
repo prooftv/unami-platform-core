@@ -30,6 +30,8 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1 text-sm">
             <Link href="/feed" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">Feed</Link>
+            <Link href="/projects" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">Projects</Link>
+            <Link href="/intelligence" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">Intelligence</Link>
             <Link href="/search" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">Search</Link>
             <Link href="/sponsors" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">Sponsors</Link>
             <Link href="/campaigns" className="rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">Campaigns</Link>

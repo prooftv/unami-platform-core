@@ -1,6 +1,7 @@
 export { ApiError } from './http';
 export type { ApiConfig } from './http';
 export type * from './types/index';
+export type { PublicProject, ListPublicProjectsParams } from './clients/public-projects';
 export type { PublicMoment, PublicListParams } from './clients/public-moments';
 export type { ParticipationResponseType, ParticipationRelationship, SubmitParticipationInput, ParticipationResult } from './clients/participation';
 export type { EvidenceRecord, UploadEvidenceInput } from './clients/evidence';
@@ -27,6 +28,7 @@ export type {
   GovernanceNodeClient,
 } from './clients/governance-node';
 
+import { createPublicProjectsClient } from './clients/public-projects';
 import { createPublicMomentsClient } from './clients/public-moments';
 import { createPublicParticipationClient } from './clients/participation';
 import { createEvidenceClient, createPublicEvidenceClient } from './clients/evidence';
@@ -58,6 +60,7 @@ export function createPublicApiClient(config: ApiClientConfig) {
     participation: createPublicParticipationClient(config),
     evidence:      createPublicEvidenceClient(config),
     records:       createPublicRecordsClient(config),
+    projects:      createPublicProjectsClient(config),
   };
 }
 

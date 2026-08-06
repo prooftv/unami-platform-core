@@ -72,6 +72,10 @@ Deno.serve(async (req: Request) => {
   const parts = url.pathname.replace(/^\/campaigns\/?/, '').split('/').filter(Boolean);
 
   try {
+    // Public routes — anon access, CSR projects only
+    if (req.method === 'GET' && parts[0] === 'public' && parts[1] === 'projects' && parts.length === 2) return await listPublicProjects(req, cors);
+    if (req.method === 'GET' && parts[0] === 'public' && parts[1] === 'projects' && parts.length === 3) return await getPublicProject(req, parts[2], cors);
+
     if (req.method === 'GET' && parts.length === 0) return await listCampaigns(req, cors);
     if (req.method === 'GET' && parts[0] === 'budget') return await budgetOverview(req, cors);
     if (req.method === 'GET' && parts.length === 1) return await getCampaign(req, parts[0], cors);
@@ -315,4 +319,57 @@ async function budgetOverview(req: Request, cors: Record<string, string>) {
   );
 
   return json(results, 200, cors);
+}
+
+// ---------------------------------------------------------------------------
+// Public routes — anon access, CSR projects only
+// ---------------------------------------------------------------------------
+
+function publicClient() {
+  return createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+  );
+}
+
+async function listPublicProjects(req: Request, cors: Record<string, string>) {
+  const url = new URL(req.url);
+  const page   = parseInt(url.searchParams.get('page')  ?? '1');
+  const limit  = parseInt(url.searchParams.get('limit') ?? '20');
+  const health = url.searchParams.get('health');
+  const region = url.searchParams.get('region');
+  const offset = (page - 1) * limit;
+
+  const supabase = publicClient();
+  let query = supabase
+    .from('campaigns')
+    .select('*, sponsor:sponsors(display_name, logo_url)', { count: 'exact' })
+    .eq('campaign_type', 'csr')
+    .in('status', ['active', 'completed', 'published']);
+
+  if (health) query = query.eq('project_health', health);
+  if (region) query = query.contains('target_regions', [region]);
+  query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+
+  const { data, error, count } = await query;
+  if (error) return err(error.message, 500, cors);
+
+  return json({
+    data,
+    pagination: { page, limit, total: count ?? 0, totalPages: Math.ceil((count ?? 0) / limit) },
+  }, 200, cors);
+}
+
+async function getPublicProject(req: Request, id: string, cors: Record<string, string>) {
+  const supabase = publicClient();
+  const { data, error } = await supabase
+    .from('campaigns')
+    .select('*, sponsor:sponsors(display_name, logo_url)')
+    .eq('id', id)
+    .eq('campaign_type', 'csr')
+    .in('status', ['active', 'completed', 'published'])
+    .single();
+
+  if (error) return err('Project not found', 404, cors);
+  return json({ data }, 200, cors);
 }
