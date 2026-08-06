@@ -17,7 +17,8 @@
 7. Check `docs/DATABASE_SCHEMA.md` before any schema changes
 8. Check `docs/context/CONTENT_OWNERSHIP.md` before any content or CMS decisions (Phase 17B+)
 9. Check `docs/context/MOMENTS_EVOLUTION.md` before any Phase 17D–17H implementation
-10. Check `docs/context/COMMERCIAL_DOMAIN.md` before any commercial, campaign, or project decisions
+10. Check `docs/context/COMMUNITY_RECORDS.md` before any Phase 17D implementation (records, timeline, admin UI)
+11. Check `docs/context/COMMERCIAL_DOMAIN.md` before any commercial, campaign, or project decisions
 
 ## What this repository is now
 Unami Platform Core v1.0 is complete. This is application validation work — not platform engineering.

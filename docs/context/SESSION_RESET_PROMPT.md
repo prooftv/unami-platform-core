@@ -53,8 +53,9 @@ For WhatsApp or broadcast work, also read:
 
 For Moments evolution (Phase 17D onward), also read:
 9. `docs/context/MOMENTS_EVOLUTION.md`
-10. `docs/abstractions/umkhandlu/11_MOMENTS_ADAPTATION.md`
-11. `docs/abstractions/umkhandlu/09_PLATFORM_MAPPING.md`
+10. `docs/context/COMMUNITY_RECORDS.md` (Phase 17D specifically)
+11. `docs/abstractions/umkhandlu/11_MOMENTS_ADAPTATION.md`
+12. `docs/abstractions/umkhandlu/09_PLATFORM_MAPPING.md`
 
 For governance node or Control Centre work, also read:
 9. `docs/context/GOVERNANCE_NODE_API.md`
