@@ -12,7 +12,7 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'GET' && parts.length === 1) return await getBroadcast(req, parts[0], cors);
     return err('Not found', 404, cors);
   } catch (e) {
-    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.50.0');
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     await logError(supabase, 'broadcasts_function', (e as Error).message, { url: req.url });
     return err('Internal server error', 500, cors);

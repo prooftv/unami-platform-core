@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 export type AdminRole = 'superadmin' | 'content_admin' | 'moderator' | 'viewer';
 

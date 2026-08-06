@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { requireAuth, corsHeaders, json, err, logError } from '../_shared/auth.ts';
 
 const ALLOWED_MIME_TYPES = new Set([

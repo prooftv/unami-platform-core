@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { z } from 'https://esm.sh/zod@3';
 import { requireAuth, corsHeaders, json, err, logAudit, logError } from '../_shared/auth.ts';
 
@@ -188,6 +188,8 @@ async function createCampaign(req: Request, cors: Record<string, string>) {
   await logAudit(supabase, context.userId, 'create', 'campaign', data.id, parsed.data);
   return json(data, 201, cors);
 }
+
+async function updateCampaign(req: Request, id: string, cors: Record<string, string>) {
   const auth = await requireAuth(req, ['superadmin', 'content_admin']);
   if (auth instanceof Response) return auth;
   const { context, supabase } = auth;
