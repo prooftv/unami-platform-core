@@ -9,25 +9,26 @@ export type NodeCapability =
   | 'commercial'
   | 'tcrs'
   | 'institutional-memory'
-  | 'health';
+  | 'health'
+  | 'operators';
 
 // ─── Node identity ────────────────────────────────────────────────────────────
+
+export interface GovernanceNodeLocation {
+  province: string;
+  district?: string;
+  municipality: string;
+  locality?: string;
+}
 
 export interface GovernanceNodeIdentity {
   id: string;
   name: string;
   authority: string;
-  location: string | { province?: string; municipality?: string };
-  version: string;
+  location: GovernanceNodeLocation;
   contractVersion: string;
   capabilities: NodeCapability[];
-  timezone: string;
-  // optional
-  description?: string;
-  website?: string;
-  logo?: string;
-  contactEmail?: string;
-  establishedDate?: string;
+  timestamp: string;
 }
 
 // ─── Health ───────────────────────────────────────────────────────────────────

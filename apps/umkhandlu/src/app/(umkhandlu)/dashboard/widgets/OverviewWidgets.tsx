@@ -7,7 +7,6 @@ import type { NodeHealth, GovernanceNodeIdentity, RecordsSummary, NoticesSummary
 
 function formatLocation(location: GovernanceNodeIdentity['location']): string {
   if (!location) return '';
-  if (typeof location === 'string') return location;
   return [location.municipality, location.province].filter(Boolean).join(', ');
 }
 
@@ -342,7 +341,7 @@ export function CrossNodeWidget({ snapshots }: { snapshots: NodeSnapshot[] }) {
 // ── Capability Matrix Widget ──────────────────────────────────────────────────
 
 const ALL_CAPABILITIES = [
-  'governance', 'participation', 'evidence', 'commercial', 'tcrs', 'institutional-memory',
+  'governance', 'participation', 'evidence', 'commercial', 'tcrs', 'institutional-memory', 'operators',
 ] as const;
 
 export function NodeCapabilityMatrixWidget({ nodes }: { nodes: NodeWithHealth[] }) {

@@ -5,7 +5,7 @@ import { fetchNodeIdentity } from '@/lib/nodes/fetcher';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MapPin, Globe, Cpu } from 'lucide-react';
+import { ArrowLeft, MapPin, Cpu } from 'lucide-react';
 import { NodeOperatorsWidget } from '@/app/(umkhandlu)/dashboard/widgets/OperatorWidgets';
 
 const CAPABILITY_LABELS: Record<string, string> = {
@@ -16,12 +16,12 @@ const CAPABILITY_LABELS: Record<string, string> = {
   'tcrs':                 'TCRS',
   'institutional-memory': 'Institutional Memory',
   'health':               'Health',
+  'operators':            'Operators',
 };
 
-function formatLocation(location: string | { province?: string; municipality?: string } | null): string {
+function formatLocation(location: { province: string; district?: string; municipality: string; locality?: string } | null): string {
   if (!location) return '—';
-  if (typeof location === 'string') return location;
-  return [location.municipality, location.province].filter(Boolean).join(', ');
+  return [location.locality, location.municipality, location.province].filter(Boolean).join(', ');
 }
 
 export default async function NodeProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -54,17 +54,9 @@ export default async function NodeProfilePage({ params }: { params: Promise<{ id
                 <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>{formatLocation(identity.location)}</span>
               </div>
-              {identity.website && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <a href={identity.website} target="_blank" rel="noopener noreferrer" className="hover:underline truncate">
-                    {identity.website}
-                  </a>
-                </div>
-              )}
               <div className="flex items-center gap-2 text-sm">
                 <Cpu className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <span>Contract v{identity.contractVersion} · Node v{identity.version}</span>
+                <span>Contract v{identity.contractVersion}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground text-xs">Node ID</span>
@@ -89,14 +81,6 @@ export default async function NodeProfilePage({ params }: { params: Promise<{ id
             </CardContent>
           </Card>
         </div>
-
-        {identity.description && (
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-sm text-muted-foreground">{identity.description}</p>
-            </CardContent>
-          </Card>
-        )}
 
         {operators ? (
           <NodeOperatorsWidget
