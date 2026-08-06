@@ -16,7 +16,7 @@ export type { ParticipationStats, EvidenceStats, ProjectHealthSummary, ActivityE
 export type { FeatureFlag, SystemSetting, AuditLogEntry, ErrorLogEntry } from './clients/settings';
 export type { UserProfile } from './clients/user-profiles';
 export type { MediaRecord, UploadMediaResult } from './clients/media';
-export type { GovernanceRecord, GovernanceRecordType, GovernanceRecordStatus, CreateRecordInput, UpdateRecordInput } from './clients/records';
+export type { PlatformRecord, RecordStatus, CreateRecordInput, UpdateRecordInput, ListRecordsParams } from './clients/records';
 export type { GovernanceNotice, GovernanceNoticeType, GovernanceNoticeStatus, CreateNoticeInput, UpdateNoticeInput } from './clients/notices';
 export type {
   NodeCapability, NodeHealthStatus,
@@ -42,7 +42,7 @@ import { createAnalyticsClient } from './clients/analytics';
 import { createSettingsClient } from './clients/settings';
 import { createUserProfilesClient } from './clients/user-profiles';
 import { createMediaClient } from './clients/media';
-import { createRecordsClient } from './clients/records';
+import { createRecordsClient, createPublicRecordsClient } from './clients/records';
 import { createNoticesClient } from './clients/notices';
 import { createGovernanceNodeClient } from './clients/governance-node';
 
@@ -54,9 +54,10 @@ export interface ApiClientConfig {
 // Public client — uses anon key as token, no user auth required
 export function createPublicApiClient(config: ApiClientConfig) {
   return {
-    moments: createPublicMomentsClient(config),
+    moments:       createPublicMomentsClient(config),
     participation: createPublicParticipationClient(config),
-    evidence: createPublicEvidenceClient(config),
+    evidence:      createPublicEvidenceClient(config),
+    records:       createPublicRecordsClient(config),
   };
 }
 
