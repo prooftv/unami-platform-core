@@ -16,11 +16,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function MomentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const api = getPublicApiClient();
-  const [moment, evidence] = await Promise.all([
+  const [moment, evidence, recordsResult] = await Promise.all([
     api.moments.get(id).catch(() => null),
     api.evidence.list(id).catch(() => []),
+    api.records.list({ momentId: id, limit: 50 }).catch(() => null),
   ]);
   if (!moment) notFound();
+
+  const records = recordsResult?.data ?? [];
 
   // Fire-and-forget weather capture — server side only, never blocks render
   const weather = await fetchWeather(moment.region, moment.createdAt).catch(() => null);
@@ -34,6 +37,22 @@ export default async function MomentDetailPage({ params }: { params: Promise<{ i
     opportunity: 'Opportunity',
     infrastructure: 'Infrastructure Update',
     consultation: 'Public Consultation',
+  };
+
+  const RECORD_TYPE_LABELS: Record<string, string> = {
+    'community-meeting':         'Community Meeting',
+    'community-decision':        'Community Decision',
+    'community-report':          'Community Report',
+    'community-concern':         'Community Concern',
+    'community-outcome':         'Community Outcome',
+    'infrastructure-update':     'Infrastructure Update',
+    'infrastructure-completion': 'Infrastructure Completion',
+    'community-policy':          'Community Policy',
+  };
+
+  const RECORD_STATUS_LABEL: Record<string, string> = {
+    pending: 'Pending', adopted: 'Adopted', approved: 'Approved',
+    resolved: 'Resolved', rejected: 'Rejected',
   };
 
   const isConsultation = moment.momentType === 'consultation';
@@ -128,6 +147,39 @@ export default async function MomentDetailPage({ params }: { params: Promise<{ i
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {records.length > 0 && ['community', 'infrastructure', 'consultation'].includes(moment.momentType ?? '') && (
+        <div className="space-y-3">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Community Timeline</p>
+          <ol className="space-y-3">
+            {records.map((record) => (
+              <li key={record.id} className="rounded-md border px-4 py-3 space-y-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {RECORD_TYPE_LABELS[record.type] ?? record.type}
+                  </span>
+                  <span className="text-xs rounded-full border px-2 py-0.5 shrink-0">
+                    {RECORD_STATUS_LABEL[record.status] ?? record.status}
+                  </span>
+                </div>
+                <p className="text-sm font-medium leading-snug">{record.title}</p>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {record.content.slice(0, 200)}{record.content.length > 200 ? '…' : ''}
+                </p>
+                <div className="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
+                  <time>{new Date(record.createdAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}</time>
+                  <Link
+                    href={`/moments/${id}/records/${record.id}`}
+                    className="text-primary hover:underline"
+                  >
+                    View full record →
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
       )}
 
