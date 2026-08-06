@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Cpu, CheckCircle2, AlertTriangle, WifiOff, ExternalLink } from 'lucide-react';
 import { NodeActions } from './_components/NodeActions';
 import { AddNodeForm } from './_components/AddNodeForm';
-import type { NodeHealth } from '@unami/api';
+import type { NodeHealth, GovernanceNodeIdentity } from '@unami/api';
 
 const STATUS_ICON = {
   healthy:     <CheckCircle2 className="h-4 w-4 text-green-500" />,
@@ -22,12 +22,10 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
   unreachable: 'destructive',
 };
 
-async function safeHealth(url: string, apiKey: string): Promise<NodeHealth | null> {
-  try {
-    return await getNodeClient(url, apiKey).health();
-  } catch {
-    return null;
-  }
+function formatLocation(location: GovernanceNodeIdentity['location'] | null): string {
+  if (!location) return '';
+  return [location.locality, location.municipality, location.district, location.province]
+    .filter(Boolean).join(', ');
 }
 
 export default async function NodesPage() {
@@ -36,10 +34,15 @@ export default async function NodesPage() {
   const nodes = await getAllNodes();
 
   const nodesWithHealth = await Promise.all(
-    nodes.map(async (node) => ({
-      node,
-      health: node.active ? await safeHealth(node.url, node.api_key) : null,
-    })),
+    nodes.map(async (node) => {
+      if (!node.active) return { node, identity: null, health: null };
+      const client = getNodeClient(node.url, node.api_key);
+      const [identity, health] = await Promise.all([
+        client.identity().catch(() => null) as Promise<GovernanceNodeIdentity | null>,
+        client.health().catch(() => null) as Promise<NodeHealth | null>,
+      ]);
+      return { node, identity, health };
+    }),
   );
 
   return (
@@ -62,13 +65,13 @@ export default async function NodesPage() {
             </CardContent>
           </Card>
         ) : (
-          nodesWithHealth.map(({ node, health }) => (
+          nodesWithHealth.map(({ node, identity, health }) => (
             <Card key={node.id} className={!node.active ? 'opacity-60' : undefined}>
               <CardHeader className="border-b pb-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <CardTitle className="text-base">{node.name}</CardTitle>
-                    <CardDescription className="mt-0.5">{node.authority}</CardDescription>
+                    <CardTitle className="text-base">{identity?.name ?? node.name}</CardTitle>
+                    <CardDescription className="mt-0.5">{identity?.authority ?? node.authority}</CardDescription>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {!node.active && <Badge variant="outline">Inactive</Badge>}
@@ -82,12 +85,12 @@ export default async function NodesPage() {
               </CardHeader>
               <CardContent className="pt-4 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {node.location && (
+                  {(identity?.location || node.location) && (
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">Location</p>
                       <div className="flex items-center gap-1.5 text-sm">
                         <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        {node.location}
+                        {identity ? formatLocation(identity.location) : node.location}
                       </div>
                     </div>
                   )}
@@ -95,7 +98,7 @@ export default async function NodesPage() {
                     <p className="text-xs font-medium text-muted-foreground">Contract Version</p>
                     <div className="flex items-center gap-1.5 text-sm">
                       <Cpu className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      v{node.contract_version}
+                      v{identity?.contractVersion ?? node.contract_version}
                     </div>
                   </div>
                   {health && (
@@ -115,11 +118,11 @@ export default async function NodesPage() {
                   )}
                 </div>
 
-                {node.capabilities.length > 0 && (
+                {((identity?.capabilities ?? node.capabilities).length > 0) && (
                   <div className="space-y-1.5">
                     <p className="text-xs font-medium text-muted-foreground">Capabilities</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {node.capabilities.map((cap) => (
+                      {(identity?.capabilities ?? node.capabilities).map((cap) => (
                         <Badge key={cap} variant="outline" className="text-xs">{cap}</Badge>
                       ))}
                     </div>
