@@ -16,7 +16,8 @@
 6. Read `docs/context/ECOSYSTEM.md` — canonical ecosystem diagram, repository boundaries, ownership rules
 7. Check `docs/DATABASE_SCHEMA.md` before any schema changes
 8. Check `docs/context/CONTENT_OWNERSHIP.md` before any content or CMS decisions (Phase 17B+)
-9. Check `docs/context/COMMERCIAL_DOMAIN.md` before any commercial, campaign, or project decisions
+9. Check `docs/context/MOMENTS_EVOLUTION.md` before any Phase 17D–17H implementation
+10. Check `docs/context/COMMERCIAL_DOMAIN.md` before any commercial, campaign, or project decisions
 
 ## What this repository is now
 Unami Platform Core v1.0 is complete. This is application validation work — not platform engineering.
