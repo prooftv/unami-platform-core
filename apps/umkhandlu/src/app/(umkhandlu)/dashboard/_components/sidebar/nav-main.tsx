@@ -31,10 +31,11 @@ export function NavMain({ items }: { items: readonly NavGroup[] }) {
 
   const isItemActive = (item: NavMainItem) => {
     if (hasSubItems(item)) return item.subItems.some((sub) => path.startsWith(sub.url));
-    return path === item.url;
+    if (item.url === '/dashboard') return path === item.url;
+    return path.startsWith(item.url);
   };
 
-  const isSubItemActive = (url: string) => path === url;
+  const isSubItemActive = (url: string) => path.startsWith(url);
   const isSubmenuOpen = (item: NavMainParentItem) => item.subItems.some((sub) => path.startsWith(sub.url));
 
   return (

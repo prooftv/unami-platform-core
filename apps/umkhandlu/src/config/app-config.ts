@@ -1,4 +1,4 @@
 export const APP_CONFIG = {
   name: 'Umkhandlu',
-  subtitle: 'Governance intelligence',
+  subtitle: 'Governance Intelligence Platform',
 } as const;
