@@ -44,11 +44,13 @@ All ten sub-phases (17A–17J) are engineering-complete.
 The remaining work before launch is:
 
 **Engineering tasks (in order):**
-1. Migration 006 — `whatsapp_templates`, `template_messages`, `messaging_windows` tables
-2. Fix `broadcast/index.ts` — `buildTemplatePayload` must match `moment_broadcast` structure
-3. Fix `broadcast/index.ts` — add `buildSponsoredTemplatePayload` for sponsored moments
-4. Fix `broadcast/index.ts` — remove freeform fallback from broadcast path
-5. Update `LAUNCH_CHECKLIST.md` as items complete
+1. `docs/DATABASE_SCHEMA.md` — add `whatsapp_templates`, `template_messages`, `messaging_windows` specs ✅
+2. Migration 007 — write `007_whatsapp_tables.sql`
+3. Fix `broadcast/index.ts` — replace `buildTemplatePayload` with `buildMomentBroadcastPayload` (header + 4 body params)
+4. Fix `broadcast/index.ts` — add `buildSponsoredTemplatePayload` for sponsored moments (load sponsor, header + 5 body params + URL button)
+5. Fix `broadcast/index.ts` — remove `buildFreeTextPayload`, `formatMessage`, and freeform fallback fetch block
+6. Fix `broadcast/index.ts` — fix National subscriber filter (no-op ternary → explicit branch: National = all subscribers, province = region match)
+7. Update `LAUNCH_CHECKLIST.md` as items complete
 
 **Ops gates (not engineering — do not block on these):**
 - Supabase Pro plan, migrations applied, storage buckets created
@@ -149,9 +151,10 @@ Key points:
 - MARKETING templates only for broadcasts — no freeform fallback
 - Freeform is valid only for inbound command responses (user messaged us first)
 - 5 templates needed: `welcome_confirmation`, `unsubscribe_confirmation`, `moment_broadcast`, `sponsored_moment`, `subscription_preferences`
-- `moment_broadcast` needs: header component (emoji + region) + 4 body params (title, content, category, region)
-- `sponsored_moment` needs: header + 4 body params + sponsor name + URL button
+- `moment_broadcast` needs: header component (emoji + region short code) + 4 body params (title, content, category, region full name)
+- `sponsored_moment` needs: header + 4 body params + sponsor display name + URL button
 - Current `buildTemplatePayload` in `broadcast/index.ts` is wrong — sends 3 body params, no header
+- National broadcast = all opted-in subscribers (no region filter); province broadcast = `.contains('regions', [region])`
 - n8n is deferred (D-023) — broadcast Edge Function handles execution directly for now
 - Supabase MCP is available for development introspection — not a runtime dependency
 

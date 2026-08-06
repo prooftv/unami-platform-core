@@ -865,6 +865,110 @@ Governance event origins. Community and statutory notices.
 
 ---
 
+## WhatsApp Template Management — Phase 17I
+
+Added by migration `007_whatsapp_tables.sql`. Tracks template approval state, delivery audit, and messaging windows.
+The `moments` table supplies all template variable values at send time — these tables do not duplicate moment content.
+
+### whatsapp_templates
+
+Local record of every Meta-approved template. Source of truth for template name, structure, and approval status.
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| id | UUID | PK, default gen_random_uuid() | |
+| name | TEXT | UNIQUE NOT NULL | Template name as registered with Meta (e.g. `moment_broadcast`) |
+| category | TEXT | NOT NULL, CHECK enum | UTILITY / MARKETING |
+| language_code | TEXT | NOT NULL, default 'en' | BCP-47 language code |
+| status | TEXT | NOT NULL, CHECK enum, default 'pending' | pending / approved / rejected / disabled |
+| header_type | TEXT | nullable, CHECK enum | TEXT / IMAGE / VIDEO / DOCUMENT — null if no header |
+| header_text | TEXT | nullable | Header text template (may contain `{{1}}`) |
+| body_text | TEXT | NOT NULL | Body text template with `{{n}}` placeholders |
+| footer_text | TEXT | nullable | Footer text (no variables allowed) |
+| button_type | TEXT | nullable, CHECK enum | URL / QUICK_REPLY — null if no button |
+| button_label | TEXT | nullable | Button display text |
+| button_url | TEXT | nullable | URL template for URL buttons (may contain `{{n}}`) |
+| variable_count | INTEGER | NOT NULL, default 0, CHECK >= 0 | Total variable count across all components |
+| meta_template_id | TEXT | nullable | Meta's internal template ID after submission |
+| submitted_at | TIMESTAMPTZ | nullable | When submitted to Meta for approval |
+| approved_at | TIMESTAMPTZ | nullable | When Meta approved |
+| created_at | TIMESTAMPTZ | NOT NULL, default NOW() | |
+| updated_at | TIMESTAMPTZ | NOT NULL, auto-updated | |
+
+**Seed rows (inserted by migration):**
+- `welcome_confirmation` — UTILITY, approved
+- `unsubscribe_confirmation` — UTILITY, approved
+- `moment_broadcast` — MARKETING, pending
+- `sponsored_moment` — MARKETING, pending
+- `subscription_preferences` — UTILITY, pending
+
+**Rules:**
+- Only templates with `status = 'approved'` may be used in broadcasts.
+- `status` transitions: `pending → approved`, `pending → rejected`, `approved → disabled`.
+- Template content is never edited after approval — create a new template version instead.
+
+**RLS:** authenticated: read. service_role: all.
+
+---
+
+### template_messages
+
+Audit log of every template message sent via the Meta API. One row per recipient per send.
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| id | UUID | PK, default gen_random_uuid() | |
+| broadcast_id | UUID | FK broadcasts(id) ON DELETE CASCADE, NOT NULL | |
+| moment_id | UUID | FK moments(id) ON DELETE CASCADE, NOT NULL | |
+| template_name | TEXT | NOT NULL | Template used (denormalised — template may be deleted) |
+| phone_number | TEXT | NOT NULL | Recipient E.164 phone number |
+| variables | JSONB | NOT NULL, default '{}' | Variable values sent: `{"1": "value", "2": "value"}` |
+| meta_message_id | TEXT | nullable | Meta's message ID from send response |
+| status | TEXT | NOT NULL, CHECK enum, default 'sent' | sent / delivered / read / failed |
+| error_code | TEXT | nullable | Meta error code if status = failed |
+| error_message | TEXT | nullable | Meta error description |
+| sent_at | TIMESTAMPTZ | NOT NULL, default NOW() | |
+| delivered_at | TIMESTAMPTZ | nullable | Set by delivery receipt webhook |
+| read_at | TIMESTAMPTZ | nullable | Set by read receipt webhook |
+
+**Rules:**
+- Rows are append-only — never updated except for `status`, `delivered_at`, `read_at` via delivery receipts.
+- `variables` stores the exact values sent — not the template text. Enables audit reconstruction.
+- Phone numbers are PII — no anon access.
+
+**Indexes:** `broadcast_id`, `moment_id`, `phone_number`, `status`, `sent_at`
+
+**RLS:** authenticated: read. service_role: all.
+
+---
+
+### messaging_windows
+
+Tracks the 24-hour customer service window per phone number.
+A window is open when the subscriber last messaged us within the past 24 hours.
+Used to determine whether freeform replies are permitted (inbound command responses only).
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| id | UUID | PK, default gen_random_uuid() | |
+| phone_number | TEXT | UNIQUE NOT NULL | E.164 format |
+| last_inbound_at | TIMESTAMPTZ | NOT NULL | Timestamp of most recent inbound message from this number |
+| window_expires_at | TIMESTAMPTZ | NOT NULL | `last_inbound_at + interval '24 hours'` — computed on insert/update |
+| updated_at | TIMESTAMPTZ | NOT NULL, auto-updated | |
+
+**Rules:**
+- One row per phone number — upserted on every inbound message.
+- `window_expires_at` is always `last_inbound_at + interval '24 hours'` — set by trigger, not application code.
+- Broadcasts never consult this table — they always use MARKETING templates.
+- Inbound command handlers (HELP, STATUS, MYAUTHORITY, opt-in, opt-out) may consult this table before deciding whether to send freeform or template.
+- Rows are never deleted — they represent the last known contact time.
+
+**Indexes:** `phone_number`, `window_expires_at`
+
+**RLS:** service_role only. Phone numbers are PII.
+
+---
+
 ## Next Step
 
 Generate `supabase/migrations/000_initial_schema.sql` from this document.

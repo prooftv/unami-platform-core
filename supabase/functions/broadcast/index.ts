@@ -3,6 +3,28 @@ import { requireAuth, corsHeaders, json, err, logAudit, logError, checkRateLimit
 
 const BATCH_SIZE = 50;
 
+// Region short code → full display name
+const REGION_NAMES: Record<string, string> = {
+  KZN:      'KwaZulu-Natal',
+  WC:       'Western Cape',
+  GP:       'Gauteng',
+  EC:       'Eastern Cape',
+  FS:       'Free State',
+  LP:       'Limpopo',
+  MP:       'Mpumalanga',
+  NC:       'Northern Cape',
+  NW:       'North West',
+  National: 'South Africa',
+};
+
+// Sponsor tier → emoji prefix for sponsored template header
+const TIER_EMOJI: Record<string, string> = {
+  platinum: '👑',
+  gold:     '⭐',
+  silver:   '📢',
+  bronze:   '📢',
+};
+
 Deno.serve(async (req: Request) => {
   const cors = corsHeaders(req);
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
@@ -11,7 +33,6 @@ Deno.serve(async (req: Request) => {
 
   const url = new URL(req.url);
   const parts = url.pathname.replace(/^\/broadcast\/?/, '').split('/').filter(Boolean);
-  // POST /broadcast/:momentId
 
   if (parts.length !== 1) return err('Not found', 404, cors);
   const momentId = parts[0];
@@ -37,10 +58,10 @@ async function executeBroadcast(
   userId: string,
   cors: Record<string, string>,
 ) {
-  // 1. Load moment
+  // 1. Load moment — join sponsor if sponsored
   const { data: moment, error: momentErr } = await supabase
     .from('moments')
-    .select('*')
+    .select('*, sponsors(id, display_name, tier)')
     .eq('id', momentId)
     .single();
 
@@ -60,15 +81,21 @@ async function executeBroadcast(
   const blastRadius: number = authorityContext?.blast_radius ?? 10000;
 
   // 3. Fetch matching subscribers
-  const { data: subscribers, error: subErr } = await supabase
+  // National = all opted-in subscribers (no region filter)
+  // Province  = subscribers whose regions array contains the moment region
+  let query = supabase
     .from('subscriptions')
     .select('phone_number')
     .eq('opted_in', true)
     .is('paused_until', null)
-    .contains('regions', [moment.region === 'National' ? moment.region : moment.region])
     .contains('categories', [moment.category])
     .limit(blastRadius);
 
+  if (moment.region !== 'National') {
+    query = query.contains('regions', [moment.region]);
+  }
+
+  const { data: subscribers, error: subErr } = await query;
   if (subErr) return err(subErr.message, 500, cors);
 
   const phoneNumbers = (subscribers ?? []).map((s: { phone_number: string }) => s.phone_number);
@@ -127,7 +154,7 @@ async function executeBroadcast(
 
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
-    const batchResult = await sendBatch(batch, moment);
+    const batchResult = await sendBatch(supabase, batch, moment, broadcast.id);
 
     successCount += batchResult.success;
     failureCount += batchResult.failure;
@@ -205,60 +232,87 @@ async function executeBroadcast(
 }
 
 // ---------------------------------------------------------------------------
-// Meta API send — template with free-text fallback
+// Meta API send — MARKETING templates only, no freeform fallback
 // ---------------------------------------------------------------------------
 
 async function sendBatch(
+  supabase: ReturnType<typeof createClient>,
   phoneNumbers: string[],
   moment: Record<string, unknown>,
+  broadcastId: string,
 ): Promise<{ success: number; failure: number; startedAt: string }> {
   const startedAt = new Date().toISOString();
   const waToken = Deno.env.get('WHATSAPP_TOKEN');
   const phoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
-  const templateName = (moment.template_name as string | null) ?? Deno.env.get('WHATSAPP_DEFAULT_TEMPLATE');
 
   if (!waToken || !phoneNumberId) {
+    // Credentials not set — fail all in non-dev, succeed all in dev
     const isDev = Deno.env.get('ENVIRONMENT') === 'development';
     return { success: isDev ? phoneNumbers.length : 0, failure: isDev ? 0 : phoneNumbers.length, startedAt };
   }
+
+  const sponsor = moment.is_sponsored
+    ? (moment.sponsors as Record<string, string> | null)
+    : null;
 
   let success = 0;
   let failure = 0;
 
   await Promise.allSettled(
     phoneNumbers.map(async (phone) => {
-      try {
-        const body = templateName
-          ? buildTemplatePayload(phone, templateName, moment)
-          : buildFreeTextPayload(phone, moment);
+      const { payload, templateName, variables } = moment.is_sponsored && sponsor
+        ? buildSponsoredTemplatePayload(phone, moment, sponsor)
+        : buildMomentBroadcastPayload(phone, moment);
 
+      try {
         const res = await fetch(
           `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
           {
             method: 'POST',
             headers: { Authorization: `Bearer ${waToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
+            body: JSON.stringify(payload),
           },
         );
 
-        // If template send fails (e.g. template not approved), fall back to free text
-        if (!res.ok && templateName) {
-          const fallback = await fetch(
-            `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
-            {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${waToken}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify(buildFreeTextPayload(phone, moment)),
-            },
-          );
-          if (fallback.ok) success++; else failure++;
-        } else if (res.ok) {
+        const responseBody = await res.json().catch(() => ({}));
+        const metaMessageId = (responseBody as Record<string, unknown>)?.messages?.[0]?.id as string | undefined;
+
+        if (res.ok) {
           success++;
+          await supabase.from('template_messages').insert({
+            broadcast_id: broadcastId,
+            moment_id: moment.id as string,
+            template_name: templateName,
+            phone_number: phone,
+            variables,
+            meta_message_id: metaMessageId ?? null,
+            status: 'sent',
+          });
         } else {
           failure++;
+          const errorBody = responseBody as Record<string, unknown>;
+          await supabase.from('template_messages').insert({
+            broadcast_id: broadcastId,
+            moment_id: moment.id as string,
+            template_name: templateName,
+            phone_number: phone,
+            variables,
+            status: 'failed',
+            error_code: String((errorBody?.error as Record<string, unknown>)?.code ?? ''),
+            error_message: String((errorBody?.error as Record<string, unknown>)?.message ?? ''),
+          });
         }
       } catch {
         failure++;
+        await supabase.from('template_messages').insert({
+          broadcast_id: broadcastId,
+          moment_id: moment.id as string,
+          template_name: templateName,
+          phone_number: phone,
+          variables,
+          status: 'failed',
+          error_message: 'Network error',
+        });
       }
     }),
   );
@@ -266,65 +320,127 @@ async function sendBatch(
   return { success, failure, startedAt };
 }
 
-function buildTemplatePayload(
+// ---------------------------------------------------------------------------
+// Template payload builders
+// ---------------------------------------------------------------------------
+
+function buildMomentBroadcastPayload(
   to: string,
-  templateName: string,
   moment: Record<string, unknown>,
-): Record<string, unknown> {
-  return {
+): { payload: Record<string, unknown>; templateName: string; variables: Record<string, string> } {
+  const region = String(moment.region ?? '');
+  const regionFull = REGION_NAMES[region] ?? region;
+  const headerText = `📢 Moment — ${region}`;
+  const title = String(moment.title ?? '');
+  const content = String(moment.content ?? '').slice(0, 160);
+  const category = String(moment.category ?? '');
+
+  const variables = { '1': '📢', '2': region, '3': title, '4': content, '5': category, '6': regionFull };
+
+  const payload = {
     messaging_product: 'whatsapp',
     to,
     type: 'template',
     template: {
-      name: templateName,
+      name: 'moment_broadcast',
       language: { code: mapLanguageCode(moment.language as string) },
       components: [
         {
+          type: 'header',
+          parameters: [{ type: 'text', text: headerText }],
+        },
+        {
           type: 'body',
           parameters: [
-            { type: 'text', text: String(moment.title) },
-            { type: 'text', text: String(moment.content).slice(0, 1024) },
-            { type: 'text', text: moment.pwa_link ? String(moment.pwa_link) : '' },
+            { type: 'text', text: title },
+            { type: 'text', text: content },
+            { type: 'text', text: category },
+            { type: 'text', text: regionFull },
           ],
         },
       ],
     },
   };
+
+  return { payload, templateName: 'moment_broadcast', variables };
 }
 
-function buildFreeTextPayload(
+function buildSponsoredTemplatePayload(
   to: string,
   moment: Record<string, unknown>,
-): Record<string, unknown> {
-  return {
+  sponsor: Record<string, string>,
+): { payload: Record<string, unknown>; templateName: string; variables: Record<string, string> } {
+  const region = String(moment.region ?? '');
+  const regionFull = REGION_NAMES[region] ?? region;
+  const tierEmoji = TIER_EMOJI[sponsor.tier ?? 'bronze'] ?? '📢';
+  const headerText = `${tierEmoji} [Sponsored] Moment — ${region}`;
+  const title = String(moment.title ?? '');
+  const content = String(moment.content ?? '').slice(0, 160);
+  const category = String(moment.category ?? '');
+  const sponsorName = sponsor.display_name ?? '';
+  const utmLink = buildUtmLink(moment);
+
+  const variables = {
+    '1': tierEmoji, '2': region, '3': title, '4': content,
+    '5': category, '6': regionFull, '7': sponsorName, '8': utmLink,
+  };
+
+  const payload = {
     messaging_product: 'whatsapp',
     to,
-    type: 'text',
-    text: { body: formatMessage(moment) },
+    type: 'template',
+    template: {
+      name: 'sponsored_moment',
+      language: { code: mapLanguageCode(moment.language as string) },
+      components: [
+        {
+          type: 'header',
+          parameters: [{ type: 'text', text: headerText }],
+        },
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: title },
+            { type: 'text', text: content },
+            { type: 'text', text: category },
+            { type: 'text', text: regionFull },
+            { type: 'text', text: sponsorName },
+          ],
+        },
+        {
+          type: 'button',
+          sub_type: 'url',
+          index: 0,
+          parameters: [{ type: 'text', text: utmLink }],
+        },
+      ],
+    },
   };
+
+  return { payload, templateName: 'sponsored_moment', variables };
 }
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function mapLanguageCode(lang: string): string {
   const map: Record<string, string> = { eng: 'en', zul: 'zu', xho: 'xh', afr: 'af' };
   return map[lang] ?? 'en';
 }
 
-function formatMessage(moment: Record<string, unknown>): string {
-  const lines = [
-    `*${moment.title}*`,
-    '',
-    String(moment.content),
-  ];
-  if (moment.is_sponsored) lines.push('', `_Sponsored content_`);
-  if (moment.pwa_link) lines.push('', `Read more: ${moment.pwa_link}`);
-  lines.push('', 'Reply STOP to unsubscribe');
-  return lines.join('\n');
+function buildUtmLink(moment: Record<string, unknown>): string {
+  const base = moment.pwa_link
+    ? String(moment.pwa_link)
+    : `https://moments.unamifoundation.org/moment/${moment.id}`;
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}utm_source=whatsapp&utm_medium=sponsored&utm_campaign=${moment.id}`;
 }
 
 function calculateComplianceScore(moment: Record<string, unknown>): number {
-  let score = 60; // base
+  let score = 60;
   if (moment.pwa_link) score += 15;
-  if (!moment.is_sponsored) score += 15; // non-sponsored = lower risk
+  if (!moment.is_sponsored) score += 15;
   if (moment.urgency_level === 'low') score += 10;
   return Math.min(score, 100);
 }

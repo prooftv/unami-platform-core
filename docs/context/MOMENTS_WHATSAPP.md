@@ -309,8 +309,21 @@ Tables from v1 WABA context that do NOT exist yet and are needed:
 | `template_messages` | Audit log of every template message sent | Before first broadcast |
 | `messaging_windows` | 24h window tracking per phone number | Useful for command responses |
 
-These require a new migration (`006_whatsapp_tables.sql`).
+These require a new migration (`007_whatsapp_tables.sql`).
+`006_platform_records.sql` is already taken by Phase 18A platform tables.
 Write `docs/DATABASE_SCHEMA.md` update first, then the migration.
+
+---
+
+## National Broadcast Model
+
+When `moment.region === 'National'`, the broadcast targets **all opted-in subscribers** regardless of
+their region preferences. National is a broadcast scope, not a region value subscribers select.
+
+- `region = 'National'` on the moment → fetch all opted-in subscribers (no region filter; category filter still applies)
+- `region = 'KZN'` (or any province) → fetch subscribers whose `regions` array contains `'KZN'`
+
+The current code has a no-op ternary that must be replaced with an explicit branch. See broadcast fix below.
 
 ---
 
@@ -318,11 +331,13 @@ Write `docs/DATABASE_SCHEMA.md` update first, then the migration.
 
 Engineering (in order):
 
-1. **Migration 006** — add `whatsapp_templates`, `template_messages`, `messaging_windows` tables
-2. **`broadcast/index.ts`** — fix `buildTemplatePayload` to match `moment_broadcast` structure (header + 4 body params)
-3. **`broadcast/index.ts`** — add `buildSponsoredTemplatePayload` for `is_sponsored = true` moments
-4. **`broadcast/index.ts`** — remove freeform fallback from broadcast path
-5. **`packages/api`** — add template management client methods if admin UI needs them
+1. **`docs/DATABASE_SCHEMA.md`** — add `whatsapp_templates`, `template_messages`, `messaging_windows` table specs ✅
+2. **Migration 007** — write `007_whatsapp_tables.sql`
+3. **`broadcast/index.ts`** — fix `buildTemplatePayload` → replace with `buildMomentBroadcastPayload` (header + 4 body params)
+4. **`broadcast/index.ts`** — add `buildSponsoredTemplatePayload` for `is_sponsored = true` moments (load sponsor, header + 5 body params + URL button)
+5. **`broadcast/index.ts`** — remove `buildFreeTextPayload`, `formatMessage`, and the freeform fallback fetch block
+6. **`broadcast/index.ts`** — fix National subscriber filter (no-op ternary → explicit branch)
+7. **`packages/api`** — add template management client methods if admin UI needs them
 
 Ops (before going live):
 1. Regenerate WHATSAPP_TOKEN in Meta Business Manager
