@@ -36,32 +36,31 @@ Do not begin a new phase until the previous phase is complete and documented.
 - Fix bugs only — no speculative improvements to infrastructure
 
 ## Current priority
-Phase 17D — Community Records. Active.
+Phase 17D — Community Records. ✅ Complete as of f22c002.
 
-Phase 17 engineering is resuming. Moments was marked engineering-complete at 17J but Phase 17D
-(Community Records) was not yet implemented. Implementation follows COMMUNITY_RECORDS.md exactly.
-
-Implementation sequence (do not skip steps):
+All six implementation steps complete:
 1. ✅ DATABASE_SCHEMA.md updated
-2. ✅ Migration 008 written
-3. ⏳ Edge Function — `supabase/functions/records/index.ts`
-4. ⏳ API client — `packages/api/src/clients/records.ts`
-5. ⏳ Admin UI — records section on moment detail, create form, status transitions
-6. ⏳ Public PWA — Community Timeline on moment detail, record detail page
+2. ✅ Migration 008 — moment_id column, index, anon RLS
+3. ✅ Edge Function — `supabase/functions/records/index.ts` rewritten (structural validation, public GET, immutability)
+4. ✅ API client — `packages/api/src/clients/records.ts` — PlatformRecord, createPublicRecordsClient
+5. ✅ Admin UI — RecordsPanel on moment detail, create form, status transitions
+6. ✅ Public PWA — Community Timeline on moment detail, record detail page
 
-Phase 18 (Unami Control Centre) resumes after Phase 17D is complete.
+Phase 17 is engineering-complete. Phase 18 (Unami Control Centre) is also complete (18A–18G + settings + shell parity).
 
-## Phase 17 — Moments Product Completion ⏳ Active (17D in progress)
+Next: update PROJECT_STATUS.md to reflect Phase 17D completion, then assess Phase 19 readiness.
+
+## Phase 17 — Moments Product Completion ✅ Engineering Complete
 - **17A** ✅ Public PWA Foundation
 - **17B** ✅ Content Ownership Constitution
 - **17C** ✅ Sanity Editorial Layer
-- **17D** ⏳ Community Records — migration done, Edge Function next
-- **17E** ⏳ Public Participation Engine
-- **17F** ⏳ Evidence Layer
-- **17G** ⏳ Commercial Layer
-- **17H** ⏳ Intelligence Foundation
-- **17I** ⏳ WhatsApp Integration
-- **17J** ⏳ Production Validation
+- **17D** ✅ Community Records — complete as of f22c002
+- **17E** ✅ Public Participation Engine
+- **17F** ✅ Evidence Layer
+- **17G** ✅ Commercial Layer
+- **17H** ✅ Intelligence Foundation
+- **17I** ✅ WhatsApp Integration
+- **17J** ✅ Production Validation — engineering complete, ops pending
 
 ## Phase 18 rules — Unami Control Centre
 - `apps/umkhandlu` is the Unami Control Centre — a read-oriented intelligence application, not a governance editor

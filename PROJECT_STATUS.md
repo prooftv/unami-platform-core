@@ -37,7 +37,7 @@ The Unami Control Centre is the second. It validates multi-application federatio
 | Layer | Status |
 |---|---|
 | Database — 26 tables | ✅ Complete |
-| Edge Functions — 17 functions (+ participation, evidence, updated campaigns) | ✅ Complete |
+| Edge Functions — 18 functions | ✅ Complete |
 | `packages/shared` — platform primitives | ✅ Frozen |
 | `packages/ui` — design system | ✅ Frozen |
 | `packages/api` — typed clients | ✅ Frozen |
@@ -272,7 +272,7 @@ Deliverable: `docs/context/CONTENT_OWNERSHIP.md` — a constitutional document, 
 | `docs/LAUNCH_CHECKLIST.md` — acceptance checklist written | ✅ |
 | D-033 recorded in `decisions.md` — Phase 17 engineering complete | ✅ |
 | Supabase Pro plan | ⏳ Ops |
-| All migrations applied (000–005) | ⏳ Ops |
+| All migrations applied (000–008) | ⏳ Ops |
 | Storage buckets created (`evidence`, `moments-media`) | ⏳ Ops |
 | WhatsApp Business Account verified, credentials set | ⏳ Ops |
 | Vercel deployments with custom domains | ⏳ Ops |
@@ -466,11 +466,14 @@ unami-platform-core/
 │   ├── functions/      17 Edge Functions (+ participation, evidence)
 │   └── migrations/
 │       ├── 000_initial_schema.sql   ← baseline, immutable
-│       ├── 001_...
+│       ├── 001_grant_service_role_privileges.sql
 │       ├── 002_governance_adaptation.sql
 │       ├── 003_participation_engine.sql
 │       ├── 004_evidence_layer.sql
-│       └── 005_commercial_layer.sql
+│       ├── 005_commercial_layer.sql
+│       ├── 006_platform_records.sql
+│       ├── 007_whatsapp_tables.sql
+│       └── 008_community_records.sql
 ├── docs/
 │   ├── abstractions/umkhandlu/      ← constitutional abstraction pack (13 documents)
 │   ├── context/
