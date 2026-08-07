@@ -6,6 +6,11 @@ import { revalidatePath } from 'next/cache';
 
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function assertUUID(value: string): void {
+  if (!UUID_RE.test(value)) throw new Error('Invalid user ID');
+}
 
 async function adminFetch(path: string, options: RequestInit) {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/admin${path}`, {
@@ -59,6 +64,7 @@ export async function updateOperatorRoleAction(_: unknown, formData: FormData) {
   if (!isSuperAdmin(session)) return { error: 'Insufficient permissions' };
 
   const userId = formData.get('userId') as string;
+  assertUUID(userId);
   const role   = formData.get('role') as string;
 
   const res = await adminFetch(`/users/${userId}`, {
@@ -80,6 +86,7 @@ export async function removeOperatorAction(_: unknown, formData: FormData) {
   if (!isSuperAdmin(session)) return { error: 'Insufficient permissions' };
 
   const userId = formData.get('userId') as string;
+  assertUUID(userId);
   if (userId === session!.id) return { error: 'Cannot remove yourself' };
 
   const res = await adminFetch(`/users/${userId}`, { method: 'DELETE' });
