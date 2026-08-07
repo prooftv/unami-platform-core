@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import type { AdminSession, DashboardMetrics, FeatureFlag, SystemSetting } from '@unami/api';
 import { createApiClient } from '@unami/api';
 import { createClient } from '@/lib/supabase/client';
@@ -160,15 +162,11 @@ export function SettingsClient({ session, metrics, flags: initialFlags, systemSe
                 {flag.description && <p className="text-xs text-muted-foreground">{flag.description}</p>}
               </div>
               {isSuperadmin ? (
-                <button
-                  onClick={() => toggleFlag(flag.flagKey, flag.enabled)}
+                <Switch
+                  checked={flag.enabled}
+                  onCheckedChange={() => toggleFlag(flag.flagKey, flag.enabled)}
                   disabled={toggling === flag.flagKey}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${flag.enabled ? 'bg-primary' : 'bg-muted-foreground/30'}`}
-                  role="switch"
-                  aria-checked={flag.enabled}
-                >
-                  <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${flag.enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                </button>
+                />
               ) : (
                 <Badge variant={flag.enabled ? 'default' : 'outline'}>{flag.enabled ? 'enabled' : 'disabled'}</Badge>
               )}
@@ -197,7 +195,7 @@ export function SettingsClient({ session, metrics, flags: initialFlags, systemSe
                 {isSuperadmin && editing !== s.settingKey ? (
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{s.settingValue}</span>
-                    <button onClick={() => startEdit(s.settingKey, s.settingValue)} className="text-xs text-primary underline hover:no-underline">Edit</button>
+                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => startEdit(s.settingKey, s.settingValue)}>Edit</Button>
                   </div>
                 ) : !isSuperadmin ? (
                   <span className="font-medium">{s.settingValue}</span>
@@ -205,15 +203,15 @@ export function SettingsClient({ session, metrics, flags: initialFlags, systemSe
               </div>
               {editing === s.settingKey && (
                 <div className="flex items-center gap-2 pt-1">
-                  <input
+                  <Input
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
-                    className="h-8 flex-1 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="h-8 flex-1 text-sm"
                   />
-                  <button onClick={() => saveEdit(s.settingKey)} disabled={saving} className="h-8 rounded-md bg-primary px-3 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                  <Button size="sm" className="h-8" onClick={() => saveEdit(s.settingKey)} disabled={saving}>
                     {saving ? 'Saving…' : 'Save'}
-                  </button>
-                  <button onClick={() => setEditing(null)} className="h-8 rounded-md border px-3 text-xs hover:bg-accent">Cancel</button>
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8" onClick={() => setEditing(null)}>Cancel</Button>
                 </div>
               )}
             </div>

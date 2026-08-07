@@ -118,12 +118,12 @@ export function CommentsClient({ initialData, session, currentPage, currentStatu
                 <TableCell>
                   {c.moderationStatus === 'pending' && (
                     <div className="flex gap-1">
-                      <button onClick={() => act(c.id, 'approve')} disabled={acting === c.id} className="inline-flex items-center gap-1 rounded-md border border-green-600 px-2 py-1 text-xs text-green-600 hover:bg-green-50 disabled:opacity-50">
+                      <Button size="sm" variant="outline" className="h-7 gap-1 text-xs text-green-600 border-green-600 hover:bg-green-50" onClick={() => act(c.id, 'approve')} disabled={acting === c.id}>
                         <CheckCircle className="h-3 w-3" /> Approve
-                      </button>
-                      <button onClick={() => act(c.id, 'reject')} disabled={acting === c.id} className="inline-flex items-center gap-1 rounded-md border border-destructive px-2 py-1 text-xs text-destructive hover:bg-red-50 disabled:opacity-50">
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 gap-1 text-xs text-destructive border-destructive hover:bg-red-50" onClick={() => act(c.id, 'reject')} disabled={acting === c.id}>
                         <XCircle className="h-3 w-3" /> Reject
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </TableCell>

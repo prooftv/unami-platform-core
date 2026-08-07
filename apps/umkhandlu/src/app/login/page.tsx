@@ -1,5 +1,8 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function LoginPage({
   searchParams,
@@ -40,25 +43,14 @@ async function LoginForm({ searchParams }: { searchParams: Promise<{ error?: str
         </p>
       )}
       <div className="space-y-1.5">
-        <label htmlFor="email" className="text-sm font-medium">Email</label>
-        <input
-          id="email" name="email" type="email" required autoComplete="email"
-          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-        />
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" name="email" type="email" required autoComplete="email" />
       </div>
       <div className="space-y-1.5">
-        <label htmlFor="password" className="text-sm font-medium">Password</label>
-        <input
-          id="password" name="password" type="password" required autoComplete="current-password"
-          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-        />
+        <Label htmlFor="password">Password</Label>
+        <Input id="password" name="password" type="password" required autoComplete="current-password" />
       </div>
-      <button
-        type="submit"
-        className="w-full py-2 px-4 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-      >
-        Sign in
-      </button>
+      <Button type="submit" className="w-full">Sign in</Button>
     </form>
   );
 }

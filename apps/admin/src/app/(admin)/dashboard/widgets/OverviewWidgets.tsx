@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useRealtimeTable } from '@/lib/realtime/useRealtimeTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import type {
   DashboardMetrics,
   MomentWithSponsor,
@@ -163,12 +164,9 @@ export function TodaysOperationsPanel({
               ))}
             </ul>
           )}
-          <button
-            onClick={() => router.push('/moments?status=draft')}
-            className="mt-3 w-full text-xs text-primary hover:underline text-left"
-          >
+          <Button variant="link" size="sm" className="mt-3 h-auto p-0 text-xs" onClick={() => router.push('/moments?status=draft')}>
             View all →
-          </button>
+          </Button>
         </CardContent>
       </Card>
 
@@ -200,12 +198,9 @@ export function TodaysOperationsPanel({
               {moderationStats?.oldestPendingAge != null ? `${moderationStats.oldestPendingAge}m ago` : '—'}
             </span>
           </div>
-          <button
-            onClick={() => router.push('/moderation')}
-            className="mt-2 w-full text-xs text-primary hover:underline text-left"
-          >
+          <Button variant="link" size="sm" className="mt-2 h-auto p-0 text-xs" onClick={() => router.push('/moderation')}>
             Review queue →
-          </button>
+          </Button>
         </CardContent>
       </Card>
 
@@ -235,12 +230,9 @@ export function TodaysOperationsPanel({
               ))}
             </ul>
           )}
-          <button
-            onClick={() => router.push('/moments?status=scheduled')}
-            className="mt-3 w-full text-xs text-primary hover:underline text-left"
-          >
+          <Button variant="link" size="sm" className="mt-3 h-auto p-0 text-xs" onClick={() => router.push('/moments?status=scheduled')}>
             View all →
-          </button>
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -348,12 +340,9 @@ export function ModerationQueueWidget({ stats }: { stats: ModerationStats | null
             {stats?.oldestPendingAge != null ? `${stats.oldestPendingAge}m ago` : '—'}
           </span>
         </div>
-        <button
-          onClick={() => router.push('/moderation')}
-          className="w-full mt-2 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
-        >
+        <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => router.push('/moderation')}>
           Review Queue
-        </button>
+        </Button>
       </CardContent>
     </Card>
   );
@@ -420,13 +409,13 @@ export function QuickActionsWidget() {
       <CardHeader><CardTitle className="text-sm">Quick Actions</CardTitle></CardHeader>
       <CardContent className="grid grid-cols-2 gap-2">
         {actions.map(({ id, label, description, icon: Icon, href }) => (
-          <button key={id} onClick={() => router.push(href)} className="flex items-start gap-2 rounded-md border p-2 text-left text-xs hover:bg-accent transition-colors">
+          <Button key={id} variant="outline" size="sm" className="flex h-auto items-start gap-2 p-2 text-left text-xs" onClick={() => router.push(href)}>
             <Icon className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
             <div>
               <p className="font-medium">{label}</p>
               <p className="text-muted-foreground">{description}</p>
             </div>
-          </button>
+          </Button>
         ))}
       </CardContent>
     </Card>
