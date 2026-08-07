@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ADMIN_BASE = new URL('/auth/v1/admin', process.env.NEXT_PUBLIC_SUPABASE_URL!).toString();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function assertUUID(value: string): void {
@@ -13,7 +13,8 @@ function assertUUID(value: string): void {
 }
 
 async function adminFetch(path: string, options: RequestInit) {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin${path}`, {
+  const url = new URL(path, SUPABASE_ADMIN_BASE + '/').toString();
+  const res = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
