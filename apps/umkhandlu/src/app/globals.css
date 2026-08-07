@@ -1,13 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@import "@unami/ui/styles/presets/brutalist.css";
-@import "@unami/ui/styles/presets/soft-pop.css";
-@import "@unami/ui/styles/presets/tangerine.css";
-@import "@unami/ui/styles/presets/rose.css";
-@import "@unami/ui/styles/presets/ocean.css";
-@import "@unami/ui/styles/presets/nord.css";
-@import "@unami/ui/styles/presets/mono.css";
+@import "../../../../packages/ui/src/styles/presets/brutalist.css";
+@import "../../../../packages/ui/src/styles/presets/soft-pop.css";
+@import "../../../../packages/ui/src/styles/presets/tangerine.css";
+@import "../../../../packages/ui/src/styles/presets/rose.css";
+@import "../../../../packages/ui/src/styles/presets/ocean.css";
+@import "../../../../packages/ui/src/styles/presets/nord.css";
+@import "../../../../packages/ui/src/styles/presets/mono.css";
 
 @custom-variant dark (&:is(.dark *));
 
