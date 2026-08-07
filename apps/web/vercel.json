@@ -1,0 +1,6 @@
+{
+  "installCommand": "cd ../.. && pnpm install",
+  "buildCommand": "cd ../.. && pnpm --filter @unami/web build",
+  "outputDirectory": ".next",
+  "ignoreCommand": "exit 1"
+}
