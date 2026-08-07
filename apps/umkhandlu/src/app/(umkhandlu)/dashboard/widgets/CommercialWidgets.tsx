@@ -9,18 +9,42 @@ import { decodeEntities } from './OverviewWidgets';
 // ── Commercial KPIs ───────────────────────────────────────────────────────────
 
 export function CommercialKPIs({ summary }: { summary: CommercialSummary | null }) {
+  const totalBudget = summary?.projects.totalBudget ?? 0;
+  const totalBeneficiaries = summary?.projects.totalBeneficiaries ?? 0;
+  const activeProjects = summary?.projects.byStatus.active ?? 0;
+
   const costPerBeneficiary =
-    summary && summary.projects.totalBeneficiaries > 0
+    totalBeneficiaries > 0
       ? new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(
-          summary.projects.totalBudget / summary.projects.totalBeneficiaries,
+          totalBudget / totalBeneficiaries,
         )
       : null;
 
   const kpis = [
-    { title: 'Total Projects',      value: summary?.projects.total ?? '—',               description: `${summary?.projects.byStatus.active ?? 0} active`,           icon: Briefcase },
-    { title: 'Total Beneficiaries', value: summary?.projects.totalBeneficiaries ?? '—', description: 'across active projects',                                      icon: Users },
-    { title: 'Cost per Beneficiary', value: costPerBeneficiary ?? '—',                  description: 'total budget ÷ beneficiaries',                               icon: TrendingUp },
-    { title: 'Active Sponsors',     value: summary?.sponsors.active ?? '—',             description: `${summary?.sponsors.total ?? 0} total registered`,            icon: Building2 },
+    {
+      title: 'Total Projects',
+      value: summary?.projects.total ?? '—',
+      description: `${activeProjects} active`,
+      icon: Briefcase,
+    },
+    {
+      title: 'Planned Beneficiaries',
+      value: totalBeneficiaries || '—',
+      description: 'promised workers across all projects',
+      icon: Users,
+    },
+    {
+      title: 'Cost per Beneficiary',
+      value: costPerBeneficiary ?? '—',
+      description: 'total budget ÷ planned beneficiaries',
+      icon: TrendingUp,
+    },
+    {
+      title: 'Active Sponsors',
+      value: summary?.sponsors.active ?? '—',
+      description: `${summary?.sponsors.total ?? 0} sponsors registered`,
+      icon: Building2,
+    },
   ];
 
   return (
