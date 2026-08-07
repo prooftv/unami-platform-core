@@ -28,7 +28,10 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    return [{ source: '/(.*)', headers: securityHeaders }];
+    return [
+      // Studio route excluded — next-sanity manages its own CSP
+      { source: '/((?!studio).*)' , headers: securityHeaders },
+    ];
   },
 };
 

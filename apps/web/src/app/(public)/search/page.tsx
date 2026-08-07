@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getPublicApiClient } from '@/lib/api/client';
 import { SearchClient } from '@/components/SearchClient';
 
