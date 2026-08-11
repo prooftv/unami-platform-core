@@ -26,3 +26,5 @@ Thumbs.db
 .idea/
 *.swp
 q-dev-chat-*.md
+apps/uncip/supabase/.temp/
+apps/uncip/supabase/supabase/
