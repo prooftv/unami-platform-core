@@ -56,7 +56,7 @@ export default async function DashboardPage() {
           <CardContent className="space-y-3">
             {activeAlerts.slice(0, 5).map((alert) => {
               const child = children.find((c) => c.id === alert.childId) ?? null;
-              return <AlertSummaryCard key={alert.id} alert={alert as never} child={child as never} />;
+              return <AlertSummaryCard key={alert.id} alert={alert} child={child} />;
             })}
           </CardContent>
         </Card>
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
             {recentChildren.map((child) => (
               <ChildSummaryCard
                 key={child.id}
-                child={child as never}
+                child={child}
                 school={null}
                 hasActiveAlert={alerts.some((a) => a.childId === child.id && a.status === 'active')}
               />

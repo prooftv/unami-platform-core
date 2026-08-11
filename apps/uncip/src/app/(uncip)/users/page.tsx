@@ -1,6 +1,6 @@
+import { createClient } from '@/lib/supabase/server';
 import { PageHeader, DataTable, EmptyState, type ColumnDef } from '@unami/ui';
 import { Users } from 'lucide-react';
-import { FIXTURE_USERS } from '@/fixtures/uncip';
 import { UserRoleBadge } from '@/components/uncip/user/UserRoleBadge';
 import { Badge } from '@/components/ui/badge';
 import type { UserRecord } from '@/domain/uncip/types';
@@ -33,8 +33,25 @@ const COLUMNS: ColumnDef<UserRecord>[] = [
   },
 ];
 
-export default function UsersPage() {
-  if (FIXTURE_USERS.length === 0) {
+export default async function UsersPage() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('uncip_user_profiles')
+    .select('id, email, name, role, station_id, school_id, is_active, created_at')
+    .order('created_at', { ascending: false });
+
+  const users: UserRecord[] = (data ?? []).map((row) => ({
+    id:        row.id,
+    email:     row.email,
+    name:      row.name ?? null,
+    role:      row.role,
+    stationId: row.station_id ?? null,
+    schoolId:  row.school_id ?? null,
+    isActive:  row.is_active,
+    createdAt: row.created_at,
+  }));
+
+  if (users.length === 0) {
     return (
       <div className="space-y-6">
         <PageHeader title="Users" description="Manage registered users." />
@@ -51,11 +68,11 @@ export default function UsersPage() {
     <div className="space-y-6">
       <PageHeader
         title="Users"
-        description={`${FIXTURE_USERS.length} registered users.`}
+        description={`${users.length} registered users.`}
       />
       <DataTable
         columns={COLUMNS}
-        data={FIXTURE_USERS}
+        data={users}
         getRowKey={(u) => u.id}
       />
     </div>

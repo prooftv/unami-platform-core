@@ -1,26 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { type AlertRecord, type ChildRecord, type UserRecord } from '@/domain/uncip/types';
+import type { UNCIPAlert, UNCIPChild } from '@unami/api';
+import type { UserRecord } from '@/domain/uncip/types';
 import { AlertTypeBadge } from './AlertTypeBadge';
 import { AlertStatusBadge } from './AlertStatusBadge';
 import { AlertTimeline } from './AlertTimeline';
 
 interface Props {
-  alert: AlertRecord;
-  child: ChildRecord | null;
-  /** Resolved user records for timeline actor lookup. Keyed by userId. */
+  alert: UNCIPAlert;
+  child: UNCIPChild | null;
   users: Record<string, UserRecord>;
 }
 
 export function AlertDetailPanel({ alert, child, users }: Props) {
   const childName = child ? `${child.firstName} ${child.lastName}` : 'Unknown child';
+  const timeline  = alert.uncipAlertTimeline ?? [];
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <Card>
-        <CardHeader>
-          <CardTitle>{childName}</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>{childName}</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2">
             <AlertTypeBadge alertType={alert.alertType} />
@@ -31,11 +29,8 @@ export function AlertDetailPanel({ alert, child, users }: Props) {
         </CardContent>
       </Card>
 
-      {/* Last seen */}
       <Card>
-        <CardHeader>
-          <CardTitle>Last Seen</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Last Seen</CardTitle></CardHeader>
         <CardContent className="text-sm space-y-1">
           <p>{new Date(alert.lastSeenAt).toLocaleString()}</p>
           <p>{alert.lastSeenLocation}</p>
@@ -43,22 +38,16 @@ export function AlertDetailPanel({ alert, child, users }: Props) {
         </CardContent>
       </Card>
 
-      {/* Timeline */}
       <Card>
-        <CardHeader>
-          <CardTitle>Timeline</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Timeline</CardTitle></CardHeader>
         <CardContent>
-          <AlertTimeline entries={alert.timeline} users={users} />
+          <AlertTimeline entries={timeline} users={users} />
         </CardContent>
       </Card>
 
-      {/* Resolution */}
       {alert.resolvedAt && (
         <Card>
-          <CardHeader>
-            <CardTitle>Resolution</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Resolution</CardTitle></CardHeader>
           <CardContent className="text-sm">
             <p>Resolved {new Date(alert.resolvedAt).toLocaleString()}</p>
           </CardContent>

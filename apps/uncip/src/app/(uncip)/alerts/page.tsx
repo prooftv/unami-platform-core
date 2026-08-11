@@ -43,7 +43,7 @@ export default async function AlertsPage() {
           const child = children.find((c) => c.id === alert.childId) ?? null;
           return (
             <a key={alert.id} href={`/alerts/${alert.id}`} className="block">
-              <AlertSummaryCard alert={alert as never} child={child as never} />
+              <AlertSummaryCard alert={alert} child={child} />
             </a>
           );
         })}

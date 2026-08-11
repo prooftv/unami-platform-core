@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { type ChildRecord, type School } from '@/domain/uncip/types';
+import type { UNCIPChild, UNCIPSchool } from '@unami/api';
 import { ChildStatusBadge } from './ChildStatusBadge';
 
 function ageFromDob(dob: string): number {
@@ -13,8 +13,8 @@ function ageFromDob(dob: string): number {
 }
 
 interface Props {
-  child: ChildRecord;
-  school: School | null;
+  child: UNCIPChild;
+  school: UNCIPSchool | null;
   hasActiveAlert: boolean;
 }
 

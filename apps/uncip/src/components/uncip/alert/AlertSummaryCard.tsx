@@ -1,17 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { type AlertRecord, type ChildRecord } from '@/domain/uncip/types';
+import type { UNCIPAlert, UNCIPChild } from '@unami/api';
 import { AlertTypeBadge } from './AlertTypeBadge';
 import { AlertStatusBadge } from './AlertStatusBadge';
 
 interface Props {
-  alert: AlertRecord;
-  child: ChildRecord | null;
+  alert: UNCIPAlert;
+  child: UNCIPChild | null;
 }
 
 export function AlertSummaryCard({ alert, child }: Props) {
-  const childName = child
-    ? `${child.firstName} ${child.lastName}`
-    : 'Unknown child';
+  const childName = child ? `${child.firstName} ${child.lastName}` : 'Unknown child';
 
   return (
     <Card>

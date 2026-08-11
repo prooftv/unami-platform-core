@@ -17,7 +17,7 @@ export default async function AlertDetailPage({ params }: Props) {
   if (!alertRes?.data) notFound();
 
   const alert = alertRes.data;
-  const child = await client?.children.get(alert.childId).then((r) => r.data).catch(() => null);
+  const child = await client?.children.get(alert.childId).then((r) => r.data).catch(() => null) ?? null;
   const childName = child ? `${child.firstName} ${child.lastName}` : 'Unknown child';
 
   return (
@@ -40,7 +40,7 @@ export default async function AlertDetailPage({ params }: Props) {
       />
 
       <div className="max-w-3xl">
-        <AlertDetailPanel alert={alert as never} child={child as never} users={{}} />
+        <AlertDetailPanel alert={alert} child={child} users={{}} />
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
-import { GUARDIAN_RELATIONSHIP_LABELS, type GuardianLink, type UserRecord } from '@/domain/uncip/types';
+import { GUARDIAN_RELATIONSHIP_LABELS } from '@/domain/uncip/types';
+import type { UserRecord } from '@/domain/uncip/types';
+import type { UNCIPGuardianLink } from '@unami/api';
 
 interface Props {
-  guardians: GuardianLink[];
+  guardians: UNCIPGuardianLink[];
   /** Resolved user records for each guardian. Keyed by userId. */
   users: Record<string, UserRecord>;
 }

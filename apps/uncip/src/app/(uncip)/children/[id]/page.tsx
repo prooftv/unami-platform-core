@@ -24,7 +24,7 @@ export default async function ChildDetailPage({ params }: Props) {
   const child  = childRes.data;
   const alerts = alertsRes?.data ?? [];
   const school = child.schoolId
-    ? await client?.schools.get(child.schoolId).then((r) => r.data).catch(() => null)
+    ? await client?.schools.get(child.schoolId).then((r) => r.data).catch(() => null) ?? null
     : null;
 
   const hasActiveAlert = alerts.some((a) => a.status === 'active');
@@ -43,8 +43,8 @@ export default async function ChildDetailPage({ params }: Props) {
 
       <div className="max-w-3xl space-y-6">
         <ChildDetailPanel
-          child={child as never}
-          school={school as never}
+          child={child}
+          school={school}
           hasActiveAlert={hasActiveAlert}
           users={{}}
         />
@@ -54,7 +54,7 @@ export default async function ChildDetailPage({ params }: Props) {
             <p className="text-sm font-medium text-muted-foreground">Alert History</p>
             {alerts.map((alert) => (
               <a key={alert.id} href={`/alerts/${alert.id}`} className="block">
-                <AlertSummaryCard alert={alert as never} child={child as never} />
+                <AlertSummaryCard alert={alert} child={child} />
               </a>
             ))}
           </div>

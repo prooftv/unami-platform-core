@@ -37,7 +37,7 @@ export default async function ChildrenPage() {
           const hasActiveAlert = activeAlerts.some((a) => a.childId === child.id);
           return (
             <a key={child.id} href={`/children/${child.id}`} className="block">
-              <ChildSummaryCard child={child as never} school={null} hasActiveAlert={hasActiveAlert} />
+              <ChildSummaryCard child={child} school={null} hasActiveAlert={hasActiveAlert} />
             </a>
           );
         })}

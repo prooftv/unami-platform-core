@@ -1,8 +1,9 @@
-import { ALERT_TIMELINE_ACTION_LABELS, UNCIP_ROLE_LABELS, type AlertTimelineEntry, type UserRecord } from '@/domain/uncip/types';
+import { ALERT_TIMELINE_ACTION_LABELS, UNCIP_ROLE_LABELS } from '@/domain/uncip/types';
+import type { UserRecord } from '@/domain/uncip/types';
+import type { UNCIPAlertTimelineEntry } from '@unami/api';
 
 interface Props {
-  entries: AlertTimelineEntry[];
-  /** Resolved user records for actor lookup. Keyed by userId. */
+  entries: UNCIPAlertTimelineEntry[];
   users: Record<string, UserRecord>;
 }
 

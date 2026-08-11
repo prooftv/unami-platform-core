@@ -1,7 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { PROVINCE_LABELS, type SAPSStation } from '@/domain/uncip/types';
+import { PROVINCE_LABELS } from '@/domain/uncip/types';
+import type { UNCIPStation } from '@unami/api';
 
-export function StationSummaryCard({ station }: { station: SAPSStation }) {
+export function StationSummaryCard({ station }: { station: UNCIPStation }) {
   return (
     <Card>
       <CardContent className="p-4">
