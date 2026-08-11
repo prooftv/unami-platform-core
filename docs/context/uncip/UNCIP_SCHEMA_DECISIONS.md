@@ -2,7 +2,7 @@
 
 **Authority:** This document is the gate before `supabase/migrations/009_uncip_schema.sql` can be written.
 
-**Status:** DRAFT — three decisions are open. Migration cannot begin until all three are resolved.
+**Status:** DECIDED — all three decisions recorded. Migration `009_uncip_schema.sql` is unblocked.
 
 **Relationship to constitution:** `apps/uncip/UNCIP_V2_FRONTEND.md` defines what the domain is.
 This document defines how it is persisted, who can access it, and what constraints apply.
@@ -360,7 +360,13 @@ required to prevent duplicate registrations and ensure the record refers to a sp
 This matches the product's self-determination principle — communities register children
 first, documentation follows. But this is a founder decision, not an engineering decision.
 
-**Status: OPEN — requires founder decision**
+**Decision: C — Optional at registration, required before alert.**
+A child may be registered with name, date of birth, and photo only.
+`identification_number` is nullable on `uncip_children`.
+The alert creation Edge Function must reject `alert_type = 'missing'` if `identification_number` is null.
+Other alert types (medical, welfare) may proceed without identification.
+
+**Status: DECIDED**
 
 ---
 
@@ -387,11 +393,14 @@ their own children and alerts), or are parents also geographically scoped to a s
   (e.g. other missing children in their neighbourhood). More complex, but potentially
   more useful for community safety awareness.
 
-**Recommendation for consideration:** Guardian-link only for V2. Station scoping for parents
-can be added in a later phase if the product requires it. Starting with the simpler model
-avoids over-engineering the auth layer before the product is validated.
+**Decision: A — Guardian-link only.**
+Parent data access is defined entirely by `uncip_guardian_links`.
+Parents see only their own children and alerts for those children.
+`station_id` on `uncip_user_profiles` is NULL for parent rows.
+No station-scoped community alert feed for parents in V2.
+Station scoping for parents is deferred to a future phase.
 
-**Status: OPEN — requires founder decision**
+**Status: DECIDED**
 
 ---
 
@@ -428,7 +437,34 @@ never implemented. There is no V1 precedent for timeline action permissions.
 - Is `status_changed` a single action covering all transitions, or should `resolved`,
   `cancelled`, and `false_alarm` be separate actions for cleaner audit trail?
 
-**Status: OPEN — requires founder decision on the table above and the three sub-questions**
+**Decisions recorded:**
+
+**3a — School alert creation:** School may raise `alert_raised` for medical alert type only.
+`alert_type = 'medical'` is permitted from school role. All other alert types require parent or admin.
+The `alert-003` fixture (school-originated medical) is confirmed as a valid scenario.
+
+**3b — Parent resolution:** Parent may perform `status_changed` on their own alerts for
+`cancel` and `false_alarm` transitions only. `resolved` is reserved for authority and admin.
+This distinction is enforced in the alerts Edge Function, not only in RLS.
+
+**3c — `status_changed` action:** Keep as single action. The resulting status is recorded
+in the associated `note` field and the `uncip_alerts.status` column update.
+Splitting into `alert_resolved`, `alert_cancelled`, `alert_false_alarm` would require
+modifying the frozen `AlertTimelineAction` type — not acceptable at this stage.
+The single action with status context is sufficient for the pilot audit trail.
+
+**Final permission table (approved):**
+
+| Action | Parent | School | Authority | Community | Admin |
+|---|---|---|---|---|---|
+| `alert_raised` | ✓ own children | ✓ medical only | — | — | ✓ |
+| `school_confirmed_last_seen` | — | ✓ enrolled | — | — | ✓ |
+| `authority_assigned_case` | — | — | ✓ | — | ✓ |
+| `community_sighting_reported` | — | — | — | ✓ | ✓ |
+| `status_changed` | ✓ cancel/false_alarm own | — | ✓ resolve | — | ✓ |
+| `note_added` | ✓ own alerts | ✓ enrolled | ✓ | ✓ | ✓ |
+
+**Status: DECIDED**
 
 ---
 
