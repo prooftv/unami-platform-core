@@ -41,27 +41,28 @@ Full ecosystem diagram: `docs/context/ECOSYSTEM.md`
 Do not skip. Do not assume. Read each file.
 
 1. `PROJECT_STATUS.md` — current phase, completed phases, remaining tasks
-2. `docs/context/product-vision.md` — what each product is and why the build order matters
-3. `docs/context/architecture.md` — layer boundaries, data flow, what is frozen
+2. `docs/context/PLATFORM.md` — what Platform Core is, boundaries, application/platform relationship
+3. `docs/context/ARCHITECTURE.md` — layer boundaries, data flow, what is frozen
 4. `docs/context/decisions.md` — decisions that must not be reversed
 5. `.amazonq/rules/workspace-rules.md` — non-negotiable workspace rules
 6. `docs/context/ECOSYSTEM.md` — canonical ecosystem diagram and ownership boundaries
 
-For WhatsApp or broadcast work, also read:
-7. `docs/context/MOMENTS_WHATSAPP.md`
-8. `docs/context/MOMENTS_SESSION_PROMPT.md`
+For Moments work, also read:
+7. `docs/context/moments/MOMENTS_WHATSAPP.md`
+8. `docs/context/moments/MOMENTS_SESSION_PROMPT.md`
+9. `docs/context/moments/MOMENTS_EVOLUTION.md`
+10. `docs/context/moments/COMMUNITY_RECORDS.md` (Phase 17D specifically)
 
-For Moments evolution (Phase 17D onward), also read:
-9. `docs/context/MOMENTS_EVOLUTION.md`
-10. `docs/context/COMMUNITY_RECORDS.md` (Phase 17D specifically)
-11. `docs/abstractions/umkhandlu/11_MOMENTS_ADAPTATION.md`
-12. `docs/abstractions/umkhandlu/09_PLATFORM_MAPPING.md`
+For Control Centre work, also read:
+7. `docs/context/moments/GOVERNANCE_NODE_API.md`
+8. `docs/context/moments/GOVERNANCE_NODE_REGISTRY.md`
+9. `docs/abstractions/umkhandlu/08_INTELLIGENCE_LAYER.md`
+10. `docs/abstractions/umkhandlu/09_PLATFORM_MAPPING.md`
 
-For governance node or Control Centre work, also read:
-9. `docs/context/GOVERNANCE_NODE_API.md`
-10. `docs/context/GOVERNANCE_NODE_REGISTRY.md`
-11. `docs/abstractions/umkhandlu/08_INTELLIGENCE_LAYER.md`
-12. `docs/abstractions/umkhandlu/09_PLATFORM_MAPPING.md`
+For UNCIP work, also read:
+7. `docs/context/uncip/UNCIP_SESSION_PROMPT.md`
+8. `docs/context/uncip/UNCIP_PRIVACY_AND_SAFEGUARDING.md`
+9. `docs/context/PLATFORM_DASHBOARD_SHELL.md`
 
 ---
 

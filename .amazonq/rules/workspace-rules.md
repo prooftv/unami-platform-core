@@ -9,17 +9,16 @@
 
 ## Before writing any code
 1. Read `PROJECT_STATUS.md` — current phase, last commit, what is done and what is next
-2. Read `docs/context/product-vision.md` — the product architecture and why the order matters
-3. Read `docs/context/architecture.md` — layer boundaries, data flow, current phase
+2. Read `docs/context/PLATFORM.md` — what Platform Core is, boundaries, application/platform relationship
+3. Read `docs/context/ARCHITECTURE.md` — layer boundaries, data flow, current technical structure
 4. Read `docs/context/decisions.md` — decisions that must not be reversed
-5. Read `docs/context/security-model.md` — auth and RBAC rules
-6. Read `docs/context/ECOSYSTEM.md` — canonical ecosystem diagram, repository boundaries, ownership rules
-7. Check `docs/DATABASE_SCHEMA.md` before any schema changes
-8. Check `docs/context/PLATFORM_DASHBOARD_SHELL.md` before scaffolding any new dashboard application
-9. Check `docs/context/CONTENT_OWNERSHIP.md` before any content or CMS decisions (Phase 17B+)
-9. Check `docs/context/MOMENTS_EVOLUTION.md` before any Phase 17D–17H implementation
-10. Check `docs/context/COMMUNITY_RECORDS.md` before any Phase 17D implementation (records, timeline, admin UI)
-11. Check `docs/context/COMMERCIAL_DOMAIN.md` before any commercial, campaign, or project decisions
+5. Read `docs/context/ECOSYSTEM.md` — canonical ecosystem diagram, repository boundaries, ownership rules
+6. Check `docs/DATABASE_SCHEMA.md` before any schema changes
+7. Check `docs/context/PLATFORM_DASHBOARD_SHELL.md` before scaffolding any new dashboard application
+8. Check `docs/context/moments/CONTENT_OWNERSHIP.md` before any content or CMS decisions
+9. Check `docs/context/moments/MOMENTS_EVOLUTION.md` before any Phase 17D–17H implementation
+10. Check `docs/context/moments/COMMUNITY_RECORDS.md` before any Phase 17D implementation
+11. Check `docs/context/moments/COMMERCIAL_DOMAIN.md` before any commercial, campaign, or project decisions
 
 ## What this repository is now
 Unami Platform Core v1.0 is complete. This is application validation work — not platform engineering.
