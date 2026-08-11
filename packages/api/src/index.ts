@@ -28,6 +28,13 @@ export type {
   GovernanceNodeClient,
 } from './clients/governance-node';
 
+// UNCIP Reimagined
+export type { Province, ChildGender, GuardianRelationship, UNCIPChild, UNCIPGuardianLink, UNCIPChildMedical, CreateChildInput, UpdateChildInput, AddGuardianInput, ListChildrenParams } from './clients/uncip-children';
+export type { UNCIPStation, CreateStationInput } from './clients/uncip-stations';
+export type { UNCIPSchool, CreateSchoolInput, ListSchoolsParams } from './clients/uncip-schools';
+export type { AlertType, AlertStatus, AlertTimelineAction, UNCIPRole, UNCIPAlert, UNCIPAlertTimelineEntry, CreateAlertInput, ChangeAlertStatusInput, ListAlertsParams } from './clients/uncip-alerts';
+export type { AddTimelineEntryInput } from './clients/uncip-timeline';
+
 import { createPublicProjectsClient } from './clients/public-projects';
 import { createPublicMomentsClient } from './clients/public-moments';
 import { createPublicParticipationClient } from './clients/participation';
@@ -47,6 +54,11 @@ import { createMediaClient } from './clients/media';
 import { createRecordsClient, createPublicRecordsClient } from './clients/records';
 import { createNoticesClient } from './clients/notices';
 import { createGovernanceNodeClient } from './clients/governance-node';
+import { createUNCIPChildrenClient } from './clients/uncip-children';
+import { createUNCIPStationsClient } from './clients/uncip-stations';
+import { createUNCIPSchoolsClient }  from './clients/uncip-schools';
+import { createUNCIPAlertsClient }   from './clients/uncip-alerts';
+import { createUNCIPTimelineClient } from './clients/uncip-timeline';
 
 export interface ApiClientConfig {
   baseUrl: string;
@@ -94,3 +106,19 @@ export type ApiClient = ReturnType<typeof createApiClient>;
  * and its node-issued read-only API key.
  */
 export { createGovernanceNodeClient };
+
+/**
+ * UNCIP Reimagined client — authenticated, all five domains.
+ * Pass the Supabase Edge Function base URL and the authenticated user's JWT.
+ */
+export function createUNCIPApiClient(config: ApiClientConfig) {
+  return {
+    children: createUNCIPChildrenClient(config),
+    stations: createUNCIPStationsClient(config),
+    schools:  createUNCIPSchoolsClient(config),
+    alerts:   createUNCIPAlertsClient(config),
+    timeline: createUNCIPTimelineClient(config),
+  };
+}
+
+export type UNCIPApiClient = ReturnType<typeof createUNCIPApiClient>;
