@@ -424,8 +424,8 @@ Required shell features for every application:
 - `PreferencesStoreProvider` in root layout — wraps the entire app
 - `getPreference()` server action reads `sidebar_variant` + `sidebar_collapsible` from cookies at layout render
 - `AppSidebar` uses `isSynced` pattern — sidebar variant/collapsible driven by preferences store after hydration
-- `LayoutControls` in header — theme preset, font, theme mode, page layout, sidebar style, sidebar collapse
-- `ThemeSwitcher` in header — quick light/dark/system cycle button
+- `ShellLayoutControls` from `@unami/ui` in header — theme preset, font, theme mode, page layout, sidebar style, sidebar collapse
+- `ShellThemeSwitcher` from `@unami/ui` in header — quick light/dark/system cycle button
 - `SearchDialog` in header — ⌘J command palette over all sidebar navigation items
 - `data-content-layout` CSS selectors on `SidebarInset` — centered/full-width layout support
 - `data-navbar-style` CSS selectors on header — sticky/scroll navbar behaviour
@@ -436,3 +436,44 @@ This pattern was validated in Phase 18 when `apps/umkhandlu` was brought to full
 Future applications (`apps/spree`, `apps/schools`, etc.) must implement this pattern from scaffold.
 The test: a new operator switching between Moments and the Control Centre should experience
 identical shell behaviour — same preferences, same keyboard shortcuts, same layout controls.
+
+The canonical starting point for every new application is `docs/context/PLATFORM_DASHBOARD_SHELL.md`.
+
+## D-041: Platform shell extraction — extract only what is provably identical
+
+Platform shell primitives are extracted into `packages/ui` only when they are provably identical
+across two or more existing applications. Extraction is never speculative.
+
+The extraction process requires:
+1. Pre-extraction diff verification — confirm files are identical before touching anything
+2. Identify the Next.js boundary — files that import from `next/*` stay in each application
+3. Extract only what has no Next.js dependency into `packages/ui`
+4. Migrate all existing applications to consume the extracted primitive
+5. Delete the local copies
+6. Verify TypeScript: zero errors across all affected targets
+7. Document the extraction in `PLATFORM_DASHBOARD_SHELL.md` extraction history
+
+Phase 19 Step 0 extractions (commit `7e952a0`):
+- `ThemeBootScript` → `packages/ui/src/shell/ThemeBootScript.tsx`
+- Nav types (`NavGroup`, `NavMainItem`, etc.) → `packages/ui/src/shell/nav-types.ts`
+- `ShellLayoutControls` — already in `packages/ui`, local copies deleted from all three apps
+
+The constitutional principle: **the shell is shared, the application is not.**
+Platform Core owns shell technology. The product owns shell configuration.
+
+## D-042: Next.js boundary — files that import from `next/*` stay in applications
+
+Files that depend on Next.js APIs cannot be extracted into `packages/ui`.
+`packages/ui` has no Next.js dependency and must not acquire one.
+
+Files that stay in each application permanently:
+- `nav-main.tsx` — imports `next/link`, `next/navigation`, app-local shadcn sidebar
+- `server-actions.ts` — imports `next/headers`
+- `lib/fonts/registry.ts` — imports `next/font/google`
+- `(app)/layout.tsx` — async server component using `next/headers`, `next/navigation`
+- `app/layout.tsx` — uses Next.js Metadata API
+
+These files are structurally identical across applications. They are documented as templates
+in `PLATFORM_DASHBOARD_SHELL.md` — not extracted as shared components.
+
+The rule: if it imports from `next/`, it stays in the application.
