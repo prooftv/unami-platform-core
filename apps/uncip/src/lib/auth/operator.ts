@@ -60,7 +60,7 @@ export async function getUNCIPClient() {
     if (!session) return null;
 
     return createUNCIPApiClient({
-      baseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! + '/functions/v1',
+      baseUrl: process.env.NEXT_PUBLIC_UNCIP_SUPABASE_URL! + '/functions/v1',
       token:   session.access_token,
     });
   } catch {
