@@ -274,38 +274,41 @@ Role experience verification  COMPLETE
 Schema decisions document     COMPLETE
 Founder decisions             ALL DECIDED
 
-Database migration            NOT STARTED  ← NEXT
-RLS                           NOT STARTED
-Edge Functions                NOT STARTED
-API clients                   NOT STARTED
+Database migration            COMPLETE  — b506f48
+RLS                           COMPLETE  — b506f48
+Edge Functions                COMPLETE  — 1ed6fc2
+API clients                   NOT STARTED  ← NEXT
 Real authentication           NOT STARTED
 Fixture replacement           NOT STARTED
 ```
 
-Latest commit: see `git log --oneline -5`
+Latest commit: `1ed6fc2`
 
 ---
 
 # THE NEXT SESSION'S JOB
 
-1. Read the four authoritative documents listed at the top
-2. Confirm current state
-3. Write `supabase/migrations/009_uncip_schema.sql` — tables + RLS policies
-4. Proceed through the backend sequence
+Read `docs/context/uncip/STEP8_HANDOFF.md` for full Step 8 context and the Step 9 contract.
 
-## Implementation sequence
+## Step 9 — Typed API clients
+
+Create typed clients in `packages/api/src/clients/` that wrap the five Edge Functions.
+Use canonical types from `apps/uncip/src/domain/uncip/types.ts`.
+
+Expected files:
 
 ```text
-009_uncip_schema.sql  (tables + RLS)
-        ↓
-Edge Functions: children, alerts, timeline, schools, stations
-        ↓
-API clients: packages/api/src/clients/uncip-*.ts
-        ↓
-Real authentication (replace mock_role with Supabase Auth)
-        ↓
-Replace fixture imports with API calls in pages
+packages/api/src/clients/uncip-children.ts
+packages/api/src/clients/uncip-alerts.ts
+packages/api/src/clients/uncip-schools.ts
+packages/api/src/clients/uncip-stations.ts
+packages/api/src/clients/uncip-timeline.ts
 ```
+
+## Step 10 (after Step 9)
+
+Replace fixture imports with API calls. Replace `mock_role` with real Supabase Auth.
+Do not rebuild the frontend — pages and components are reused as-is.
 
 Do not rebuild the frontend. The pages and components are reused as-is.
 The structural change is replacing:
@@ -339,9 +342,11 @@ INTERACTION STATES
      ↓
 SCHEMA DECISIONS  ✅ GATE CLEARED
      ↓
-DATABASE / RLS    ← YOU ARE HERE
+DATABASE / RLS    ✅  b506f48
      ↓
-BACKEND
+EDGE FUNCTIONS    ✅  1ed6fc2
+     ↓
+API CLIENTS            ← YOU ARE HERE
      ↓
 REAL AUTH
      ↓
