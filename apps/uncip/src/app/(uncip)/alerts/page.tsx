@@ -1,18 +1,28 @@
-import { PageHeader, EmptyState } from '@unami/ui';
-import { AlertTriangle } from 'lucide-react';
+import { PageHeader } from '@unami/ui';
+import { FIXTURE_ALERTS, FIXTURE_CHILDREN } from '@/fixtures/uncip';
+import { AlertSummaryCard } from '@/components/uncip/alert/AlertSummaryCard';
 
 export default function AlertsPage() {
+  const sorted = [...FIXTURE_ALERTS].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Alerts"
-        description="Active and resolved missing child alerts."
+        description={`${FIXTURE_ALERTS.length} alerts — ${FIXTURE_ALERTS.filter((a) => a.status === 'active').length} active.`}
       />
-      <EmptyState
-        title="No alerts"
-        description="Missing child alerts will appear here once the backend is connected."
-        icon={AlertTriangle}
-      />
+      <div className="space-y-3">
+        {sorted.map((alert) => {
+          const child = FIXTURE_CHILDREN.find((c) => c.id === alert.childId) ?? null;
+          return (
+            <a key={alert.id} href={`/alerts/${alert.id}`} className="block">
+              <AlertSummaryCard alert={alert} child={child} />
+            </a>
+          );
+        })}
+      </div>
     </div>
   );
 }
