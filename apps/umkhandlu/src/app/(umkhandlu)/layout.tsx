@@ -5,8 +5,7 @@ import { getOperatorSession } from '@/lib/auth/operator';
 import { getPreference } from '@/server/server-actions';
 import { AppSidebar } from './dashboard/_components/sidebar/app-sidebar';
 import { SearchDialog } from './dashboard/_components/header/search-dialog';
-import { ShellThemeSwitcher } from '@unami/ui';
-import { LayoutControls } from './dashboard/_components/header/layout-controls';
+import { ShellThemeSwitcher, ShellLayoutControls } from '@unami/ui';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -60,7 +59,7 @@ export default async function UmkhandluLayout({ children }: { children: ReactNod
               <SearchDialog />
             </div>
             <div className="flex items-center gap-2">
-              <LayoutControls />
+              <ShellLayoutControls />
               <ShellThemeSwitcher />
             </div>
           </div>

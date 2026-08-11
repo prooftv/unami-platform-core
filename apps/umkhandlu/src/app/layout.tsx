@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { ThemeBootScript } from '@/scripts/theme-boot';
-import { PREFERENCE_DEFAULTS, PreferencesStoreProvider } from '@unami/ui';
+import { ThemeBootScript, PREFERENCE_DEFAULTS, PreferencesStoreProvider } from '@unami/ui';
 import { fontVars } from '@/lib/fonts/registry';
 import './globals.css';
 

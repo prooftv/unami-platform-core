@@ -34,7 +34,7 @@ import type {
   NavMainItem,
   NavMainLinkItem,
   NavMainParentItem,
-} from "@/navigation/sidebar/sidebar-items";
+} from "@unami/ui";
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];

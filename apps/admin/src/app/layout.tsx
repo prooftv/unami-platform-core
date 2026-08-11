@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { fontVars } from "@/lib/fonts/registry";
 import { PREFERENCE_DEFAULTS } from "@unami/ui";
-import { ThemeBootScript } from "@/scripts/theme-boot";
+import { ThemeBootScript } from "@unami/ui";
 import { PreferencesStoreProvider } from "@unami/ui";
 import "./globals.css";
 

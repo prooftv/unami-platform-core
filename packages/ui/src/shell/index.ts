@@ -1,4 +1,6 @@
 // Shell framework — platform-generic, no app-specific imports
+export * from './ThemeBootScript';
+export * from './nav-types';
 export * from './ShellLayoutControls';
 export * from './ShellThemeSwitcher';
 export * from './ShellNavUser';

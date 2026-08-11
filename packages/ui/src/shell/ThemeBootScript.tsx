@@ -1,11 +1,12 @@
 /**
- * Boot script that reads user preference values from cookies or localStorage
- * based on the configured persistence mode.
+ * Pre-hydration boot script. Reads preference values from cookies or localStorage
+ * and applies data attributes to <html> before React hydrates, preventing
+ * theme/layout flicker. RootLayout stays fully static.
  *
- * Runs early in <head> to apply the correct data attributes before hydration,
- * preventing layout or theme flicker and keeping RootLayout fully static.
+ * Canonical implementation — consumed by all Unami applications.
+ * No Next.js dependency. Returns a plain <script> tag.
  */
-import { PREFERENCE_REGISTRY } from "@unami/ui";
+import { PREFERENCE_REGISTRY } from '../theme/preferences-config';
 
 export function ThemeBootScript() {
   const registry = JSON.stringify(PREFERENCE_REGISTRY);
@@ -24,34 +25,21 @@ export function ThemeBootScript() {
         }
 
         function readLocal(name) {
-          try {
-            return window.localStorage.getItem(name);
-          } catch (e) {
-            return null;
-          }
+          try { return window.localStorage.getItem(name); } catch (e) { return null; }
         }
 
         function readPreference(key, definition) {
           var mode = definition.persistence;
           var value = null;
-
-          if (mode === "localStorage") {
-            value = readLocal(key);
-          }
-
-          if (!value && (mode === "client-cookie" || mode === "server-cookie")) {
-            value = readCookie(key);
-          }
-
+          if (mode === "localStorage") value = readLocal(key);
+          if (!value && (mode === "client-cookie" || mode === "server-cookie")) value = readCookie(key);
           return definition.values.indexOf(value) >= 0 ? value : definition.defaultValue;
         }
 
         var preferences = {};
-
         Object.keys(REGISTRY).forEach(function(key) {
           var definition = REGISTRY[key];
           var value = readPreference(key, definition);
-
           preferences[key] = value;
           root.setAttribute(definition.attribute, value);
         });
@@ -60,9 +48,7 @@ export function ThemeBootScript() {
         var resolvedMode =
           mode === "system" && window.matchMedia
             ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-            : mode === "dark"
-              ? "dark"
-              : "light";
+            : mode === "dark" ? "dark" : "light";
 
         root.classList.toggle("dark", resolvedMode === "dark");
         root.style.colorScheme = resolvedMode;

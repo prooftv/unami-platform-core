@@ -419,7 +419,7 @@ Each consumes `@unami/ui`, `@unami/shared`, `@unami/api`. None modify `packages/
 
 ---
 
-## Phase 19 — UNCIP v2 ⏳ Next
+## Phase 19 — UNCIP v2 ⏳ Active
 
 **Goal:** Build UNCIP (Unami National Child Identification Programme) as `apps/uncip`.
 Child safety platform for South African townships. Connects parents, schools, SAPS, and community.
@@ -427,20 +427,52 @@ Strategic goal: government pilot presentation — 30 schools, 3 provinces, ~2,00
 
 All founder decisions locked. Full context in `docs/context/uncip/UNCIP_SESSION_PROMPT.md`.
 
-**Implementation sequence:**
+### Phase 19 Step 0 — Platform Shell Extraction ✅ Complete
+
+First extraction of the dashboard shell pattern proven independently in Moments, Umkhandlu, and UNCIP.
+No new packages. No speculative abstractions. Only what was provably identical across all three apps.
+
+| Task | Status |
+|---|---|
+| Pre-extraction diff verification — confirmed identical files before touching anything | ✅ |
+| `ThemeBootScript` extracted → `packages/ui/src/shell/ThemeBootScript.tsx` | ✅ |
+| Nav types (`NavGroup`, `NavMainItem`, etc.) extracted → `packages/ui/src/shell/nav-types.ts` | ✅ |
+| `packages/ui/src/shell/index.ts` updated to export both | ✅ |
+| All three apps migrated: `ThemeBootScript` imported from `@unami/ui` | ✅ |
+| All three apps migrated: `ShellLayoutControls` imported from `@unami/ui` (local copies deleted) | ✅ |
+| All three apps migrated: nav types imported from `@unami/ui` in `sidebar-items.ts` and `nav-main.tsx` | ✅ |
+| Local `scripts/theme-boot.tsx` deleted from all three apps | ✅ |
+| Local `header/layout-controls.tsx` deleted from all three apps | ✅ |
+| `docs/context/PLATFORM_DASHBOARD_SHELL.md` written — constitutional spec + templates + checklist | ✅ |
+| TypeScript: zero errors across `packages/ui`, admin, umkhandlu, uncip | ✅ |
+| Boundary verified: only `packages/ui` and three app shell files changed | ✅ |
+
+**Constitutional principle locked:**
+> The shell is shared. The application is not.
+> Platform Core owns shell technology. The product owns shell configuration.
+
+**What cannot be extracted (Next.js dependency boundary):**
+- `nav-main.tsx` — needs `next/link`, `next/navigation`, app-local shadcn sidebar
+- `server-actions.ts` — needs `next/headers`
+- `lib/fonts/registry.ts` — needs `next/font/google`
+- Layout files — async server components with Next.js APIs
+
+### Phase 19 Steps 1–10 — UNCIP Domain Implementation ⏳
+
+**Implementation sequence (UI-first, backend last):**
 
 | Step | Task | Status |
 |---|---|---|
-| 1 | Database — 8 new tables, migration `009_uncip_schema.sql`, RLS | ⏳ |
-| 2 | Edge Functions — children, alerts, sightings, notifications | ⏳ |
-| 3 | API clients — `packages/api/src/clients/uncip-*.ts` | ⏳ |
-| 4 | App scaffold — `apps/uncip/`, auth, shell, role routing | ⏳ |
-| 5 | Admin dashboard — user management, schools, stations, all alerts | ⏳ |
-| 6 | Parent dashboard — child profiles, digital ID card, alert creation | ⏳ |
-| 7 | School dashboard — enrolled children, last-seen confirmation | ⏳ |
-| 8 | Authority dashboard — station alerts, case number assignment | ⏳ |
-| 9 | Community dashboard — area alerts, sighting reports | ⏳ |
-| 10 | Notifications — outbound email on alert, sighting, resolution | ⏳ |
+| 1 | App scaffold — `apps/uncip/` foundation complete (shell, auth stub, domain types) | ✅ |
+| 2 | UI — Children module (list, detail, create form) against synthetic data | ⏳ |
+| 3 | UI — Alerts module (list, detail, create form) against synthetic data | ⏳ |
+| 4 | UI — Users module (list, invite, role assignment) against synthetic data | ⏳ |
+| 5 | UI — SAPS Stations module (list, detail) against synthetic data | ⏳ |
+| 6 | UX validation — full domain surface reviewed, synthetic data settled | ⏳ |
+| 7 | Database — 8 new tables, migration `009_uncip_schema.sql`, RLS | ⏳ |
+| 8 | Edge Functions — children, alerts, sightings, notifications | ⏳ |
+| 9 | API clients — `packages/api/src/clients/uncip-*.ts` | ⏳ |
+| 10 | Wire UI to real data — replace synthetic data, auth phase | ⏳ |
 
 ---
 
