@@ -100,8 +100,13 @@ const RATE_LIMITS: Record<string, { windowMs: number; max: number }> = {
   '/broadcasts':    { windowMs: 60_000, max: 60 },
   '/settings':      { windowMs: 60_000, max: 30 },
   '/retry-batches': { windowMs: 60_000, max: 5 },
-  '/records':       { windowMs: 60_000, max: 60 },
-  '/notices':       { windowMs: 60_000, max: 60 },
+  '/records':          { windowMs: 60_000, max: 60 },
+  '/notices':           { windowMs: 60_000, max: 60 },
+  '/uncip-children':    { windowMs: 60_000, max: 60 },
+  '/uncip-alerts':      { windowMs: 60_000, max: 60 },
+  '/uncip-timeline':    { windowMs: 60_000, max: 120 },
+  '/uncip-schools':     { windowMs: 60_000, max: 60 },
+  '/uncip-stations':    { windowMs: 60_000, max: 60 },
 };
 
 export async function checkRateLimit(
