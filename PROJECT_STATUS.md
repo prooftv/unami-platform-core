@@ -407,14 +407,40 @@ Control Centre shell brought to full parity with Moments admin. Validates the pl
 Phase 16  Platform Independence          ✅ Complete
 Phase 17  Moments Product Completion     ✅ Engineering Complete (ops gates remaining)
 Phase 18  Unami Control Centre           ✅ Complete (18A–18G + settings + shell parity)
-Phase 19  Multi-node Federation
-Phase 20  Commercial Intelligence
-Phase 21  National Institutional Memory
+Phase 19  UNCIP v2                       ⏳ Next
+Phase 20  Multi-node Federation
+Phase 21  Commercial Intelligence
+Phase 22  National Institutional Memory
 ```
 
 Future applications (Umkhandlu governance app, ITPMS, Schools Portal, BeatsChain, Spree) are
 scaffolded as concrete product requirements emerge — not on a fixed schedule.
 Each consumes `@unami/ui`, `@unami/shared`, `@unami/api`. None modify `packages/`.
+
+---
+
+## Phase 19 — UNCIP v2 ⏳ Next
+
+**Goal:** Build UNCIP (Unami National Child Identification Programme) as `apps/uncip`.
+Child safety platform for South African townships. Connects parents, schools, SAPS, and community.
+Strategic goal: government pilot presentation — 30 schools, 3 provinces, ~2,000 children.
+
+All founder decisions locked. Full context in `docs/context/uncip/UNCIP_SESSION_PROMPT.md`.
+
+**Implementation sequence:**
+
+| Step | Task | Status |
+|---|---|---|
+| 1 | Database — 8 new tables, migration `009_uncip_schema.sql`, RLS | ⏳ |
+| 2 | Edge Functions — children, alerts, sightings, notifications | ⏳ |
+| 3 | API clients — `packages/api/src/clients/uncip-*.ts` | ⏳ |
+| 4 | App scaffold — `apps/uncip/`, auth, shell, role routing | ⏳ |
+| 5 | Admin dashboard — user management, schools, stations, all alerts | ⏳ |
+| 6 | Parent dashboard — child profiles, digital ID card, alert creation | ⏳ |
+| 7 | School dashboard — enrolled children, last-seen confirmation | ⏳ |
+| 8 | Authority dashboard — station alerts, case number assignment | ⏳ |
+| 9 | Community dashboard — area alerts, sighting reports | ⏳ |
+| 10 | Notifications — outbound email on alert, sighting, resolution | ⏳ |
 
 ---
 
