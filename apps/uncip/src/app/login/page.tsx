@@ -39,26 +39,8 @@ async function LoginForm({
 }) {
   const { error } = await searchParams;
 
-  async function login(formData: FormData) {
-    'use server';
-    const { createClient } = await import('@/lib/supabase/server');
-    const { redirect } = await import('next/navigation');
-
-    const email    = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    const supabase = await createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (authError) {
-      redirect(`/login?error=${encodeURIComponent(authError.message)}`);
-    }
-
-    redirect('/dashboard');
-  }
-
   return (
-    <form action={login} className="space-y-4">
+    <form action="/auth/login" method="POST" className="space-y-4">
       {error && (
         <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
           {decodeURIComponent(error)}
