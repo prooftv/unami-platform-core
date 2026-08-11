@@ -1,10 +1,19 @@
+import { getUNCIPClient } from '@/lib/auth/operator';
 import { PageHeader, EmptyState } from '@unami/ui';
 import { AlertTriangle } from 'lucide-react';
-import { FIXTURE_ALERTS, FIXTURE_CHILDREN } from '@/fixtures/uncip';
 import { AlertSummaryCard } from '@/components/uncip/alert/AlertSummaryCard';
 
-export default function AlertsPage() {
-  const sorted = [...FIXTURE_ALERTS].sort(
+export default async function AlertsPage() {
+  const client = await getUNCIPClient();
+  const [alertsRes, childrenRes] = await Promise.all([
+    client?.alerts.list({ limit: 100 }),
+    client?.children.list({ limit: 100 }),
+  ]);
+
+  const alerts   = alertsRes?.data ?? [];
+  const children = childrenRes?.data ?? [];
+
+  const sorted = [...alerts].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 
@@ -21,18 +30,20 @@ export default function AlertsPage() {
     );
   }
 
+  const activeCount = alerts.filter((a) => a.status === 'active').length;
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Alerts"
-        description={`${FIXTURE_ALERTS.length} alerts — ${FIXTURE_ALERTS.filter((a) => a.status === 'active').length} active.`}
+        description={`${alerts.length} alerts — ${activeCount} active.`}
       />
       <div className="space-y-3">
         {sorted.map((alert) => {
-          const child = FIXTURE_CHILDREN.find((c) => c.id === alert.childId) ?? null;
+          const child = children.find((c) => c.id === alert.childId) ?? null;
           return (
             <a key={alert.id} href={`/alerts/${alert.id}`} className="block">
-              <AlertSummaryCard alert={alert} child={child} />
+              <AlertSummaryCard alert={alert as never} child={child as never} />
             </a>
           );
         })}

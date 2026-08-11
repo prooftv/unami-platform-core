@@ -5,7 +5,6 @@ import { getUNCIPSession } from '@/lib/auth/operator';
 import { getPreference } from '@/server/server-actions';
 import { AppSidebar } from './dashboard/_components/sidebar/app-sidebar';
 import { SearchDialog } from './dashboard/_components/header/search-dialog';
-import { RoleSwitcher } from './dashboard/_components/header/role-switcher';
 import { ShellThemeSwitcher, ShellLayoutControls } from '@unami/ui';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -60,16 +59,12 @@ export default async function UNCIPLayout({ children }: { children: ReactNode })
               <SearchDialog />
             </div>
             <div className="flex items-center gap-2">
-              <RoleSwitcher currentRole={session.role} />
               <ShellLayoutControls />
               <ShellThemeSwitcher />
             </div>
           </div>
         </header>
         <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden p-4 has-data-[content-padding=false]:p-0 md:p-6 md:has-data-[content-padding=false]:p-0">
-          <div className="mb-4 rounded-md border border-dashed border-amber-400 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
-            DEVELOPMENT MODE — SYNTHETIC DATA ONLY — No real child data is present
-          </div>
           {children}
         </div>
       </SidebarInset>

@@ -39,10 +39,22 @@ async function LoginForm({
 }) {
   const { error } = await searchParams;
 
-  // TODO(auth-phase): Wire this server action to Supabase Auth signInWithPassword
-  async function login(_formData: FormData) {
+  async function login(formData: FormData) {
     'use server';
-    // Placeholder — auth phase will implement this
+    const { createClient } = await import('@/lib/supabase/server');
+    const { redirect } = await import('next/navigation');
+
+    const email    = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    const supabase = await createClient();
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (authError) {
+      redirect(`/login?error=${encodeURIComponent(authError.message)}`);
+    }
+
+    redirect('/dashboard');
   }
 
   return (

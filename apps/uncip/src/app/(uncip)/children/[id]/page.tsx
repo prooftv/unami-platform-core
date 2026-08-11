@@ -2,13 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { PageHeader } from '@unami/ui';
 import { Button } from '@/components/ui/button';
-import {
-  FIXTURE_CHILDREN,
-  FIXTURE_USERS,
-  getSchool,
-  getAlertsForChild,
-} from '@/fixtures/uncip';
-import { buildUsersMap } from '@/lib/fixtures/users-map';
+import { getUNCIPClient } from '@/lib/auth/operator';
 import { ChildDetailPanel } from '@/components/uncip/child/ChildDetailPanel';
 import { AlertSummaryCard } from '@/components/uncip/alert/AlertSummaryCard';
 
@@ -18,13 +12,22 @@ interface Props {
 
 export default async function ChildDetailPage({ params }: Props) {
   const { id } = await params;
-  const child = FIXTURE_CHILDREN.find((c) => c.id === id);
-  if (!child) notFound();
+  const client = await getUNCIPClient();
 
-  const school = getSchool(child.schoolId ?? '') ?? null;
-  const alerts = getAlertsForChild(child.id);
+  const [childRes, alertsRes] = await Promise.all([
+    client?.children.get(id).catch(() => null),
+    client?.alerts.list({ childId: id, limit: 50 }),
+  ]);
+
+  if (!childRes?.data) notFound();
+
+  const child  = childRes.data;
+  const alerts = alertsRes?.data ?? [];
+  const school = child.schoolId
+    ? await client?.schools.get(child.schoolId).then((r) => r.data).catch(() => null)
+    : null;
+
   const hasActiveAlert = alerts.some((a) => a.status === 'active');
-  const usersMap = buildUsersMap(FIXTURE_USERS);
 
   return (
     <div className="space-y-6">
@@ -40,10 +43,10 @@ export default async function ChildDetailPage({ params }: Props) {
 
       <div className="max-w-3xl space-y-6">
         <ChildDetailPanel
-          child={child}
-          school={school}
+          child={child as never}
+          school={school as never}
           hasActiveAlert={hasActiveAlert}
-          users={usersMap}
+          users={{}}
         />
 
         {alerts.length > 0 && (
@@ -51,7 +54,7 @@ export default async function ChildDetailPage({ params }: Props) {
             <p className="text-sm font-medium text-muted-foreground">Alert History</p>
             {alerts.map((alert) => (
               <a key={alert.id} href={`/alerts/${alert.id}`} className="block">
-                <AlertSummaryCard alert={alert} child={child} />
+                <AlertSummaryCard alert={alert as never} child={child as never} />
               </a>
             ))}
           </div>

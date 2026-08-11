@@ -1,43 +1,30 @@
-import { getUNCIPSession } from '@/lib/auth/operator';
+import { getUNCIPSession, getUNCIPClient } from '@/lib/auth/operator';
 import { PageHeader, KPIGrid, MetricCard, ActivityFeed } from '@unami/ui';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Baby, CheckCircle, Users } from 'lucide-react';
-import {
-  FIXTURE_CHILDREN,
-  FIXTURE_ALERTS,
-  FIXTURE_USERS,
-  getSchool,
-  getAlertsForChild,
-  getActiveAlerts,
-} from '@/fixtures/uncip';
-import { buildUsersMap } from '@/lib/fixtures/users-map';
 import { AlertSummaryCard } from '@/components/uncip/alert/AlertSummaryCard';
 import { ChildSummaryCard } from '@/components/uncip/child/ChildSummaryCard';
 
 export default async function DashboardPage() {
-  const session = await getUNCIPSession();
+  const [session, client] = await Promise.all([getUNCIPSession(), getUNCIPClient()]);
 
-  const activeAlerts = getActiveAlerts();
-  const resolvedCount = FIXTURE_ALERTS.filter((a) => a.status === 'resolved').length;
-  const usersMap = buildUsersMap(FIXTURE_USERS);
+  const [childrenRes, alertsRes, stationsRes] = await Promise.all([
+    client?.children.list({ limit: 100 }),
+    client?.alerts.list({ limit: 100 }),
+    client?.stations.list(),
+  ]);
 
-  // Recent children — last 4 by createdAt
-  const recentChildren = [...FIXTURE_CHILDREN]
+  const children = childrenRes?.data ?? [];
+  const alerts   = alertsRes?.data ?? [];
+  const stations = stationsRes?.data ?? [];
+
+  const activeAlerts  = alerts.filter((a) => a.status === 'active');
+  const resolvedCount = alerts.filter((a) => a.status === 'resolved').length;
+
+  const recentChildren = [...children]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 4);
-
-  const activityItems = FIXTURE_ALERTS.flatMap((alert) =>
-    alert.timeline.map((entry) => ({ entry, actorName: usersMap[entry.actorId]?.name ?? entry.actorId }))
-  )
-    .sort((a, b) => new Date(b.entry.timestamp).getTime() - new Date(a.entry.timestamp).getTime())
-    .slice(0, 8)
-    .map(({ entry, actorName }) => ({
-      id: entry.id,
-      label: `${actorName} — ${entry.action.replace(/_/g, ' ')}`,
-      description: entry.note ?? undefined,
-      timestamp: new Date(entry.timestamp).toLocaleString(),
-    }));
 
   return (
     <div className="space-y-6">
@@ -52,10 +39,10 @@ export default async function DashboardPage() {
       />
 
       <KPIGrid>
-        <MetricCard title="Registered Children" value={String(FIXTURE_CHILDREN.length)} icon={Baby} compact />
-        <MetricCard title="Active Alerts" value={String(activeAlerts.length)} icon={AlertTriangle} compact />
-        <MetricCard title="Resolved This Month" value={String(resolvedCount)} icon={CheckCircle} compact />
-        <MetricCard title="Registered Users" value={String(FIXTURE_USERS.length)} icon={Users} compact />
+        <MetricCard title="Registered Children"  value={String(children.length)}  icon={Baby}          compact />
+        <MetricCard title="Active Alerts"         value={String(activeAlerts.length)} icon={AlertTriangle} compact />
+        <MetricCard title="Resolved This Month"   value={String(resolvedCount)}    icon={CheckCircle}   compact />
+        <MetricCard title="Stations Configured"   value={String(stations.length)}  icon={Users}         compact />
       </KPIGrid>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -67,9 +54,9 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {activeAlerts.map((alert) => {
-              const child = FIXTURE_CHILDREN.find((c) => c.id === alert.childId) ?? null;
-              return <AlertSummaryCard key={alert.id} alert={alert} child={child} />;
+            {activeAlerts.slice(0, 5).map((alert) => {
+              const child = children.find((c) => c.id === alert.childId) ?? null;
+              return <AlertSummaryCard key={alert.id} alert={alert as never} child={child as never} />;
             })}
           </CardContent>
         </Card>
@@ -82,23 +69,17 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {recentChildren.map((child) => {
-              const school = getSchool(child.schoolId ?? '') ?? null;
-              const hasActiveAlert = getAlertsForChild(child.id).some((a) => a.status === 'active');
-              return (
-                <ChildSummaryCard
-                  key={child.id}
-                  child={child}
-                  school={school}
-                  hasActiveAlert={hasActiveAlert}
-                />
-              );
-            })}
+            {recentChildren.map((child) => (
+              <ChildSummaryCard
+                key={child.id}
+                child={child as never}
+                school={null}
+                hasActiveAlert={alerts.some((a) => a.childId === child.id && a.status === 'active')}
+              />
+            ))}
           </CardContent>
         </Card>
       </div>
-
-      <ActivityFeed items={activityItems} title="Recent Activity" />
     </div>
   );
 }

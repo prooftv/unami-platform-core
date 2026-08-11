@@ -2,8 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { PageHeader } from '@unami/ui';
 import { Button } from '@/components/ui/button';
-import { FIXTURE_ALERTS, FIXTURE_CHILDREN, FIXTURE_USERS } from '@/fixtures/uncip';
-import { buildUsersMap } from '@/lib/fixtures/users-map';
+import { getUNCIPClient } from '@/lib/auth/operator';
 import { AlertDetailPanel } from '@/components/uncip/alert/AlertDetailPanel';
 
 interface Props {
@@ -12,11 +11,13 @@ interface Props {
 
 export default async function AlertDetailPage({ params }: Props) {
   const { id } = await params;
-  const alert = FIXTURE_ALERTS.find((a) => a.id === id);
-  if (!alert) notFound();
+  const client = await getUNCIPClient();
 
-  const child = FIXTURE_CHILDREN.find((c) => c.id === alert.childId) ?? null;
-  const usersMap = buildUsersMap(FIXTURE_USERS);
+  const alertRes = await client?.alerts.get(id).catch(() => null);
+  if (!alertRes?.data) notFound();
+
+  const alert = alertRes.data;
+  const child = await client?.children.get(alert.childId).then((r) => r.data).catch(() => null);
   const childName = child ? `${child.firstName} ${child.lastName}` : 'Unknown child';
 
   return (
@@ -39,7 +40,7 @@ export default async function AlertDetailPage({ params }: Props) {
       />
 
       <div className="max-w-3xl">
-        <AlertDetailPanel alert={alert} child={child} users={usersMap} />
+        <AlertDetailPanel alert={alert as never} child={child as never} users={{}} />
       </div>
     </div>
   );
