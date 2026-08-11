@@ -8,7 +8,6 @@ Before responding to anything, read these files from the repository:
 
 ```text
 PROJECT_STATUS.md
-PLATFORM.md
 apps/uncip/UNCIP_V2_FRONTEND.md
 docs/context/uncip/UNCIP_SCHEMA_DECISIONS.md
 ```
@@ -23,230 +22,121 @@ The repository is the source of truth.
 
 **UNCIP V2 — National Child Identification Program**
 
-Repository:
-
-```text
-prooftv/unami-platform-core
-```
-
-Application:
-
-```text
-apps/uncip
-```
-
-UNCIP V2 is being developed using a constitution-first process.
-
-The objective is a **real application**, not a permanent prototype made from fixtures and mock implementations.
+Repository: `prooftv/unami-platform-core`
+Application: `apps/uncip`
 
 ---
 
-# COMPLETED FOUNDATION
+# MILESTONE — FOUNDATIONAL ARCHITECTURE COMPLETE
 
-The following phases are complete.
+**Commit: `d381d8a`**
 
-```text
-1. Constitution
-2. Canonical domain types
-3. Synthetic fixtures
-4. Domain components
-5. Pages
-6. Interaction states + role experience verification
-```
+UNCIP Reimagined is no longer a prototype. The application operates against its real backend and authorization model.
 
-The resulting architecture is:
+The full build sequence is complete:
 
 ```text
-Source extraction
-      ↓
-UNCIP V2 Constitution
-      ↓
-Canonical domain types
-      ↓
-Synthetic fixtures
-      ↓
-Domain components
-      ↓
-Pages
-      ↓
-Interaction states
-      ↓
-Role experience verification
+CONSTITUTION          FROZEN   apps/uncip/UNCIP_V2_FRONTEND.md
+DOMAIN TYPES          FROZEN   apps/uncip/src/domain/uncip/types.ts
+FIXTURES              FROZEN   apps/uncip/src/fixtures/uncip/ (historical reference only)
+DOMAIN COMPONENTS     COMPLETE
+PAGES                 COMPLETE
+INTERACTION STATES    COMPLETE
+SCHEMA DECISIONS      COMPLETE docs/context/uncip/UNCIP_SCHEMA_DECISIONS.md
+DATABASE + RLS        COMPLETE b506f48 — 009_uncip_schema.sql, 8 tables, uncip_current_profile()
+EDGE FUNCTIONS        COMPLETE 1ed6fc2 — uncip-children, uncip-alerts, uncip-schools, uncip-stations, uncip-timeline
+API CLIENTS           COMPLETE 06bed7a — createUNCIPApiClient factory, all 5 typed clients
+REAL AUTH             COMPLETE 0fcde4f — operator.ts, middleware.ts, login wired, all 6 pages
+INTEGRATION AUDIT     COMPLETE d381d8a — as never removed, mock-session deleted, users page on real DB
 ```
 
-The frontend foundation is now complete.
+---
+
+# WHAT IS GONE
+
+The following no longer exist in the codebase:
+
+- `mock-session.ts` — deleted
+- `RoleSwitcher` component — deleted
+- `setMockRole` server action — removed
+- Dev banner in layout — removed
+- `as never` type bridges — all removed
+- Fixture-backed routes — all 7 pages now on real API calls
+- Domain → API translation hacks — components consume API types directly
+
+---
+
+# REAL AUTHORIZATION CHAIN
+
+```text
+User
+ ↓
+Supabase Auth (JWT validated server-side via getUser())
+ ↓
+uncip_user_profiles (role, station_id, school_id, is_active)
+ ↓
+getUNCIPSession() / getUNCIPClient()
+ ↓
+Edge Functions (business rules + Decision enforcement)
+ ↓
+PostgreSQL + RLS (community safeguarding boundary enforced at DB layer)
+ ↓
+UNCIP UI
+```
 
 ---
 
 # CONSTITUTION — FROZEN
 
-File:
+File: `apps/uncip/UNCIP_V2_FRONTEND.md`
 
-```text
-apps/uncip/UNCIP_V2_FRONTEND.md
-```
-
-Status: **FROZEN**
-
-The central entity is:
+Central entity:
 
 ```text
 Child
 ├── GuardianLink[]
 ├── schoolId → School
-├── address
-├── medicalInfo
+├── address (flat: addressStreet, addressCity, addressProvince, addressPostalCode)
+├── medicalInfo (joined: uncipChildMedical)
 └── Alert[]
-      └── AlertTimelineEntry[]
+      └── AlertTimelineEntry[] (joined: uncipAlertTimeline)
 ```
 
-Five roles exist:
+Five roles: `parent` `school` `authority` `community` `admin`
+
+Core response workflow:
 
 ```text
-parent
-school
-authority
-community
-admin
-```
-
-The core response workflow is:
-
-```text
-Parent raises alert
-        ↓
-School receives / confirms last seen
-        ↓
-Authority receives / assigns case
-        ↓
-Community reports sighting
-        ↓
-Authority resolves
+Parent raises alert → School confirms last seen → Authority assigns case
+→ Community reports sighting → Authority resolves
 ```
 
 ---
 
 # CANONICAL TYPES — FROZEN
 
-File:
+File: `apps/uncip/src/domain/uncip/types.ts`
 
-```text
-apps/uncip/src/domain/uncip/types.ts
-```
+These are the **conceptual UNCIP ontology**. Do not modify unless a genuine contradiction is discovered.
 
-Status: **FROZEN / AUDITED**
-
-Do not casually alter them.
+The API types in `packages/api/src/clients/uncip-*.ts` represent the actual persisted/API shape.
+Components consume API types directly. The domain types remain the conceptual reference.
 
 ---
 
-# FIXTURES — FROZEN
-
-Commit: `405e357`
-
-The fixtures are development/test data only. They are not the backend.
-
-Do not expand the fixture system to simulate persistence.
-Do not build fake mutations against fixtures.
-Do not add increasingly sophisticated mock infrastructure.
-
----
-
-# DOMAIN COMPONENTS — COMPLETE
-
-Commit: `a74615f`
-
-```text
-child/
-alert/
-station/
-user/
-```
-
-Props-driven. Reusable when real API data replaces fixture data.
-
----
-
-# PAGES — COMPLETE
-
-Commit: `27ffb33`
-
-```text
-/dashboard
-/children
-/children/[id]
-/alerts
-/alerts/[id]
-/users
-/stations
-```
-
----
-
-# INTERACTION STATES + ROLE EXPERIENCE — COMPLETE
-
-Commit: `2cb1b3e`
-
-Every applicable route has: loading, error, empty, populated, not-found where applicable.
-
----
-
-# MOCK ROLE SESSION — DEVELOPMENT ONLY
-
-The current role switcher uses `mock_role`. This is not production authentication.
-
-Do not extend it. Do not build permission logic around it.
-
-The eventual architecture uses Supabase Auth and a UNCIP user profile.
-
----
-
-# SAFEGUARDING
-
-Do not introduce real child information into fixtures, tests, screenshots, commits, documentation examples, or development data.
-
----
-
-# SCHEMA DECISIONS DOCUMENT
-
-File:
-
-```text
-docs/context/uncip/UNCIP_SCHEMA_DECISIONS.md
-```
-
-Status: **ALL THREE DECISIONS RECORDED — MIGRATION 009 UNBLOCKED**
-
----
-
-# THREE DECISIONS — RECORDED
+# THREE DECISIONS — LOCKED
 
 ## Decision 1 — Identification Number
-
-**DECIDED: C — Optional at registration, required before missing-child alert.**
-
-- `identification_number` is nullable on `uncip_children`
-- Alert creation Edge Function rejects `alert_type = 'missing'` if `identification_number` is null
-- Medical and welfare alerts may proceed without identification
+**C — Optional at registration, required before missing-child alert.**
+- `identification_number` nullable on `uncip_children`
+- Edge Function rejects `alert_type = 'missing'` if `identification_number` is null
 
 ## Decision 2 — Parent Station Scope
-
-**DECIDED: A — Guardian-link only.**
-
+**A — Guardian-link only.**
 - Parent sees only their own children and alerts for those children
 - `station_id` is NULL for parent rows in `uncip_user_profiles`
-- No station-scoped community alert feed for parents in V2
 
 ## Decision 3 — Alert Timeline Action Permissions
-
-**DECIDED.**
-
-**3a — School alert creation:** School may raise `alert_raised` for medical alert type only.
-
-**3b — Parent resolution:** Parent may perform `status_changed` for cancel/false_alarm on own alerts only. `resolved` is reserved for authority and admin.
-
-**3c — `status_changed` action:** Keep as single action. Splitting would require modifying the frozen `AlertTimelineAction` type — not acceptable.
-
 **Approved permission table:**
 
 | Action | Parent | School | Authority | Community | Admin |
@@ -260,95 +150,54 @@ Status: **ALL THREE DECISIONS RECORDED — MIGRATION 009 UNBLOCKED**
 
 ---
 
-# CURRENT STATUS
+# SAFEGUARDING BOUNDARY
 
-```text
-Constitution                  FROZEN
-Domain types                  FROZEN
-Synthetic fixtures            FROZEN
-Domain components             COMPLETE
-Pages                         COMPLETE
-Interaction states            COMPLETE
-Role experience verification  COMPLETE
-
-Schema decisions document     COMPLETE
-Founder decisions             ALL DECIDED
-
-Database migration            COMPLETE  — b506f48
-RLS                           COMPLETE  — b506f48
-Edge Functions                COMPLETE  — 1ed6fc2
-API clients                   NOT STARTED  ← NEXT
-Real authentication           NOT STARTED
-Fixture replacement           NOT STARTED
-```
-
-Latest commit: `1ed6fc2`
+Community role has **zero access** to child identity, medical, or guardian data.
+Enforced at RLS layer — not just UI. This is non-negotiable.
 
 ---
 
-# THE NEXT SESSION'S JOB
-
-Read `docs/context/uncip/STEP8_HANDOFF.md` for full Step 8 context and the Step 9 contract.
-
-## Step 9 — Typed API clients
-
-Create typed clients in `packages/api/src/clients/` that wrap the five Edge Functions.
-Use canonical types from `apps/uncip/src/domain/uncip/types.ts`.
-
-Expected files:
+# CURRENT STATUS
 
 ```text
-packages/api/src/clients/uncip-children.ts
-packages/api/src/clients/uncip-alerts.ts
-packages/api/src/clients/uncip-schools.ts
-packages/api/src/clients/uncip-stations.ts
-packages/api/src/clients/uncip-timeline.ts
+Foundational architecture     COMPLETE  d381d8a
 ```
 
-## Step 10 (after Step 9)
+The question has shifted from **"How do we make UNCIP real?"** to **"What does UNCIP need to actually operate in the world?"**
 
-Replace fixture imports with API calls. Replace `mock_role` with real Supabase Auth.
-Do not rebuild the frontend — pages and components are reused as-is.
+The operational product roadmap covers:
 
-Do not rebuild the frontend. The pages and components are reused as-is.
-The structural change is replacing:
-
-```typescript
-import { FIXTURE_CHILDREN } from '@/fixtures/uncip';
+```text
+Child registration form
+Guardian management
+Missing-child alert initiation
+Institutional response workflow
+Community sighting
+Case management
+Resolution
+Audit / reporting
+Operational deployment
 ```
 
-with:
-
-```typescript
-const children = await uncipClient.children.list();
-```
+**Do not choose the next feature speculatively.** Derive the roadmap from the actual system that now exists.
 
 ---
 
 # CONTINUITY PRINCIPLE
 
 ```text
-CONSTITUTION
-     ↓
-TYPE FREEZE
-     ↓
-FIXTURE FREEZE
-     ↓
-COMPONENTS
-     ↓
-PAGES
-     ↓
-INTERACTION STATES
-     ↓
-SCHEMA DECISIONS  ✅ GATE CLEARED
-     ↓
-DATABASE / RLS    ✅  b506f48
-     ↓
-EDGE FUNCTIONS    ✅  1ed6fc2
-     ↓
-API CLIENTS            ← YOU ARE HERE
-     ↓
-REAL AUTH
-     ↓
-REAL DATA
+CONSTITUTION          ✅ FROZEN
+TYPE FREEZE           ✅ FROZEN
+FIXTURE FREEZE        ✅ FROZEN (historical reference only)
+COMPONENTS            ✅ COMPLETE
+PAGES                 ✅ COMPLETE
+INTERACTION STATES    ✅ COMPLETE
+SCHEMA DECISIONS      ✅ GATE CLEARED
+DATABASE / RLS        ✅ b506f48
+EDGE FUNCTIONS        ✅ 1ed6fc2
+API CLIENTS           ✅ 06bed7a
+REAL AUTH             ✅ 0fcde4f
+INTEGRATION AUDIT     ✅ d381d8a  ← MILESTONE
+
+OPERATIONAL ROADMAP   ← NEXT
 ```

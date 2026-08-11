@@ -14,7 +14,7 @@ Read this first when resuming work or starting a new session.
 | Branch | `main` |
 | Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `4b713d9` |
+| Last commit | `d381d8a` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -457,22 +457,42 @@ No new packages. No speculative abstractions. Only what was provably identical a
 - `lib/fonts/registry.ts` — needs `next/font/google`
 - Layout files — async server components with Next.js APIs
 
-### Phase 19 Steps 1–10 — UNCIP Domain Implementation ⏳
+### Phase 19 Steps 1–11 — UNCIP Domain Implementation ✅ Foundational Architecture Complete
 
-**Implementation sequence (UI-first, backend last):**
+**Milestone commit: `d381d8a`**
+
+The UNCIP foundational architecture is proven. The application is no longer a prototype.
+All fixture infrastructure is gone. All routes operate against real Supabase Auth, real Edge Functions, and real RLS.
 
 | Step | Task | Status |
 |---|---|---|
-| 1 | App scaffold — `apps/uncip/` foundation complete (shell, auth stub, domain types) | ✅ |
-| 2 | UI — Children module (list, detail, create form) against synthetic data | ⏳ |
-| 3 | UI — Alerts module (list, detail, create form) against synthetic data | ⏳ |
-| 4 | UI — Users module (list, invite, role assignment) against synthetic data | ⏳ |
-| 5 | UI — SAPS Stations module (list, detail) against synthetic data | ⏳ |
-| 6 | UX validation — full domain surface reviewed, synthetic data settled | ⏳ |
-| 7 | Database — 8 new tables, migration `009_uncip_schema.sql`, RLS | ⏳ |
-| 8 | Edge Functions — children, alerts, sightings, notifications | ⏳ |
-| 9 | API clients — `packages/api/src/clients/uncip-*.ts` | ⏳ |
-| 10 | Wire UI to real data — replace synthetic data, auth phase | ⏳ |
+| 1 | App scaffold — `apps/uncip/` foundation, shell, auth stub, domain types | ✅ |
+| 2 | UI — Children module (list, detail) against synthetic data | ✅ |
+| 3 | UI — Alerts module (list, detail) against synthetic data | ✅ |
+| 4 | UI — Users module against synthetic data | ✅ |
+| 5 | UI — SAPS Stations module against synthetic data | ✅ |
+| 6 | UX validation — full domain surface reviewed, synthetic data settled | ✅ |
+| 7 | Database — 8 tables, `009_uncip_schema.sql`, full RLS, `uncip_current_profile()` | ✅ `b506f48` |
+| 8 | Edge Functions — `uncip-children`, `uncip-alerts`, `uncip-schools`, `uncip-stations`, `uncip-timeline` | ✅ `1ed6fc2` |
+| 9 | API clients — `packages/api/src/clients/uncip-*.ts`, `createUNCIPApiClient` factory | ✅ `06bed7a` |
+| 10 | Real auth — `operator.ts` rewritten, `middleware.ts`, login wired, all 6 pages on real API | ✅ `0fcde4f` |
+| 11 | Integration audit — `as never` bridges removed, `mock-session.ts` deleted, users page on real DB | ✅ `d381d8a` |
+
+**Authorization chain proven for all five roles:**
+
+```text
+Supabase Auth → uncip_user_profiles → Edge Functions → RLS → PostgreSQL → UI
+```
+
+**Eliminated at `d381d8a`:**
+- Mock session
+- Mock role
+- Dev banner
+- Fixture-backed routes (all 7 pages)
+- `as never` type bridges (all 7 components)
+- Domain → API translation hacks
+
+**Next: operational product roadmap** — child registration, alert creation, institutional response workflow.
 
 ---
 
