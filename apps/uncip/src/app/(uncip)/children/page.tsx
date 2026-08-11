@@ -1,8 +1,22 @@
-import { PageHeader } from '@unami/ui';
+import { PageHeader, EmptyState } from '@unami/ui';
+import { Baby } from 'lucide-react';
 import { FIXTURE_CHILDREN, getSchool, getAlertsForChild } from '@/fixtures/uncip';
 import { ChildSummaryCard } from '@/components/uncip/child/ChildSummaryCard';
 
 export default function ChildrenPage() {
+  if (FIXTURE_CHILDREN.length === 0) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Children" description="Registered children in the UNCIP system." />
+        <EmptyState
+          title="No children registered"
+          description="Children registered by parents will appear here."
+          icon={Baby}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader

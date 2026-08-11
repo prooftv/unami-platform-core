@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import {
   getPreferencePersistence,
   PREFERENCE_REGISTRY,
@@ -8,6 +9,16 @@ import {
   type PreferenceValueMap,
   parsePreference,
 } from "@unami/ui";
+import type { UNCIPRole } from "@/domain/uncip";
+
+// ─── Mock role switcher — FOUNDATION PHASE ONLY ───────────────────────────────
+// Sets the mock_role cookie so getUNCIPSession() returns the selected role.
+// Remove this function when the auth phase begins.
+export async function setMockRole(role: UNCIPRole): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set('mock_role', role, { path: '/', maxAge: 60 * 60 * 24 });
+  revalidatePath('/', 'layout');
+}
 
 export async function getValueFromCookie(key: string): Promise<string | undefined> {
   const cookieStore = await cookies();

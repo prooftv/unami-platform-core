@@ -1,4 +1,5 @@
-import { PageHeader, DataTable, type ColumnDef } from '@unami/ui';
+import { PageHeader, DataTable, EmptyState, type ColumnDef } from '@unami/ui';
+import { Users } from 'lucide-react';
 import { FIXTURE_USERS } from '@/fixtures/uncip';
 import { UserRoleBadge } from '@/components/uncip/user/UserRoleBadge';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,19 @@ const COLUMNS: ColumnDef<UserRecord>[] = [
 ];
 
 export default function UsersPage() {
+  if (FIXTURE_USERS.length === 0) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Users" description="Manage registered users." />
+        <EmptyState
+          title="No users registered"
+          description="Invited users will appear here."
+          icon={Users}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader

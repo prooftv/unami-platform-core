@@ -6,12 +6,18 @@
  * + Edge Function role lookup. The return type (UNCIPSession | null) does not change.
  */
 
-import type { UNCIPSession } from '@/domain/uncip';
-import { DEFAULT_MOCK_SESSION } from './mock-session';
+import { cookies } from 'next/headers';
+import type { UNCIPSession, UNCIPRole } from '@/domain/uncip';
+import { getMockSession } from './mock-session';
 
 export type { UNCIPSession };
 
+const VALID_ROLES: UNCIPRole[] = ['admin', 'parent', 'school', 'authority', 'community'];
+
 export async function getUNCIPSession(): Promise<UNCIPSession | null> {
   // TODO(auth-phase): Replace with Supabase Auth getUser() + /uncip-auth Edge Function
-  return DEFAULT_MOCK_SESSION;
+  const cookieStore = await cookies();
+  const raw = cookieStore.get('mock_role')?.value as UNCIPRole | undefined;
+  const role: UNCIPRole = raw && VALID_ROLES.includes(raw) ? raw : 'admin';
+  return getMockSession(role);
 }
