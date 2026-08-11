@@ -10,6 +10,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { createUNCIPApiClient } from '@unami/api';
+import { UNCIP_ENV } from '@/lib/env';
 import type { UNCIPSession } from '@/domain/uncip/types';
 
 export type { UNCIPSession };
@@ -60,7 +61,7 @@ export async function getUNCIPClient() {
     if (!session) return null;
 
     return createUNCIPApiClient({
-      baseUrl: process.env.NEXT_PUBLIC_UNCIP_SUPABASE_URL! + '/functions/v1',
+      baseUrl: UNCIP_ENV.supabaseUrl + '/functions/v1',
       token:   session.access_token,
     });
   } catch {

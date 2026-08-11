@@ -161,25 +161,28 @@ Enforced at RLS layer — not just UI. This is non-negotiable.
 
 ```text
 Foundational architecture     COMPLETE  d381d8a
+Platform isolation            COMPLETE  43227f1
+Environment guard             COMPLETE  (this commit)
 ```
 
-The question has shifted from **"How do we make UNCIP real?"** to **"What does UNCIP need to actually operate in the world?"**
+## Deployment Gate — must complete before operational features
 
-The operational product roadmap covers:
-
-```text
-Child registration form
-Guardian management
-Missing-child alert initiation
-Institutional response workflow
-Community sighting
-Case management
-Resolution
-Audit / reporting
-Operational deployment
+```
+□ New UNCIP Supabase project created
+□ Migration 009_uncip_schema.sql applied to UNCIP project
+□ RLS verified in UNCIP project
+□ UNCIP Edge Functions deployed to UNCIP project
+□ NEXT_PUBLIC_UNCIP_SUPABASE_URL set in Vercel
+□ NEXT_PUBLIC_UNCIP_SUPABASE_ANON_KEY set in Vercel
+□ Vercel root directory = apps/uncip
+□ Production build succeeds on Vercel
+□ Login works against UNCIP Auth
+□ Database contains no Moments data
+□ No Moments credentials present in UNCIP environment
 ```
 
-**Do not choose the next feature speculatively.** Derive the roadmap from the actual system that now exists.
+Once the deployment gate is cleared, begin Phase A of the operational roadmap.
+See `docs/context/uncip/UNCIP_OPERATIONAL_ROADMAP.md`.
 
 ---
 
@@ -197,7 +200,9 @@ DATABASE / RLS        ✅ b506f48
 EDGE FUNCTIONS        ✅ 1ed6fc2
 API CLIENTS           ✅ 06bed7a
 REAL AUTH             ✅ 0fcde4f
-INTEGRATION AUDIT     ✅ d381d8a  ← MILESTONE
+INTEGRATION AUDIT     ✅ d381d8a
+PLATFORM ISOLATION    ✅ 43227f1  (separate Supabase project, env guard)
 
-OPERATIONAL ROADMAP   ← NEXT
+DEPLOYMENT GATE       ← NEXT (ops)
+OPERATIONAL ROADMAP   ← AFTER DEPLOYMENT GATE
 ```

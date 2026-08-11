@@ -1,12 +1,13 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { UNCIP_ENV } from '@/lib/env';
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_UNCIP_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_UNCIP_SUPABASE_ANON_KEY!,
+    UNCIP_ENV.supabaseUrl,
+    UNCIP_ENV.supabaseAnonKey,
     {
       cookies: {
         getAll() {

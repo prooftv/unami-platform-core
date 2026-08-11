@@ -1,12 +1,13 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { UNCIP_ENV } from '@/lib/env';
 
 export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_UNCIP_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_UNCIP_SUPABASE_ANON_KEY!,
+    UNCIP_ENV.supabaseUrl,
+    UNCIP_ENV.supabaseAnonKey,
     {
       cookies: {
         getAll() {
