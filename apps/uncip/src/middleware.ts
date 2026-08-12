@@ -2,7 +2,16 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { UNCIP_ENV } from '@/lib/env';
 
+const PUBLIC_PATHS = ['/login', '/auth'];
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Skip auth for public paths
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -24,8 +33,11 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // Refresh session — required for Server Components to read auth state
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
 
   return supabaseResponse;
 }
