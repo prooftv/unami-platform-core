@@ -43,19 +43,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.redirect(
-        `${origin}/login?error=${encodeURIComponent(
-          'Session not established after sign in',
-        )}`,
-        { status: 303 },
-      );
-    }
-
     return response;
   } catch (err) {
     const message =
