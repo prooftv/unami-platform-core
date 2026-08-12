@@ -7,6 +7,8 @@ export interface UNCIPStation {
   province: Province;
   district: string | null;
   contactPhone: string | null;
+  lat: number | null;
+  lng: number | null;
   createdAt: string;
 }
 
@@ -15,6 +17,8 @@ export interface CreateStationInput {
   province: Province;
   district?: string | null;
   contactPhone?: string | null;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export function createUNCIPStationsClient(config: ApiConfig) {
@@ -38,6 +42,8 @@ export function createUNCIPStationsClient(config: ApiConfig) {
           province:      input.province,
           district:      input.district ?? null,
           contact_phone: input.contactPhone ?? null,
+          lat:           input.lat ?? null,
+          lng:           input.lng ?? null,
         }),
       });
     },

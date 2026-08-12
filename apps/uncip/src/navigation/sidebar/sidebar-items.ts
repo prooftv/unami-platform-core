@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   Baby,
   LayoutDashboard,
+  Map,
   School,
   Settings,
   Shield,
@@ -17,6 +18,7 @@ const ALL_ITEMS = {
   dashboard: { id: "dashboard", title: "Dashboard",     url: "/dashboard", icon: LayoutDashboard },
   children:  { id: "children",  title: "Children",      url: "/children",  icon: Baby },
   alerts:    { id: "alerts",    title: "Alerts",         url: "/alerts",    icon: AlertTriangle },
+  map:       { id: "map",       title: "Map",            url: "/map",       icon: Map },
   users:     { id: "users",     title: "Users",          url: "/users",     icon: Users },
   schools:   { id: "schools",   title: "Schools",        url: "/schools",   icon: School },
   stations:  { id: "stations",  title: "SAPS Stations",  url: "/stations",  icon: Shield },
@@ -24,11 +26,11 @@ const ALL_ITEMS = {
 } as const;
 
 const ROLE_ITEMS: Record<UNCIPRole, (keyof typeof ALL_ITEMS)[]> = {
-  admin:     ["dashboard", "children", "alerts", "users", "schools", "stations", "settings"],
-  parent:    ["dashboard", "children", "alerts", "settings"],
-  school:    ["dashboard", "children", "alerts", "schools", "settings"],
-  authority: ["dashboard", "children", "alerts", "schools", "stations", "settings"],
-  community: ["dashboard", "alerts", "settings"],
+  admin:     ["dashboard", "children", "alerts", "map", "users", "schools", "stations", "settings"],
+  parent:    ["dashboard", "children", "alerts", "map", "settings"],
+  school:    ["dashboard", "children", "alerts", "map", "schools", "settings"],
+  authority: ["dashboard", "children", "alerts", "map", "schools", "stations", "settings"],
+  community: ["dashboard", "alerts", "map", "settings"],
 };
 
 export function getSidebarItems(role: string): NavGroup[] {
@@ -36,7 +38,7 @@ export function getSidebarItems(role: string): NavGroup[] {
   const items = keys.map((k) => ALL_ITEMS[k]);
 
   const dashboard = items.filter((i) => i.id === "dashboard");
-  const children  = items.filter((i) => i.id === "children" || i.id === "alerts");
+  const children  = items.filter((i) => i.id === "children" || i.id === "alerts" || i.id === "map");
   const admin     = items.filter((i) => i.id === "users" || i.id === "schools" || i.id === "stations");
   const system    = items.filter((i) => i.id === "settings");
 

@@ -6,6 +6,8 @@ const CreateStationSchema = z.object({
   province:      z.enum(['eastern_cape','free_state','gauteng','kwazulu_natal','limpopo','mpumalanga','north_west','northern_cape','western_cape']),
   district:      z.string().max(200).nullable().optional(),
   contact_phone: z.string().max(20).nullable().optional(),
+  lat:           z.number().nullable().optional(),
+  lng:           z.number().nullable().optional(),
 });
 
 Deno.serve(async (req: Request) => {

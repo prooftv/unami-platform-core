@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getUNCIPClient, getUNCIPSession } from '@/lib/auth/operator';
 import { ALERT_TYPE_LABELS } from '@/domain/uncip/types';
+import { LocationPicker } from '@/components/uncip/map/LocationPicker';
 import type { AlertType } from '@/domain/uncip/types';
 
 const ALERT_TYPES: AlertType[] = ['missing', 'medical', 'danger', 'other'];
@@ -37,12 +38,16 @@ export default async function NewAlertPage({
     const c = await getUNCIPClient();
     if (!c) redirect('/login');
     try {
+      const latRaw = String(formData.get('lastSeenLat') ?? '').trim();
+      const lngRaw = String(formData.get('lastSeenLng') ?? '').trim();
       const res = await c.alerts.create({
         childId:          String(formData.get('childId') ?? '').trim(),
         alertType:        formData.get('alertType') as AlertType,
         description:      String(formData.get('description') ?? '').trim(),
         lastSeenAt:       String(formData.get('lastSeenAt') ?? '').trim(),
         lastSeenLocation: String(formData.get('lastSeenLocation') ?? '').trim(),
+        lastSeenLat:      latRaw ? parseFloat(latRaw) : null,
+        lastSeenLng:      lngRaw ? parseFloat(lngRaw) : null,
         lastSeenWearing:  String(formData.get('lastSeenWearing') ?? '').trim() || null,
         contactPhone:     String(formData.get('contactPhone') ?? '').trim(),
       });
@@ -112,8 +117,12 @@ export default async function NewAlertPage({
                   <Input id="lastSeenAt" name="lastSeenAt" type="datetime-local" required />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="lastSeenLocation">Location</Label>
+                  <Label htmlFor="lastSeenLocation">Location description</Label>
                   <Input id="lastSeenLocation" name="lastSeenLocation" required placeholder="e.g. Near Soweto Primary School" />
+                </div>
+                <div className="space-y-1">
+                  <Label>Pin on map (optional)</Label>
+                  <LocationPicker latName="lastSeenLat" lngName="lastSeenLng" />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="lastSeenWearing">Wearing (optional)</Label>

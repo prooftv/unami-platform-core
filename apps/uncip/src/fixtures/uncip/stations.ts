@@ -11,6 +11,8 @@ export const FIXTURE_STATIONS: SAPSStation[] = [
     province: 'western_cape',
     district: 'Cape Town Metro',
     contactPhone: null,
+    lat: null,
+    lng: null,
   },
   {
     id: 'station-002',
@@ -18,6 +20,8 @@ export const FIXTURE_STATIONS: SAPSStation[] = [
     province: 'gauteng',
     district: 'Johannesburg Metro',
     contactPhone: null,
+    lat: null,
+    lng: null,
   },
   {
     id: 'station-003',
@@ -25,5 +29,7 @@ export const FIXTURE_STATIONS: SAPSStation[] = [
     province: 'kwazulu_natal',
     district: 'eThekwini Metro',
     contactPhone: null,
+    lat: null,
+    lng: null,
   },
 ];

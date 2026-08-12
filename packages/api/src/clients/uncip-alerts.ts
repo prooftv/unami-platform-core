@@ -23,6 +23,8 @@ export interface UNCIPAlertTimelineEntry {
   note: string | null;
   caseNumber: string | null;
   sightingLocation: string | null;
+  sightingLat: number | null;
+  sightingLng: number | null;
   timestamp: string;
 }
 
@@ -34,6 +36,8 @@ export interface UNCIPAlert {
   description: string;
   lastSeenAt: string;
   lastSeenLocation: string;
+  lastSeenLat: number | null;
+  lastSeenLng: number | null;
   lastSeenWearing: string | null;
   contactPhone: string;
   createdBy: string;
@@ -51,6 +55,8 @@ export interface CreateAlertInput {
   description: string;
   lastSeenAt: string;
   lastSeenLocation: string;
+  lastSeenLat?: number | null;
+  lastSeenLng?: number | null;
   lastSeenWearing?: string | null;
   contactPhone: string;
 }
@@ -96,6 +102,8 @@ export function createUNCIPAlertsClient(config: ApiConfig) {
           description:        input.description,
           last_seen_at:       input.lastSeenAt,
           last_seen_location: input.lastSeenLocation,
+          last_seen_lat:      input.lastSeenLat ?? null,
+          last_seen_lng:      input.lastSeenLng ?? null,
           last_seen_wearing:  input.lastSeenWearing ?? null,
           contact_phone:      input.contactPhone,
         }),

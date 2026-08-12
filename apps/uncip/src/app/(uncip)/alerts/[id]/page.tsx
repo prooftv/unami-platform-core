@@ -31,13 +31,17 @@ export default async function AlertDetailPage({ params }: Props) {
     const note      = String(formData.get('note') ?? '').trim() || null;
     const caseNumber       = String(formData.get('caseNumber') ?? '').trim() || null;
     const sightingLocation = String(formData.get('sightingLocation') ?? '').trim() || null;
+    const sightingLatRaw   = String(formData.get('sightingLat') ?? '').trim();
+    const sightingLngRaw   = String(formData.get('sightingLng') ?? '').trim();
+    const sightingLat      = sightingLatRaw ? parseFloat(sightingLatRaw) : null;
+    const sightingLng      = sightingLngRaw ? parseFloat(sightingLngRaw) : null;
 
     if (action === 'change_status') {
       const newStatus = formData.get('newStatus') as 'resolved' | 'cancelled' | 'false_alarm';
       const statusNote = String(formData.get('statusNote') ?? '').trim() || null;
       await c.alerts.changeStatus(alertId, { status: newStatus, note: statusNote }).catch(() => null);
     } else {
-      await c.timeline.add({ alertId, action: action as never, note, caseNumber, sightingLocation }).catch(() => null);
+      await c.timeline.add({ alertId, action: action as never, note, caseNumber, sightingLocation, sightingLat, sightingLng }).catch(() => null);
     }
 
     redirect(`/alerts/${alertId}`);

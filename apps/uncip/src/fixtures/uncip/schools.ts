@@ -13,6 +13,8 @@ export const FIXTURE_SCHOOLS: School[] = [
     address: 'Site C, Khayelitsha, Cape Town',
     contactPhone: null,
     contactEmail: null,
+    lat: null,
+    lng: null,
   },
   {
     id: 'school-002',
@@ -22,6 +24,8 @@ export const FIXTURE_SCHOOLS: School[] = [
     address: 'Site B, Khayelitsha, Cape Town',
     contactPhone: null,
     contactEmail: null,
+    lat: null,
+    lng: null,
   },
   {
     id: 'school-003',
@@ -31,6 +35,8 @@ export const FIXTURE_SCHOOLS: School[] = [
     address: 'Meadowlands, Soweto, Johannesburg',
     contactPhone: null,
     contactEmail: null,
+    lat: null,
+    lng: null,
   },
   {
     id: 'school-004',
@@ -40,5 +46,7 @@ export const FIXTURE_SCHOOLS: School[] = [
     address: 'Section K, Umlazi, Durban',
     contactPhone: null,
     contactEmail: null,
+    lat: null,
+    lng: null,
   },
 ];

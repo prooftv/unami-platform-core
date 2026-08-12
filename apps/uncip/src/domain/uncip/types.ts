@@ -107,6 +107,8 @@ export interface School {
   address: string;
   contactPhone: string | null;
   contactEmail: string | null;
+  lat: number | null;
+  lng: number | null;
 }
 
 // ─── SAPS Station ─────────────────────────────────────────────────────────────
@@ -119,6 +121,8 @@ export interface SAPSStation {
   province: Province;
   district: string | null;
   contactPhone: string | null;
+  lat: number | null;
+  lng: number | null;
 }
 
 // ─── User record ──────────────────────────────────────────────────────────────
@@ -199,6 +203,10 @@ export interface AlertTimelineEntry {
   actorRole: UNCIPRole;
   action: AlertTimelineAction;
   note: string | null;
+  caseNumber: string | null;
+  sightingLocation: string | null;
+  sightingLat: number | null;
+  sightingLng: number | null;
   timestamp: string;
 }
 
@@ -214,6 +222,8 @@ export interface AlertRecord {
   description: string;
   lastSeenAt: string;
   lastSeenLocation: string;
+  lastSeenLat: number | null;
+  lastSeenLng: number | null;
   lastSeenWearing: string | null;
   contactPhone: string;
   timeline: AlertTimelineEntry[];

@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LocationPicker } from '@/components/uncip/map/LocationPicker';
 import type { UNCIPRole } from '@/domain/uncip/types';
 import type { AlertStatus } from '@unami/api';
 
@@ -95,6 +96,10 @@ export function AlertActionPanel({ alertId, currentStatus, role, onAction }: Pro
               <Label htmlFor="sightingLocation">Where did you see the child? <span className="text-destructive">*</span></Label>
               <Input id="sightingLocation" name="sightingLocation" required
                 placeholder="e.g. Corner of Vilakazi and Moema" />
+            </div>
+            <div className="space-y-1">
+              <Label>Pin on map (optional)</Label>
+              <LocationPicker latName="sightingLat" lngName="sightingLng" />
             </div>
             <div className="space-y-1">
               <Label htmlFor="sightingNote">Additional details (optional)</Label>

@@ -9,6 +9,8 @@ const CreateSchoolSchema = z.object({
   emis:          z.string().max(20).nullable().optional(),
   contact_phone: z.string().max(20).nullable().optional(),
   contact_email: z.string().email().nullable().optional(),
+  lat:           z.number().nullable().optional(),
+  lng:           z.number().nullable().optional(),
 });
 
 Deno.serve(async (req: Request) => {

@@ -8,6 +8,8 @@ const CreateAlertSchema = z.object({
   description:        z.string().min(10).max(2000),
   last_seen_at:       z.string().datetime(),
   last_seen_location: z.string().min(1).max(500),
+  last_seen_lat:      z.number().nullable().optional(),
+  last_seen_lng:      z.number().nullable().optional(),
   last_seen_wearing:  z.string().max(500).nullable().optional(),
   contact_phone:      z.string().min(7).max(20),
 });

@@ -10,6 +10,8 @@ export interface AddTimelineEntryInput {
   caseNumber?: string | null;
   /** Populated for community_sighting_reported only */
   sightingLocation?: string | null;
+  sightingLat?: number | null;
+  sightingLng?: number | null;
 }
 
 export function createUNCIPTimelineClient(config: ApiConfig) {
@@ -27,6 +29,8 @@ export function createUNCIPTimelineClient(config: ApiConfig) {
           note:              input.note ?? null,
           case_number:       input.caseNumber ?? null,
           sighting_location: input.sightingLocation ?? null,
+          sighting_lat:      input.sightingLat ?? null,
+          sighting_lng:      input.sightingLng ?? null,
         }),
       });
     },

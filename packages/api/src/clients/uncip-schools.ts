@@ -10,6 +10,8 @@ export interface UNCIPSchool {
   contactPhone: string | null;
   contactEmail: string | null;
   stationId: string | null;
+  lat: number | null;
+  lng: number | null;
   createdAt: string;
 }
 
@@ -21,6 +23,8 @@ export interface CreateSchoolInput {
   emis?: string | null;
   contactPhone?: string | null;
   contactEmail?: string | null;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface ListSchoolsParams {
@@ -53,6 +57,8 @@ export function createUNCIPSchoolsClient(config: ApiConfig) {
           emis:          input.emis ?? null,
           contact_phone: input.contactPhone ?? null,
           contact_email: input.contactEmail ?? null,
+          lat:           input.lat ?? null,
+          lng:           input.lng ?? null,
         }),
       });
     },

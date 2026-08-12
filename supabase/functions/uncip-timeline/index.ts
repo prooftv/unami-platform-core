@@ -13,6 +13,8 @@ const AddTimelineEntrySchema = z.object({
   note:              z.string().max(2000).nullable().optional(),
   case_number:       z.string().max(100).nullable().optional(),
   sighting_location: z.string().max(500).nullable().optional(),
+  sighting_lat:      z.number().nullable().optional(),
+  sighting_lng:      z.number().nullable().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -104,6 +106,12 @@ Deno.serve(async (req: Request) => {
                              : null,
         sighting_location: parsed.data.action === 'community_sighting_reported'
                              ? (parsed.data.sighting_location ?? null)
+                             : null,
+        sighting_lat:      parsed.data.action === 'community_sighting_reported'
+                             ? (parsed.data.sighting_lat ?? null)
+                             : null,
+        sighting_lng:      parsed.data.action === 'community_sighting_reported'
+                             ? (parsed.data.sighting_lng ?? null)
                              : null,
       })
       .select()

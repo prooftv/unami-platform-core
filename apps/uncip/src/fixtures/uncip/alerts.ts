@@ -2,7 +2,12 @@
 // These records do not represent real alerts or real children.
 // All names, locations, and details are fictional.
 
-import type { AlertRecord } from '@/domain/uncip';
+import type { AlertRecord, AlertTimelineEntry } from '@/domain/uncip';
+
+// Helper: adds D4 spatial null fields to pre-D4 fixture timeline entries
+function tl(entry: Omit<AlertTimelineEntry, 'caseNumber' | 'sightingLocation' | 'sightingLat' | 'sightingLng'>): AlertTimelineEntry {
+  return { ...entry, caseNumber: null, sightingLocation: null, sightingLat: null, sightingLng: null };
+}
 
 export const FIXTURE_ALERTS: AlertRecord[] = [
   // ── Alert 1: Full workflow — missing child, resolved ─────────────────────────
@@ -15,6 +20,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     description: 'Child did not return home after school. Last seen leaving school premises.',
     lastSeenAt: '2025-03-10T14:30:00Z',
     lastSeenLocation: 'Sinethemba Primary School gate, Site C, Khayelitsha',
+    lastSeenLat: null,
+    lastSeenLng: null,
     lastSeenWearing: 'School uniform — grey trousers, white shirt, black shoes',
     contactPhone: '071-000-0001',
     createdBy: 'user-parent-001',
@@ -23,7 +30,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     resolvedAt: '2025-03-10T19:45:00Z',
     resolvedBy: 'user-authority-001',
     timeline: [
-      {
+      tl({
         id: 'tl-001-1',
         alertId: 'alert-001',
         actorId: 'user-parent-001',
@@ -31,8 +38,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'alert_raised',
         note: 'My son did not come home. He left school at 14:30 according to his teacher.',
         timestamp: '2025-03-10T16:00:00Z',
-      },
-      {
+      }),
+      tl({
         id: 'tl-001-2',
         alertId: 'alert-001',
         actorId: 'user-school-001',
@@ -40,8 +47,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'school_confirmed_last_seen',
         note: 'Confirmed: Amahle left through the main gate at approximately 14:35. He was alone.',
         timestamp: '2025-03-10T16:45:00Z',
-      },
-      {
+      }),
+      tl({
         id: 'tl-001-3',
         alertId: 'alert-001',
         actorId: 'user-authority-001',
@@ -49,8 +56,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'authority_assigned_case',
         note: 'SAPS case number assigned. Officers dispatched to Site C area.',
         timestamp: '2025-03-10T17:15:00Z',
-      },
-      {
+      }),
+      tl({
         id: 'tl-001-4',
         alertId: 'alert-001',
         actorId: 'user-community-001',
@@ -58,8 +65,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'community_sighting_reported',
         note: 'Child seen near the community hall on Mew Way at approximately 17:00.',
         timestamp: '2025-03-10T18:30:00Z',
-      },
-      {
+      }),
+      tl({
         id: 'tl-001-5',
         alertId: 'alert-001',
         actorId: 'user-authority-001',
@@ -67,7 +74,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'status_changed',
         note: 'Child located safely near community hall. Returned to family.',
         timestamp: '2025-03-10T19:45:00Z',
-      },
+      }),
     ],
   },
 
@@ -80,6 +87,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     description: 'Child missing since this morning. Did not arrive at school.',
     lastSeenAt: '2025-07-15T07:00:00Z',
     lastSeenLocation: 'Home — Meadowlands, Soweto',
+    lastSeenLat: null,
+    lastSeenLng: null,
     lastSeenWearing: 'Blue jeans, red hoodie, white takkies',
     contactPhone: '072-000-0002',
     createdBy: 'user-parent-002',
@@ -88,7 +97,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     resolvedAt: null,
     resolvedBy: null,
     timeline: [
-      {
+      tl({
         id: 'tl-002-1',
         alertId: 'alert-002',
         actorId: 'user-parent-002',
@@ -96,7 +105,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'alert_raised',
         note: 'Siyanda left for school at 07:00 but the school called to say she never arrived.',
         timestamp: '2025-07-15T10:00:00Z',
-      },
+      }),
     ],
   },
 
@@ -109,6 +118,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     description: 'Child collapsed at school. Severe allergic reaction. Ambulance called.',
     lastSeenAt: '2025-07-14T11:15:00Z',
     lastSeenLocation: 'Thuthukani Primary School, Meadowlands, Soweto',
+    lastSeenLat: null,
+    lastSeenLng: null,
     lastSeenWearing: null,
     contactPhone: '073-000-0003',
     createdBy: 'user-school-002',
@@ -117,7 +128,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     resolvedAt: null,
     resolvedBy: null,
     timeline: [
-      {
+      tl({
         id: 'tl-003-1',
         alertId: 'alert-003',
         actorId: 'user-school-002',
@@ -125,8 +136,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'alert_raised',
         note: 'Learner collapsed in the classroom. Suspected severe allergic reaction. EMS contacted.',
         timestamp: '2025-07-14T11:20:00Z',
-      },
-      {
+      }),
+      tl({
         id: 'tl-003-2',
         alertId: 'alert-003',
         actorId: 'user-school-002',
@@ -134,7 +145,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'school_confirmed_last_seen',
         note: 'Child is at Baragwanath Hospital. Parent has been notified.',
         timestamp: '2025-07-14T11:50:00Z',
-      },
+      }),
     ],
   },
 
@@ -147,6 +158,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     description: 'Child did not come home at expected time.',
     lastSeenAt: '2025-06-20T15:00:00Z',
     lastSeenLocation: 'Ikusasa Primary School, Site B, Khayelitsha',
+    lastSeenLat: null,
+    lastSeenLng: null,
     lastSeenWearing: 'School uniform',
     contactPhone: '074-000-0004',
     createdBy: 'user-parent-001',
@@ -155,7 +168,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     resolvedAt: null,
     resolvedBy: null,
     timeline: [
-      {
+      tl({
         id: 'tl-004-1',
         alertId: 'alert-004',
         actorId: 'user-parent-001',
@@ -163,8 +176,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'alert_raised',
         note: null,
         timestamp: '2025-06-20T17:00:00Z',
-      },
-      {
+      }),
+      tl({
         id: 'tl-004-2',
         alertId: 'alert-004',
         actorId: 'user-parent-001',
@@ -172,7 +185,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'status_changed',
         note: 'Child was at a neighbour\'s house. Alert cancelled.',
         timestamp: '2025-06-20T17:30:00Z',
-      },
+      }),
     ],
   },
 
@@ -185,6 +198,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     description: 'Child seen being led away by unknown adult near school.',
     lastSeenAt: '2025-05-05T13:00:00Z',
     lastSeenLocation: 'Outside Lungisa Primary School, Umlazi',
+    lastSeenLat: null,
+    lastSeenLng: null,
     lastSeenWearing: 'School uniform',
     contactPhone: '075-000-0005',
     createdBy: 'user-community-001',
@@ -193,7 +208,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     resolvedAt: null,
     resolvedBy: null,
     timeline: [
-      {
+      tl({
         id: 'tl-005-1',
         alertId: 'alert-005',
         actorId: 'user-community-001',
@@ -201,8 +216,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'alert_raised',
         note: 'Saw a child being led away. Did not recognise the adult.',
         timestamp: '2025-05-05T13:10:00Z',
-      },
-      {
+      }),
+      tl({
         id: 'tl-005-2',
         alertId: 'alert-005',
         actorId: 'user-authority-001',
@@ -210,8 +225,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'note_added',
         note: 'Contacted school. Adult was the child\'s grandfather collecting them early.',
         timestamp: '2025-05-05T13:45:00Z',
-      },
-      {
+      }),
+      tl({
         id: 'tl-005-3',
         alertId: 'alert-005',
         actorId: 'user-authority-001',
@@ -219,7 +234,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'status_changed',
         note: 'Confirmed false alarm. Child safe with family.',
         timestamp: '2025-05-05T14:00:00Z',
-      },
+      }),
     ],
   },
 
@@ -232,6 +247,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     description: 'Child reported being followed on the way home from school for several days.',
     lastSeenAt: '2025-07-16T15:30:00Z',
     lastSeenLocation: 'Mew Way, Khayelitsha',
+    lastSeenLat: null,
+    lastSeenLng: null,
     lastSeenWearing: 'School uniform',
     contactPhone: '076-000-0006',
     createdBy: 'user-parent-003',
@@ -240,7 +257,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     resolvedAt: null,
     resolvedBy: null,
     timeline: [
-      {
+      tl({
         id: 'tl-006-1',
         alertId: 'alert-006',
         actorId: 'user-parent-003',
@@ -248,8 +265,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'alert_raised',
         note: 'My daughter says a man has been following her home for three days.',
         timestamp: '2025-07-16T16:00:00Z',
-      },
-      {
+      }),
+      tl({
         id: 'tl-006-2',
         alertId: 'alert-006',
         actorId: 'user-authority-001',
@@ -257,7 +274,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'authority_assigned_case',
         note: 'Case opened. Patrol increased on Mew Way route.',
         timestamp: '2025-07-16T17:00:00Z',
-      },
+      }),
     ],
   },
 
@@ -270,6 +287,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     description: 'Child has not been seen at home or school for two days. Family concerned.',
     lastSeenAt: '2025-07-14T08:00:00Z',
     lastSeenLocation: 'Home — Umlazi Section K',
+    lastSeenLat: null,
+    lastSeenLng: null,
     lastSeenWearing: null,
     contactPhone: '077-000-0007',
     createdBy: 'user-parent-002',
@@ -278,7 +297,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     resolvedAt: null,
     resolvedBy: null,
     timeline: [
-      {
+      tl({
         id: 'tl-007-1',
         alertId: 'alert-007',
         actorId: 'user-parent-002',
@@ -286,7 +305,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'alert_raised',
         note: 'Lethiwe has not been home since Monday morning. School says she has not attended.',
         timestamp: '2025-07-16T09:00:00Z',
-      },
+      }),
     ],
   },
 
@@ -299,6 +318,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     description: 'Child had a seizure during school hours.',
     lastSeenAt: '2025-04-22T10:00:00Z',
     lastSeenLocation: 'Sinethemba Primary School, Site C, Khayelitsha',
+    lastSeenLat: null,
+    lastSeenLng: null,
     lastSeenWearing: null,
     contactPhone: '078-000-0008',
     createdBy: 'user-school-001',
@@ -307,7 +328,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
     resolvedAt: '2025-04-22T13:00:00Z',
     resolvedBy: 'user-authority-001',
     timeline: [
-      {
+      tl({
         id: 'tl-008-1',
         alertId: 'alert-008',
         actorId: 'user-school-001',
@@ -315,8 +336,8 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'alert_raised',
         note: 'Learner had a seizure in class. EMS called. Parent notified.',
         timestamp: '2025-04-22T10:05:00Z',
-      },
-      {
+      }),
+      tl({
         id: 'tl-008-2',
         alertId: 'alert-008',
         actorId: 'user-authority-001',
@@ -324,7 +345,7 @@ export const FIXTURE_ALERTS: AlertRecord[] = [
         action: 'status_changed',
         note: 'Child treated at Red Cross Hospital. Stable. Discharged to family.',
         timestamp: '2025-04-22T13:00:00Z',
-      },
+      }),
     ],
   },
 ];
