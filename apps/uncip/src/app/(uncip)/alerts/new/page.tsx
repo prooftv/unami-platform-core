@@ -21,13 +21,13 @@ export default async function NewAlertPage({
   const { childId, error } = await searchParams;
   const client = await getUNCIPClient();
 
-  const [childrenRes, preselectedRes] = await Promise.all([
+  const [childrenRes, preselectedRes] = await Promise.allSettled([
     client?.children.list({ limit: 100 }),
-    childId ? client?.children.get(childId).catch(() => null) : Promise.resolve(null),
+    childId ? client?.children.get(childId) : Promise.resolve(null),
   ]);
 
-  const children    = childrenRes?.data ?? [];
-  const preselected = preselectedRes?.data ?? null;
+  const children    = childrenRes.status    === 'fulfilled' ? (childrenRes.value?.data    ?? []) : [];
+  const preselected = preselectedRes.status === 'fulfilled' ? (preselectedRes.value?.data ?? null) : null;
 
   async function create(formData: FormData) {
     'use server';

@@ -16,8 +16,7 @@ export default async function NewChildPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const client = await getUNCIPClient();
-  const schoolsRes = await client?.schools.list();
-  const schools = schoolsRes?.data ?? [];
+  const schools = await client?.schools.list().then((r) => r.data).catch(() => []) ?? [];
 
   const { error } = await searchParams;
 

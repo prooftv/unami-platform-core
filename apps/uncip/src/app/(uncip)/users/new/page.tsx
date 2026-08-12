@@ -22,12 +22,12 @@ export default async function NewUserPage({
   if (session?.role !== 'admin') redirect('/users');
 
   const client = await getUNCIPClient();
-  const [stationsRes, schoolsRes] = await Promise.all([
+  const [stationsResult, schoolsResult] = await Promise.allSettled([
     client?.stations.list(),
     client?.schools.list(),
   ]);
-  const stations = stationsRes?.data ?? [];
-  const schools  = schoolsRes?.data ?? [];
+  const stations = stationsResult.status === 'fulfilled' ? (stationsResult.value?.data ?? []) : [];
+  const schools  = schoolsResult.status  === 'fulfilled' ? (schoolsResult.value?.data  ?? []) : [];
 
   const { error } = await searchParams;
 

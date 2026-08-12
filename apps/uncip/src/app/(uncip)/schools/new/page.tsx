@@ -19,8 +19,7 @@ export default async function NewSchoolPage({
   if (session?.role !== 'admin') redirect('/schools');
 
   const client = await getUNCIPClient();
-  const stationsRes = await client?.stations.list();
-  const stations = stationsRes?.data ?? [];
+  const stations = await client?.stations.list().then((r) => r.data).catch(() => []) ?? [];
 
   const { error } = await searchParams;
 
