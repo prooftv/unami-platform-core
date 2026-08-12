@@ -651,6 +651,176 @@ These questions have not been deliberately decided. They are deferred, not forgo
 
 ---
 
+## Information Architecture — Constitutional Principles
+
+**Authority:** `docs/context/uncip/UNCIP_INFORMATION_ARCHITECTURE.md` contains the full decision record.
+This section locks the principles into the constitution.
+
+**Established:** 2026-08-12, after Phase A–C completion and before Phase D implementation.
+
+---
+
+### The Governing Principle
+
+Every piece of information in UNCIP belongs to a specific **information object**, has an **operational context**, and carries a **visibility scope**. Information is never collected merely because the technology can collect it.
+
+```
+Record
+  ↓
+Why does this information exist?
+  ↓
+What operational object does it belong to?
+  ↓
+Who is allowed to see it?
+  ↓
+How long does it matter?
+  ↓
+Can it become evidence or provenance?
+```
+
+---
+
+### The Information Hierarchy
+
+```
+CHILD
+  identity
+      ↓
+INCIDENT
+  what happened / last known context
+      ↓
+TIMELINE
+  institutional response (immutable)
+      ↓
+MEDIA
+  evidence attached to the appropriate object
+      ↓
+LOCATION
+  spatial representation of those objects
+      ↓
+MAP
+  authorised operational projection
+```
+
+The map is a **projection** of authorised operational information. It is not a new source of truth. It inherits the same RLS and privacy boundaries as the underlying records.
+
+---
+
+### Information Objects and Their Scope
+
+| Information | Belongs to | Visibility scope |
+|---|---|---|
+| Child identity photo | Child record | Parent/guardian → School → Authority → Admin. **Never community.** |
+| Last-seen location | Incident (alert) | Same scope as the incident |
+| Sighting location | Sighting timeline event | Authority/Admin + the reporter's own sighting |
+| Sighting photo | Sighting timeline event | Same event scope |
+| SAPS case document | Authority timeline action | Authority/Admin only |
+| School location | School record | Appropriate institutional scope |
+| Station location/boundary | Station record | Appropriate operational scope |
+| Community incident pin | Incident | Station-area, **no child identity** |
+| Parent's device location | Person | **Never captured** |
+| Community reporter's device location | Person | **Never captured** |
+
+---
+
+### Location Semantics — Three Distinct Concepts
+
+These must never collapse into one generic `location` field.
+
+```
+CHILD
+  registered address (uncip_children address columns)
+
+INCIDENT
+  last-seen location (uncip_alerts.last_seen_location)
+
+TIMELINE EVENT
+  sighting location (uncip_alert_timeline.sighting_location)
+```
+
+Future coordinates follow the same separation:
+- `uncip_alerts.last_seen_lat / last_seen_lng`
+- `uncip_alert_timeline.sighting_lat / sighting_lng`
+- `uncip_schools.lat / lng`
+- `uncip_saps_stations.lat / lng`
+
+All as nullable columns added when the map UI is built. Not before.
+
+---
+
+### Media — Scoped Attachment Model
+
+```
+Child
+  └── identity photo (uncip_children.photo_url → Storage)
+
+Alert
+  └── alert-level evidence (uncip_alert_media, timeline_entry_id = null)
+        │
+        └── Timeline event
+              ├── sighting photo (uncip_alert_media, timeline_entry_id set)
+              └── SAPS document  (uncip_alert_media, timeline_entry_id set)
+```
+
+Every attachment has an explicit relationship to either the alert or a specific timeline event. There is no indiscriminate upload mechanism.
+
+---
+
+### Timeline — First-Class Operational Fields
+
+The `uncip_alert_timeline` table carries:
+- `note TEXT` — narrative (all action types)
+- `case_number TEXT` — nullable, `authority_assigned_case` only
+- `sighting_location TEXT` — nullable, `community_sighting_reported` only
+
+These are first-class columns, not JSONB. The action types are known and finite. Named columns are queryable, indexable, and unambiguous.
+
+---
+
+### What Is Never Captured
+
+- Reporter or user device location (parent raising alert, community member reporting sighting)
+- Continuous child location tracking of any kind
+- Biometric data
+- Weather context (the `description` field is sufficient; weather is not a structured operational input for the pilot)
+- Any data not directly tied to the incident or the child's identity
+
+---
+
+### Map — Authorised Operational Projection
+
+The map is not a decorative UI feature. Its location semantics are designed now even though the map UI is built later.
+
+**Community map view:** incident pins in station area showing alert type and status only. Never child name, child photo, child address, or identification number. The map inherits the existing RLS and response-stripping boundaries.
+
+**The map must never become a privacy bypass.**
+
+---
+
+### Implementation Sequence (Phase D onwards)
+
+```
+D1  case_number + sighting_location columns on uncip_alert_timeline
+    One migration. Update Edge Function, API client, AlertActionPanel.
+
+D2  Child identity photo upload
+    Supabase Storage bucket (children-photos) + upload field in /children/new.
+    photo_url column already exists.
+
+D3  Alert action panel completion
+    Proper form inputs for school confirmation, authority case assignment,
+    community sighting. Core pilot workflow demonstration.
+
+D4  uncip_alert_media table + storage
+    After D1–D3 are working.
+
+D5  Coordinate columns + map UI
+    Nullable lat/lng on alerts, timeline, schools, stations.
+    Map component built against these columns.
+```
+
+---
+
 ## Relationship to Platform Documents
 
 | Document | What it governs |
@@ -660,5 +830,6 @@ These questions have not been deliberately decided. They are deferred, not forgo
 | `docs/context/ARCHITECTURE.md` | Technical structure, layer boundaries |
 | `docs/context/decisions.md` | Platform-level architectural decisions |
 | `apps/uncip/UNCIP_V2_FRONTEND.md` | **This document — UNCIP domain, roles, entities, build sequence** |
+| `docs/context/uncip/UNCIP_INFORMATION_ARCHITECTURE.md` | Information architecture decisions — media, location, map, provenance |
 
 **The rule:** Platform Core tells UNCIP how the application is built. This constitution tells it what the application is.
