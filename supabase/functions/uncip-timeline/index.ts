@@ -1,4 +1,4 @@
-import { z } from 'https://esm.sh/zod@3';
+import { z } from 'npm:zod@3';
 import { requireUNCIPAuth, corsHeaders, json, err, UNCIPRole } from '../_shared/uncip-auth.ts';
 
 const AddTimelineEntrySchema = z.object({

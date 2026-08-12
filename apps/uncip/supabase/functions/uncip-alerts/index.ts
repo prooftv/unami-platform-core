@@ -1,5 +1,5 @@
-import { z } from 'https://esm.sh/zod@3';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { z } from 'npm:zod@3';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { requireUNCIPAuth, corsHeaders, json, err, UNCIPRole } from '../_shared/uncip-auth.ts';
 
 const CreateAlertSchema = z.object({
@@ -83,8 +83,18 @@ Deno.serve(async (req: Request) => {
 
     const { data, error, count } = await query;
     if (error) return err(error.message, 500, cors);
+
+    const CHILD_IDENTITY_FIELDS = ['child_id'] as const;
+    const sanitized = profile.role === 'community'
+      ? (data ?? []).map((row: Record<string, unknown>) => {
+          const clean = { ...row };
+          for (const f of CHILD_IDENTITY_FIELDS) delete clean[f];
+          return clean;
+        })
+      : data;
+
     return json({
-      data,
+      data: sanitized,
       pagination: { page, limit, total: count ?? 0, totalPages: Math.ceil((count ?? 0) / limit) },
     }, 200, cors);
   }
@@ -99,7 +109,10 @@ Deno.serve(async (req: Request) => {
       .order('timestamp', { referencedTable: 'uncip_alert_timeline', ascending: true })
       .single();
     if (error) return err('Alert not found', 404, cors);
-    return json({ data }, 200, cors);
+    const responseData = profile.role === 'community'
+      ? (() => { const clean = { ...data }; delete clean.child_id; return clean; })()
+      : data;
+    return json({ data: responseData }, 200, cors);
   }
 
   // POST /uncip-alerts — create alert

@@ -1,4 +1,4 @@
-import { z } from 'https://esm.sh/zod@3';
+import { z } from 'npm:zod@3';
 import { requireUNCIPAuth, corsHeaders, json, err, UNCIPRole } from '../_shared/uncip-auth.ts';
 
 const AddTimelineEntrySchema = z.object({
@@ -10,7 +10,9 @@ const AddTimelineEntrySchema = z.object({
     'status_changed',
     'note_added',
   ]),
-  note: z.string().max(2000).nullable().optional(),
+  note:              z.string().max(2000).nullable().optional(),
+  case_number:       z.string().max(100).nullable().optional(),
+  sighting_location: z.string().max(500).nullable().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -92,11 +94,17 @@ Deno.serve(async (req: Request) => {
     const { data: entry, error: insertError } = await supabase
       .from('uncip_alert_timeline')
       .insert({
-        alert_id:   alertId,
-        actor_id:   profile.id,
-        actor_role: profile.role,
-        action:     parsed.data.action,
-        note:       parsed.data.note ?? null,
+        alert_id:          alertId,
+        actor_id:          profile.id,
+        actor_role:        profile.role,
+        action:            parsed.data.action,
+        note:              parsed.data.note ?? null,
+        case_number:       parsed.data.action === 'authority_assigned_case'
+                             ? (parsed.data.case_number ?? null)
+                             : null,
+        sighting_location: parsed.data.action === 'community_sighting_reported'
+                             ? (parsed.data.sighting_location ?? null)
+                             : null,
       })
       .select()
       .single();

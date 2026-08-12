@@ -1,5 +1,5 @@
-import { z } from 'https://esm.sh/zod@3';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { z } from 'npm:zod@3';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { requireUNCIPAuth, corsHeaders, json, err, UNCIPRole } from '../_shared/uncip-auth.ts';
 
 const CreateAlertSchema = z.object({

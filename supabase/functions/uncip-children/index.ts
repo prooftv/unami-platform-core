@@ -1,4 +1,4 @@
-import { z } from 'https://esm.sh/zod@3';
+import { z } from 'npm:zod@3';
 import { requireUNCIPAuth, corsHeaders, json, err } from '../_shared/uncip-auth.ts';
 
 const PROVINCES = ['eastern_cape','free_state','gauteng','kwazulu_natal','limpopo','mpumalanga','north_west','northern_cape','western_cape'] as const;
