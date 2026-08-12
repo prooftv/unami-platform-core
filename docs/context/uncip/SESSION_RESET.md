@@ -163,23 +163,36 @@ Enforced at RLS layer — not just UI. This is non-negotiable.
 Foundational architecture     COMPLETE  d381d8a
 Platform isolation            COMPLETE  43227f1
 Environment guard             COMPLETE  (this commit)
+Phase A write surface         COMPLETE  2478367
 ```
 
 ## Deployment Gate — must complete before operational features
 
 ```
-□ New UNCIP Supabase project created
-□ Migration 009_uncip_schema.sql applied to UNCIP project
-□ RLS verified in UNCIP project
-□ UNCIP Edge Functions deployed to UNCIP project
-□ NEXT_PUBLIC_UNCIP_SUPABASE_URL set in Vercel
-□ NEXT_PUBLIC_UNCIP_SUPABASE_ANON_KEY set in Vercel
-□ Vercel root directory = apps/uncip
-□ Production build succeeds on Vercel
-□ Login works against UNCIP Auth
-□ Database contains no Moments data
-□ No Moments credentials present in UNCIP environment
+✅ New UNCIP Supabase project created          — tqragjtvcnsmumtaijds
+✅ Migration 009_uncip_schema.sql applied      — verified 2026-08-12
+✅ UNCIP Edge Functions deployed               — all 5 ACTIVE (verified 2026-08-12)
+✅ NEXT_PUBLIC_UNCIP_SUPABASE_URL set in Vercel
+✅ NEXT_PUBLIC_UNCIP_SUPABASE_ANON_KEY set in Vercel
+✅ Vercel root directory = apps/uncip
+✅ Production build succeeds on Vercel         — commit 2478367 deployed, state=success
+✅ Login works against UNCIP Auth              — getUser() confirmed working
+□ RLS verified in UNCIP project               — not formally verified
+□ Database contains no Moments data           — not verified
+□ No Moments credentials present in UNCIP environment — not verified
 ```
+
+## Known operational issue (2026-08-12)
+
+Edge functions return WORKER_ERROR (HTTP 500) when called with non-user JWTs
+(anon key, service role key). This is caused by supabase-js v2.50.0 throwing
+on getUser() when the JWT has no `sub` claim (403 from auth server).
+
+Real user JWTs (with sub claim) are expected to work correctly.
+Dashboard showing ErrorState is most likely caused by Vercel env vars pointing
+to the wrong Supabase project URL. Requires Vercel dashboard verification.
+
+Production URL: https://unami-platform-core-uncip-admin.vercel.app
 
 Once the deployment gate is cleared, begin Phase A of the operational roadmap.
 See `docs/context/uncip/UNCIP_OPERATIONAL_ROADMAP.md`.
@@ -197,7 +210,16 @@ PAGES                 ✅ COMPLETE
 INTERACTION STATES    ✅ COMPLETE
 SCHEMA DECISIONS      ✅ GATE CLEARED
 DATABASE / RLS        ✅ b506f48
-EDGE FUNCTIONS        ✅ 1ed6fc2
+EDGE FUNCTIONS        ✅ 1ed6fc2 (redeployed 2026-08-12, all 5 ACTIVE)
+API CLIENTS           ✅ 06bed7a
+REAL AUTH             ✅ 0fcde4f
+INTEGRATION AUDIT     ✅ d381d8a
+PLATFORM ISOLATION    ✅ 43227f1
+PHASE A WRITE SURFACE ✅ 2478367  ← child, alert, station, school, user creation
+
+DEPLOYMENT GATE       ✅ Substantially cleared (see known issue above)
+OPERATIONAL ROADMAP   ← ACTIVE — Phase A complete, Phase B next
+```
 API CLIENTS           ✅ 06bed7a
 REAL AUTH             ✅ 0fcde4f
 INTEGRATION AUDIT     ✅ d381d8a

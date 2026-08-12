@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 18 — Complete (18A–18G) |
+| Phase | Phase 18 — Complete (18A–18G) + UNCIP Phase A |
 | Branch | `main` |
-| Workspace | `/workspaces/unami-platform-core` |
+| Workspace | `/home/ec2-user/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `d381d8a` |
+| Last commit | `2478367` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
