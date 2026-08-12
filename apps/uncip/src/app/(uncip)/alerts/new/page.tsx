@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getUNCIPClient } from '@/lib/auth/operator';
+import { getUNCIPClient, getUNCIPSession } from '@/lib/auth/operator';
 import { ALERT_TYPE_LABELS } from '@/domain/uncip/types';
 import type { AlertType } from '@/domain/uncip/types';
 
@@ -18,6 +18,9 @@ export default async function NewAlertPage({
 }: {
   searchParams: Promise<{ childId?: string; error?: string }>;
 }) {
+  const session = await getUNCIPSession();
+  if (!session) redirect('/login');
+  if (!['admin', 'parent', 'school'].includes(session.role)) redirect('/alerts');
   const { childId, error } = await searchParams;
   const client = await getUNCIPClient();
 
