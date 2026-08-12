@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { UNCIP_ENV } from '@/lib/env';
 
-const PUBLIC_PATHS = ['/login', '/auth'];
+const PUBLIC_PATHS = ['/login', '/register', '/auth'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
