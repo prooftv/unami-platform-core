@@ -23,9 +23,6 @@ export async function getUNCIPSession(): Promise<UNCIPSession | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return null;
-
     // Load UNCIP profile directly from the database via the anon client
     // (RLS allows users to read their own profile row)
     const { data: profile, error } = await supabase
