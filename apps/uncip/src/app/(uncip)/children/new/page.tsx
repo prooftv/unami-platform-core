@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getUNCIPClient } from '@/lib/auth/operator';
+import { getUNCIPClient, getUNCIPSession } from '@/lib/auth/operator';
 import { PROVINCE_LABELS, CHILD_GENDER_LABELS } from '@/domain/uncip/types';
 import type { Province, ChildGender } from '@/domain/uncip/types';
 
@@ -15,6 +15,9 @@ export default async function NewChildPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const session = await getUNCIPSession();
+  if (!session) redirect('/login');
+  if (session.role !== 'admin' && session.role !== 'parent') redirect('/children');
   const client = await getUNCIPClient();
   const schools = await client?.schools.list().then((r) => r.data).catch(() => []) ?? [];
 

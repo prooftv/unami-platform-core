@@ -13,7 +13,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { APP_CONFIG } from "@/config/app-config";
-import { sidebarItems } from "@/navigation/sidebar/sidebar-items";
+import { getSidebarItems } from "@/navigation/sidebar/sidebar-items";
 import { usePreferencesStore } from "@unami/ui";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
@@ -33,6 +33,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
 
   const variant = isSynced ? sidebarVariant : props.variant;
   const collapsible = isSynced ? sidebarCollapsible : props.collapsible;
+  const navItems = getSidebarItems(user.role);
 
   return (
     <Sidebar {...props} variant={variant} collapsible={collapsible}>
@@ -49,7 +50,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={sidebarItems} />
+        <NavMain items={navItems} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser name={user.name} email={user.email} role={user.role} />
