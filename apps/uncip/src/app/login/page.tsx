@@ -7,7 +7,7 @@ import { APP_CONFIG } from '@/config/app-config';
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; registered?: string }>;
 }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -25,7 +25,10 @@ export default function LoginPage({
         <LoginForm searchParams={searchParams} />
 
         <p className="text-center text-xs text-muted-foreground">
-          Contact your administrator if you need access.
+          Parent?{' '}
+          <a href="/register" className="underline underline-offset-4 hover:text-foreground">
+            Create an account
+          </a>
         </p>
       </div>
     </div>
@@ -35,12 +38,17 @@ export default function LoginPage({
 async function LoginForm({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; registered?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, registered } = await searchParams;
 
   return (
     <form action="/auth/login" method="POST" className="space-y-4">
+      {registered && (
+        <p className="text-sm text-green-700 bg-green-50 dark:bg-green-950 dark:text-green-300 px-3 py-2 rounded-md">
+          Account created. Check your email to confirm, then sign in.
+        </p>
+      )}
       {error && (
         <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
           {decodeURIComponent(error)}
