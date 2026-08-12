@@ -9,8 +9,7 @@ import { PROVINCE_LABELS } from '@/domain/uncip/types';
 
 export default async function SchoolsPage() {
   const [session, client] = await Promise.all([getUNCIPSession(), getUNCIPClient()]);
-  const res = await client?.schools.list();
-  const schools = res?.data ?? [];
+  const schools = await client?.schools.list().then((r) => r.data).catch(() => []) ?? [];
   const isAdmin = session?.role === 'admin';
 
   const actions = isAdmin ? (

@@ -7,8 +7,7 @@ import { StationSummaryCard } from '@/components/uncip/station/StationSummaryCar
 
 export default async function StationsPage() {
   const [session, client] = await Promise.all([getUNCIPSession(), getUNCIPClient()]);
-  const res = await client?.stations.list();
-  const stations = res?.data ?? [];
+  const stations = await client?.stations.list().then((r) => r.data).catch(() => []) ?? [];
   const isAdmin = session?.role === 'admin';
 
   const actions = isAdmin ? (

@@ -38,16 +38,20 @@ const COLUMNS: ColumnDef<UserRecord>[] = [
 
 export default async function UsersPage() {
   const [session, supabase] = await Promise.all([getUNCIPSession(), createClient()]);
-  const { data } = await supabase
-    .from('uncip_user_profiles')
-    .select('id, email, name, role, station_id, school_id, is_active, created_at')
-    .order('created_at', { ascending: false });
+  let rawUsers: { id: string; email: string; name: string | null; role: string; station_id: string | null; school_id: string | null; is_active: boolean; created_at: string }[] = [];
+  try {
+    const { data } = await supabase
+      .from('uncip_user_profiles')
+      .select('id, email, name, role, station_id, school_id, is_active, created_at')
+      .order('created_at', { ascending: false });
+    rawUsers = data ?? [];
+  } catch { /* show empty state */ }
 
-  const users: UserRecord[] = (data ?? []).map((row) => ({
+  const users: UserRecord[] = rawUsers.map((row) => ({
     id:        row.id,
     email:     row.email,
     name:      row.name ?? null,
-    role:      row.role,
+    role:      row.role as UserRecord['role'],
     stationId: row.station_id ?? null,
     schoolId:  row.school_id ?? null,
     isActive:  row.is_active,
