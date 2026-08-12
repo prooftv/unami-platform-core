@@ -20,7 +20,9 @@ export async function getUNCIPSession(): Promise<UNCIPSession | null> {
     const supabase = await createClient();
 
     // getUser() validates the JWT server-side — required per security model
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // TEMP DIAGNOSTIC
+    console.log('[UNCIP][getUNCIPSession] getUser:', { userId: user?.id ?? null, error: userError?.message ?? null });
     if (!user) return null;
 
     // Load UNCIP profile directly from the database via the anon client
@@ -30,6 +32,9 @@ export async function getUNCIPSession(): Promise<UNCIPSession | null> {
       .select('id, email, name, role, station_id, school_id, is_active')
       .eq('id', user.id)
       .single();
+
+    // TEMP DIAGNOSTIC
+    console.log('[UNCIP][getUNCIPSession] profile:', { found: !!profile, active: profile?.is_active ?? null, error: error?.message ?? null, code: error?.code ?? null });
 
     if (error || !profile || !profile.is_active) return null;
 
@@ -41,7 +46,9 @@ export async function getUNCIPSession(): Promise<UNCIPSession | null> {
       stationId: profile.station_id ?? null,
       schoolId:  profile.school_id ?? null,
     };
-  } catch {
+  } catch (e) {
+    // TEMP DIAGNOSTIC
+    console.log('[UNCIP][getUNCIPSession] caught exception:', e instanceof Error ? e.message : String(e));
     return null;
   }
 }
