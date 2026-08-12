@@ -7,13 +7,13 @@ import { ChildSummaryCard } from '@/components/uncip/child/ChildSummaryCard';
 
 export default async function ChildrenPage() {
   const client = await getUNCIPClient();
-  const [childrenRes, alertsRes] = await Promise.all([
+  const [childrenResult, alertsResult] = await Promise.allSettled([
     client?.children.list({ limit: 100 }),
     client?.alerts.list({ status: 'active', limit: 100 }),
   ]);
 
-  const children = childrenRes?.data ?? [];
-  const activeAlerts = alertsRes?.data ?? [];
+  const children    = childrenResult.status  === 'fulfilled' ? (childrenResult.value?.data  ?? []) : [];
+  const activeAlerts = alertsResult.status   === 'fulfilled' ? (alertsResult.value?.data    ?? []) : [];
 
   const actions = <Button asChild><Link href="/children/new">Register Child</Link></Button>;
 

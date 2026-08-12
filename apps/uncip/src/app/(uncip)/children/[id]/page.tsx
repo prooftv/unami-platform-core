@@ -14,15 +14,16 @@ export default async function ChildDetailPage({ params }: Props) {
   const { id } = await params;
   const client = await getUNCIPClient();
 
-  const [childRes, alertsRes] = await Promise.all([
-    client?.children.get(id).catch(() => null),
+  const [childResult, alertsResult] = await Promise.allSettled([
+    client?.children.get(id),
     client?.alerts.list({ childId: id, limit: 50 }),
   ]);
 
+  const childRes = childResult.status === 'fulfilled' ? childResult.value : null;
   if (!childRes?.data) notFound();
 
   const child  = childRes.data;
-  const alerts = alertsRes?.data ?? [];
+  const alerts = alertsResult.status === 'fulfilled' ? (alertsResult.value?.data ?? []) : [];
   const school = child.schoolId
     ? await client?.schools.get(child.schoolId).then((r) => r.data).catch(() => null) ?? null
     : null;

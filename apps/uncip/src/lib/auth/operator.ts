@@ -47,12 +47,21 @@ export async function getUNCIPSession(): Promise<UNCIPSession | null> {
  * Returns an authenticated UNCIP API client for the current session.
  * Use in Server Components and Server Actions only.
  * Returns null if unauthenticated.
+ *
+ * Uses getUser() (JWT-validated) to confirm auth, then reads the access
+ * token from the session cookie. getSession() alone is not safe server-side.
  */
 export async function getUNCIPClient() {
   try {
     const supabase = await createClient();
+
+    // getUser() validates the JWT — confirms the user is genuinely authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    // getSession() reads the cookie — safe to use for the token after getUser() confirms auth
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return null;
+    if (!session?.access_token) return null;
 
     return createUNCIPApiClient({
       baseUrl: UNCIP_ENV.supabaseUrl + '/functions/v1',

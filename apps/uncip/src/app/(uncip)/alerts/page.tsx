@@ -7,13 +7,13 @@ import { AlertSummaryCard } from '@/components/uncip/alert/AlertSummaryCard';
 
 export default async function AlertsPage() {
   const client = await getUNCIPClient();
-  const [alertsRes, childrenRes] = await Promise.all([
+  const [alertsResult, childrenResult] = await Promise.allSettled([
     client?.alerts.list({ limit: 100 }),
     client?.children.list({ limit: 100 }),
   ]);
 
-  const alerts   = alertsRes?.data ?? [];
-  const children = childrenRes?.data ?? [];
+  const alerts   = alertsResult.status   === 'fulfilled' ? (alertsResult.value?.data   ?? []) : [];
+  const children = childrenResult.status === 'fulfilled' ? (childrenResult.value?.data ?? []) : [];
 
   const sorted = [...alerts].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
