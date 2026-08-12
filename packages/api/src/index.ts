@@ -34,6 +34,7 @@ export type { UNCIPStation, CreateStationInput } from './clients/uncip-stations'
 export type { UNCIPSchool, CreateSchoolInput, ListSchoolsParams } from './clients/uncip-schools';
 export type { AlertType, AlertStatus, AlertTimelineAction, UNCIPRole, UNCIPAlert, UNCIPAlertTimelineEntry, CreateAlertInput, ChangeAlertStatusInput, ListAlertsParams } from './clients/uncip-alerts';
 export type { AddTimelineEntryInput } from './clients/uncip-timeline';
+export type { UNCIPMediaScope, UNCIPMediaRow, RequestUploadInput, UploadResult, SignedUrlResult } from './clients/uncip-media';
 
 import { createPublicProjectsClient } from './clients/public-projects';
 import { createPublicMomentsClient } from './clients/public-moments';
@@ -59,6 +60,7 @@ import { createUNCIPStationsClient } from './clients/uncip-stations';
 import { createUNCIPSchoolsClient }  from './clients/uncip-schools';
 import { createUNCIPAlertsClient }   from './clients/uncip-alerts';
 import { createUNCIPTimelineClient } from './clients/uncip-timeline';
+import { createUNCIPMediaClient }    from './clients/uncip-media';
 
 export interface ApiClientConfig {
   baseUrl: string;
@@ -118,6 +120,7 @@ export function createUNCIPApiClient(config: ApiClientConfig) {
     schools:  createUNCIPSchoolsClient(config),
     alerts:   createUNCIPAlertsClient(config),
     timeline: createUNCIPTimelineClient(config),
+    media:    createUNCIPMediaClient(config),
   };
 }
 

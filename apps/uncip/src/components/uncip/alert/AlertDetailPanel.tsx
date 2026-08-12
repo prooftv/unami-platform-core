@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { UNCIPAlert, UNCIPChild } from '@unami/api';
-import type { UserRecord } from '@/domain/uncip/types';
+import type { UNCIPAlert, UNCIPChild, UNCIPMediaRow, RequestUploadInput } from '@unami/api';
+import type { UserRecord, UNCIPRole } from '@/domain/uncip/types';
 import { AlertTypeBadge } from './AlertTypeBadge';
 import { AlertStatusBadge } from './AlertStatusBadge';
 import { AlertTimeline } from './AlertTimeline';
@@ -9,9 +9,18 @@ interface Props {
   alert: UNCIPAlert;
   child: UNCIPChild | null;
   users: Record<string, UserRecord>;
+  currentUserId?: string;
+  currentRole?: UNCIPRole;
+  timelineMedia?: Record<string, UNCIPMediaRow[]>;
+  onRequestTimelineUpload?: (
+    timelineEntryId: string,
+    mime: RequestUploadInput['mimeType'],
+    size: number,
+    label: string | null,
+  ) => Promise<{ uploadUrl: string } | { error: string }>;
 }
 
-export function AlertDetailPanel({ alert, child, users }: Props) {
+export function AlertDetailPanel({ alert, child, users, currentUserId, currentRole, timelineMedia, onRequestTimelineUpload }: Props) {
   const childName = child ? `${child.firstName} ${child.lastName}` : 'Unknown child';
   const timeline  = alert.uncipAlertTimeline ?? [];
 
@@ -41,7 +50,15 @@ export function AlertDetailPanel({ alert, child, users }: Props) {
       <Card>
         <CardHeader><CardTitle>Timeline</CardTitle></CardHeader>
         <CardContent>
-          <AlertTimeline entries={timeline} users={users} />
+          <AlertTimeline
+            entries={timeline}
+            users={users}
+            currentUserId={currentUserId}
+            currentRole={currentRole}
+            alertStatus={alert.status}
+            timelineMedia={timelineMedia}
+            onRequestTimelineUpload={onRequestTimelineUpload}
+          />
         </CardContent>
       </Card>
 
