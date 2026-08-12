@@ -28,6 +28,12 @@ export function AlertTimeline({ entries, users }: Props) {
               {actor?.name ?? entry.actorId} · {UNCIP_ROLE_LABELS[entry.actorRole]} ·{' '}
               {new Date(entry.timestamp).toLocaleString()}
             </p>
+            {entry.caseNumber && (
+              <p className="mt-1 text-sm font-medium">Case: {entry.caseNumber}</p>
+            )}
+            {entry.sightingLocation && (
+              <p className="mt-1 text-sm">Sighting location: {entry.sightingLocation}</p>
+            )}
             {entry.note && <p className="mt-1 text-sm">{entry.note}</p>}
           </li>
         );

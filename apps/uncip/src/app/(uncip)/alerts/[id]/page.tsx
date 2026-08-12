@@ -29,13 +29,15 @@ export default async function AlertDetailPage({ params }: Props) {
     const action    = String(formData.get('action') ?? '');
     const alertId   = String(formData.get('alertId') ?? '');
     const note      = String(formData.get('note') ?? '').trim() || null;
+    const caseNumber       = String(formData.get('caseNumber') ?? '').trim() || null;
+    const sightingLocation = String(formData.get('sightingLocation') ?? '').trim() || null;
 
     if (action === 'change_status') {
       const newStatus = formData.get('newStatus') as 'resolved' | 'cancelled' | 'false_alarm';
       const statusNote = String(formData.get('statusNote') ?? '').trim() || null;
       await c.alerts.changeStatus(alertId, { status: newStatus, note: statusNote }).catch(() => null);
     } else {
-      await c.timeline.add({ alertId, action: action as never, note }).catch(() => null);
+      await c.timeline.add({ alertId, action: action as never, note, caseNumber, sightingLocation }).catch(() => null);
     }
 
     redirect(`/alerts/${alertId}`);

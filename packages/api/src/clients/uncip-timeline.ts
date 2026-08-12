@@ -6,6 +6,10 @@ export interface AddTimelineEntryInput {
   // alert_raised and status_changed are owned by the alerts function — not accepted here
   action: Exclude<AlertTimelineAction, 'alert_raised' | 'status_changed'>;
   note?: string | null;
+  /** Populated for authority_assigned_case only */
+  caseNumber?: string | null;
+  /** Populated for community_sighting_reported only */
+  sightingLocation?: string | null;
 }
 
 export function createUNCIPTimelineClient(config: ApiConfig) {
@@ -18,9 +22,11 @@ export function createUNCIPTimelineClient(config: ApiConfig) {
       return apiFetch(config, '/uncip-timeline', {
         method: 'POST',
         body: JSON.stringify({
-          alert_id: input.alertId,
-          action:   input.action,
-          note:     input.note ?? null,
+          alert_id:          input.alertId,
+          action:            input.action,
+          note:              input.note ?? null,
+          case_number:       input.caseNumber ?? null,
+          sighting_location: input.sightingLocation ?? null,
         }),
       });
     },

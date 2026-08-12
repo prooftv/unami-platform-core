@@ -63,8 +63,10 @@ export function AlertActionPanel({ alertId, currentStatus, role, onAction }: Pro
             <input type="hidden" name="action" value="authority_assigned_case" />
             <input type="hidden" name="alertId" value={alertId} />
             <div className="space-y-2">
-              <Label htmlFor="caseNote">SAPS Case Number</Label>
-              <Textarea id="caseNote" name="note" rows={1} placeholder="e.g. CAS 123/08/2026" />
+              <Label htmlFor="caseNumber">SAPS Case Number</Label>
+              <Textarea id="caseNumber" name="caseNumber" rows={1} placeholder="e.g. CAS 123/08/2026" />
+              <Label htmlFor="caseNote">Note (optional)</Label>
+              <Textarea id="caseNote" name="note" rows={1} placeholder="Additional context" />
               <Button type="submit" variant="outline" size="sm" disabled={pending}>Assign Case Number</Button>
             </div>
           </form>
@@ -76,8 +78,10 @@ export function AlertActionPanel({ alertId, currentStatus, role, onAction }: Pro
             <input type="hidden" name="action" value="community_sighting_reported" />
             <input type="hidden" name="alertId" value={alertId} />
             <div className="space-y-2">
-              <Label htmlFor="sightingNote">Sighting Details</Label>
-              <Textarea id="sightingNote" name="note" rows={2} placeholder="Location, time, description" />
+              <Label htmlFor="sightingLocation">Where did you see the child?</Label>
+              <Textarea id="sightingLocation" name="sightingLocation" rows={1} placeholder="e.g. Corner of Vilakazi and Moema" />
+              <Label htmlFor="sightingNote">Additional details (optional)</Label>
+              <Textarea id="sightingNote" name="note" rows={2} placeholder="Time, description, circumstances" />
               <Button type="submit" variant="outline" size="sm" disabled={pending}>Report Sighting</Button>
             </div>
           </form>

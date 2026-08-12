@@ -21,6 +21,8 @@ export interface UNCIPAlertTimelineEntry {
   actorRole: UNCIPRole;
   action: AlertTimelineAction;
   note: string | null;
+  caseNumber: string | null;
+  sightingLocation: string | null;
   timestamp: string;
 }
 
