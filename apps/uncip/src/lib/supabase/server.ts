@@ -26,3 +26,17 @@ export async function createClient() {
     },
   );
 }
+
+/**
+ * Service-role client for admin operations (e.g. inviteUserByEmail).
+ * Server-only. Never expose to the browser.
+ */
+export function createServiceClient() {
+  const serviceKey = process.env.UNCIP_SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) throw new Error('[UNCIP] Missing UNCIP_SUPABASE_SERVICE_ROLE_KEY');
+  return createServerClient(
+    UNCIP_ENV.supabaseUrl,
+    serviceKey,
+    { cookies: { getAll: () => [], setAll: () => {} } },
+  );
+}

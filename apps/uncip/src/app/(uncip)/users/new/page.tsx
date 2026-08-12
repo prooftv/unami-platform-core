@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getUNCIPSession, getUNCIPClient } from '@/lib/auth/operator';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { UNCIP_ROLE_LABELS } from '@/domain/uncip/types';
 import type { UNCIPRole } from '@/domain/uncip/types';
 
@@ -33,7 +33,7 @@ export default async function NewUserPage({
 
   async function create(formData: FormData) {
     'use server';
-    const supabase = await createClient();
+    const supabase = createServiceClient();
     const email    = String(formData.get('email') ?? '').trim();
     const name     = String(formData.get('name') ?? '').trim() || null;
     const role     = formData.get('role') as UNCIPRole;
