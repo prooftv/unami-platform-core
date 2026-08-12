@@ -1,4 +1,3 @@
-```ts
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { UNCIP_ENV } from '@/lib/env';
@@ -24,9 +23,9 @@ export async function POST(request: NextRequest) {
             return request.cookies.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              response.cookies.set(name, value, options),
-            );
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
           },
         },
       },
@@ -44,9 +43,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.redirect(
+        `${origin}/login?error=${encodeURIComponent(
+          'Session not established after sign in',
+        )}`,
+        { status: 303 },
+      );
+    }
+
     return response;
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unexpected error';
+    const message =
+      err instanceof Error ? err.message : 'Unexpected error';
 
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(message)}`,
@@ -54,4 +67,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-```
+
