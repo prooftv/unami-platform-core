@@ -35,9 +35,14 @@ export default async function ChildDetailPage({ params }: Props) {
         title={`${child.firstName} ${child.lastName}`}
         description={school?.name ?? 'No school assigned'}
         actions={
-          <Button variant="outline" asChild>
-            <Link href="/children">← Back to Children</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild>
+              <Link href={`/alerts/new?childId=${child.id}`}>Raise Alert</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/children">← Back to Children</Link>
+            </Button>
+          </div>
         }
       />
 

@@ -1,6 +1,9 @@
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { getUNCIPSession } from '@/lib/auth/operator';
 import { PageHeader, DataTable, EmptyState, type ColumnDef } from '@unami/ui';
 import { Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { UserRoleBadge } from '@/components/uncip/user/UserRoleBadge';
 import { Badge } from '@/components/ui/badge';
 import type { UserRecord } from '@/domain/uncip/types';
@@ -34,7 +37,7 @@ const COLUMNS: ColumnDef<UserRecord>[] = [
 ];
 
 export default async function UsersPage() {
-  const supabase = await createClient();
+  const [session, supabase] = await Promise.all([getUNCIPSession(), createClient()]);
   const { data } = await supabase
     .from('uncip_user_profiles')
     .select('id, email, name, role, station_id, school_id, is_active, created_at')
@@ -51,30 +54,23 @@ export default async function UsersPage() {
     createdAt: row.created_at,
   }));
 
+  const actions = session?.role === 'admin' ? (
+    <Button asChild><Link href="/users/new">Invite User</Link></Button>
+  ) : undefined;
+
   if (users.length === 0) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Users" description="Manage registered users." />
-        <EmptyState
-          title="No users registered"
-          description="Invited users will appear here."
-          icon={Users}
-        />
+        <PageHeader title="Users" description="Manage registered users." actions={actions} />
+        <EmptyState title="No users registered" description="Invited users will appear here." icon={Users} />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Users"
-        description={`${users.length} registered users.`}
-      />
-      <DataTable
-        columns={COLUMNS}
-        data={users}
-        getRowKey={(u) => u.id}
-      />
+      <PageHeader title="Users" description={`${users.length} registered users.`} actions={actions} />
+      <DataTable columns={COLUMNS} data={users} getRowKey={(u) => u.id} />
     </div>
   );
 }

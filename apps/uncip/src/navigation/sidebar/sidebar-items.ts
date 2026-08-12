@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   Baby,
   LayoutDashboard,
+  School,
   Settings,
   Shield,
   Users,
@@ -29,8 +30,9 @@ export const sidebarItems: NavGroup[] = [
     id: 3,
     label: "Administration",
     items: [
-      { id: "users", title: "Users", url: "/users", icon: Users },
-      { id: "stations", title: "SAPS Stations", url: "/stations", icon: Shield },
+      { id: "users",    title: "Users",         url: "/users",    icon: Users },
+      { id: "schools",  title: "Schools",        url: "/schools",  icon: School },
+      { id: "stations", title: "SAPS Stations",  url: "/stations", icon: Shield },
     ],
   },
   {
