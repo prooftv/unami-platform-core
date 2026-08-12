@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getUNCIPClient, getUNCIPSession } from '@/lib/auth/operator';
+import { createServiceClient } from '@/lib/supabase/server';
 import { PROVINCE_LABELS, CHILD_GENDER_LABELS } from '@/domain/uncip/types';
 import type { Province, ChildGender } from '@/domain/uncip/types';
 
@@ -27,12 +28,37 @@ export default async function NewChildPage({
     'use server';
     const c = await getUNCIPClient();
     if (!c) redirect('/login');
+
+    // Handle optional photo upload
+    let photoUrl: string | null = null;
+    const photoFile = formData.get('photo');
+    if (photoFile instanceof File && photoFile.size > 0) {
+      try {
+        const svc = createServiceClient();
+        const ext  = photoFile.name.split('.').pop() ?? 'jpg';
+        const path = `${crypto.randomUUID()}.${ext}`;
+        const { error: uploadError } = await svc.storage
+          .from('children-photos')
+          .upload(path, await photoFile.arrayBuffer(), {
+            contentType: photoFile.type,
+            upsert: false,
+          });
+        if (!uploadError) {
+          const { data: urlData } = svc.storage.from('children-photos').getPublicUrl(path);
+          photoUrl = urlData.publicUrl;
+        }
+      } catch {
+        // Photo upload failure is non-fatal — child is registered without photo
+      }
+    }
+
     try {
       const res = await c.children.create({
         firstName:            String(formData.get('firstName') ?? '').trim(),
         lastName:             String(formData.get('lastName') ?? '').trim(),
         dateOfBirth:          String(formData.get('dateOfBirth') ?? '').trim(),
         gender:               formData.get('gender') as ChildGender,
+        photoUrl,
         identificationNumber: String(formData.get('identificationNumber') ?? '').trim() || null,
         schoolId:             String(formData.get('schoolId') ?? '').trim() || null,
         addressStreet:        String(formData.get('addressStreet') ?? '').trim() || null,
@@ -57,7 +83,7 @@ export default async function NewChildPage({
           </Button>
         }
       />
-      <form action={create}>
+      <form action={create} encType="multipart/form-data">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
           <div className="space-y-6">
 
@@ -94,6 +120,11 @@ export default async function NewChildPage({
                 <div className="space-y-1">
                   <Label htmlFor="identificationNumber">SA ID / Birth Certificate Number (optional)</Label>
                   <Input id="identificationNumber" name="identificationNumber" placeholder="Required before raising a missing-child alert" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="photo">Photo (optional)</Label>
+                  <Input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" />
+                  <p className="text-xs text-muted-foreground">JPEG, PNG or WebP · max 5 MB</p>
                 </div>
               </CardContent>
             </Card>
@@ -159,6 +190,7 @@ export default async function NewChildPage({
               <Card>
                 <CardContent className="pt-4 text-sm text-muted-foreground space-y-2">
                   <p>The ID number is optional at registration but required before raising a missing-child alert.</p>
+                  <p>A photo helps identify the child quickly in an emergency.</p>
                   <p>You will be linked as the primary guardian automatically.</p>
                 </CardContent>
               </Card>
