@@ -150,6 +150,54 @@ async function upsertGuardianLink(childId, userId, relationship, isPrimary) {
   console.log(`  created guardian link`);
 }
 
+async function upsertAlert(childId, createdBy) {
+  const { data: existing } = await supabase
+    .from('uncip_alerts')
+    .select('id')
+    .eq('child_id', childId)
+    .eq('status', 'active')
+    .maybeSingle();
+  if (existing) { console.log(`  skip alert (already active)`); return existing.id; }
+
+  const { data, error } = await supabase
+    .from('uncip_alerts')
+    .insert({
+      child_id:           childId,
+      alert_type:         'missing',
+      status:             'active',
+      description:        'Sipho did not return home after school. Last seen leaving Soweto Primary School at 14:30.',
+      last_seen_at:       new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+      last_seen_location: 'Soweto Primary School, Vilakazi Street',
+      last_seen_lat:      -26.2485,
+      last_seen_lng:      27.8543,
+      last_seen_wearing:  'Blue school uniform, black backpack',
+      contact_phone:      '+27 82 555 0101',
+      created_by:         createdBy,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(`alert: ${error.message}`);
+  console.log(`  created alert`);
+  return data.id;
+}
+
+async function upsertTimelineEntry(alertId, actorId, actorRole, actorName, action, extra = {}) {
+  const { data: existing } = await supabase
+    .from('uncip_alert_timeline')
+    .select('id')
+    .eq('alert_id', alertId)
+    .eq('action', action)
+    .eq('actor_id', actorId)
+    .maybeSingle();
+  if (existing) { console.log(`  skip timeline: ${action}`); return; }
+
+  const { error } = await supabase
+    .from('uncip_alert_timeline')
+    .insert({ alert_id: alertId, actor_id: actorId, actor_role: actorRole, actor_name: actorName, action, ...extra });
+  if (error) throw new Error(`timeline ${action}: ${error.message}`);
+  console.log(`  created timeline: ${action}`);
+}
+
 // ---------------------------------------------------------------------------
 // Seed
 // ---------------------------------------------------------------------------
@@ -189,6 +237,21 @@ const childId = await upsertChild('Sipho', 'Dlamini', '2015-03-12', 'male', sowe
 // Guardian link
 console.log('\nGuardian links:');
 await upsertGuardianLink(childId, parentId, 'parent', true);
+
+// Alert + timeline
+console.log('\nAlerts:');
+const alertId = await upsertAlert(childId, parentId);
+
+console.log('\nTimeline:');
+await upsertTimelineEntry(alertId, parentId,    'parent',    'Nomsa Dlamini',   'alert_raised',
+  { note: 'Sipho did not come home. Please help find him.' });
+await upsertTimelineEntry(alertId, schoolId,    'school',    'Thabo Mokoena',   'school_confirmed_last_seen',
+  { note: 'Confirmed Sipho left school at 14:30 through the main gate.' });
+await upsertTimelineEntry(alertId, authorityId, 'authority', 'Sgt. Sipho Nkosi','authority_assigned_case',
+  { case_number: 'CAS-2026-SOW-0042', note: 'Case opened. Officers dispatched to Vilakazi Street area.' });
+await upsertTimelineEntry(alertId, communityId, 'community', 'Zanele Khumalo',  'community_sighting_reported',
+  { sighting_location: 'Corner Mooki St & Mphuti St, Soweto', sighting_lat: -26.2501, sighting_lng: 27.8561,
+    note: 'Saw a boy matching the description near the spaza shop at 16:15.' });
 
 console.log('\nUNCIP pilot seed — complete\n');
 console.log('Test accounts (password: Pilot2026!):');
