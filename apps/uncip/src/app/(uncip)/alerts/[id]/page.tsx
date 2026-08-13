@@ -47,6 +47,17 @@ export default async function AlertDetailPage({ params }: Props) {
     );
   }
 
+  // Signed URLs for timeline media — resolved server-side, keyed by row id
+  const timelineSignedUrls: Record<string, string> = {};
+  if (client) {
+    await Promise.all(
+      Object.values(timelineMedia).flat().map(async (row) => {
+        const res = await client.media.getSignedUrl(row.storagePath, 'timeline-media').catch(() => null);
+        if (res?.data.signedUrl) timelineSignedUrls[row.id] = res.data.signedUrl;
+      }),
+    );
+  }
+
   async function handleAction(formData: FormData) {
     'use server';
     const c = await getUNCIPClient();
@@ -154,6 +165,7 @@ export default async function AlertDetailPage({ params }: Props) {
           currentUserId={session?.id}
           currentRole={session?.role}
           timelineMedia={timelineMedia}
+          timelineSignedUrls={timelineSignedUrls}
           onRequestTimelineUpload={handleRequestTimelineUpload}
         />
 

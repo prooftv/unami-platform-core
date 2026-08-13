@@ -11,6 +11,7 @@ interface Props {
   currentUserId?: string;
   currentRole?: UNCIPRole;
   timelineMedia?: Record<string, UNCIPMediaRow[]>;
+  timelineSignedUrls?: Record<string, string>;
   onRequestTimelineUpload?: (
     timelineEntryId: string,
     mime: RequestUploadInput['mimeType'],
@@ -25,6 +26,7 @@ export function AlertDetailPanel({
   currentUserId,
   currentRole,
   timelineMedia,
+  timelineSignedUrls,
   onRequestTimelineUpload,
 }: Props) {
   const timeline = alert.uncipAlertTimeline ?? [];
@@ -81,6 +83,7 @@ export function AlertDetailPanel({
             currentRole={currentRole}
             alertStatus={alert.status}
             timelineMedia={timelineMedia}
+            timelineSignedUrls={timelineSignedUrls}
             onRequestTimelineUpload={onRequestTimelineUpload}
           />
         </CardContent>

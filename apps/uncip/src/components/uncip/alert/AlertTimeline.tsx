@@ -4,10 +4,9 @@ import { UNCIP_ROLE_LABELS } from '@/domain/uncip/types';
 import type { UNCIPRole } from '@/domain/uncip/types';
 import type { UNCIPAlertTimelineEntry, RequestUploadInput } from '@unami/api';
 import { TimelineMediaUpload } from '@/components/uncip/media/TimelineMediaUpload';
-import { MediaList } from '@/components/uncip/media/MediaList';
 import type { UNCIPMediaRow } from '@unami/api';
 import { EmptyState } from '@unami/ui';
-import { Eye } from 'lucide-react';
+import { Eye, FileText, Image } from 'lucide-react';
 
 // ─── Action display config ────────────────────────────────────────────────────
 // Maps each action to a human label and a role-colour accent.
@@ -28,6 +27,8 @@ interface Props {
   currentRole?: UNCIPRole;
   alertStatus?: string;
   timelineMedia?: Record<string, UNCIPMediaRow[]>;
+  /** Signed URLs keyed by media row id — resolved server-side before passing down */
+  timelineSignedUrls?: Record<string, string>;
   onRequestTimelineUpload?: (
     timelineEntryId: string,
     mime: RequestUploadInput['mimeType'],
@@ -42,6 +43,7 @@ export function AlertTimeline({
   currentRole,
   alertStatus,
   timelineMedia = {},
+  timelineSignedUrls = {},
   onRequestTimelineUpload,
 }: Props) {
   if (entries.length === 0) {
@@ -108,9 +110,29 @@ export function AlertTimeline({
 
               {/* Evidence */}
               {media.length > 0 && (
-                <div className="mt-2">
-                  <MediaList rows={media} bucket="timeline-media" />
-                </div>
+                <ul className="space-y-1 mt-2">
+                  {media.map((row) => {
+                    const signedUrl = timelineSignedUrls[row.id] ?? null;
+                    const isImage = row.mimeType.startsWith('image/');
+                    const Icon = isImage ? Image : FileText;
+                    return (
+                      <li key={row.id} className="flex items-center gap-2 text-sm">
+                        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                        {signedUrl ? (
+                          <a href={signedUrl} target="_blank" rel="noopener noreferrer"
+                            className="text-primary underline-offset-2 hover:underline truncate">
+                            {row.label ?? row.mimeType}
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground truncate">{row.label ?? row.mimeType}</span>
+                        )}
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {(row.fileSize / 1024).toFixed(0)} KB
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
 
               {/* Upload — entry author only, active alerts */}
