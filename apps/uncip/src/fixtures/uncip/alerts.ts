@@ -4,9 +4,9 @@
 
 import type { AlertRecord, AlertTimelineEntry } from '@/domain/uncip';
 
-// Helper: adds D4 spatial null fields to pre-D4 fixture timeline entries
-function tl(entry: Omit<AlertTimelineEntry, 'caseNumber' | 'sightingLocation' | 'sightingLat' | 'sightingLng'>): AlertTimelineEntry {
-  return { ...entry, caseNumber: null, sightingLocation: null, sightingLat: null, sightingLng: null };
+// Helper: adds D4 spatial null fields and F3 actorName null to pre-existing fixture entries
+function tl(entry: Omit<AlertTimelineEntry, 'actorName' | 'caseNumber' | 'sightingLocation' | 'sightingLat' | 'sightingLng'>): AlertTimelineEntry {
+  return { ...entry, actorName: null, caseNumber: null, sightingLocation: null, sightingLat: null, sightingLng: null };
 }
 
 export const FIXTURE_ALERTS: AlertRecord[] = [

@@ -99,6 +99,7 @@ Deno.serve(async (req: Request) => {
         alert_id:          alertId,
         actor_id:          profile.id,
         actor_role:        profile.role,
+        actor_name:        profile.name ?? null,
         action:            parsed.data.action,
         note:              parsed.data.note ?? null,
         case_number:       parsed.data.action === 'authority_assigned_case'

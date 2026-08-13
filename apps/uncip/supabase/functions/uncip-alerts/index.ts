@@ -163,6 +163,7 @@ Deno.serve(async (req: Request) => {
       alert_id:   alert.id,
       actor_id:   profile.id,
       actor_role: profile.role,
+      actor_name: profile.name ?? null,
       action:     'alert_raised',
     });
 
@@ -218,6 +219,7 @@ Deno.serve(async (req: Request) => {
       alert_id:   id,
       actor_id:   profile.id,
       actor_role: profile.role,
+      actor_name: profile.name ?? null,
       action:     'status_changed',
       note:       parsed.data.note ?? `Status changed to ${parsed.data.status}`,
     });

@@ -201,6 +201,7 @@ export interface AlertTimelineEntry {
   alertId: string;
   actorId: string;
   actorRole: UNCIPRole;
+  actorName: string | null;
   action: AlertTimelineAction;
   note: string | null;
   caseNumber: string | null;
