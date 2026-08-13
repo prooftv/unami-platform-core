@@ -1,12 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { UNCIP_ROLE_LABELS } from '@/domain/uncip/types';
 import type { UNCIPRole } from '@/domain/uncip/types';
 import type { UNCIPAlertTimelineEntry, RequestUploadInput } from '@unami/api';
 import { TimelineMediaUpload } from '@/components/uncip/media/TimelineMediaUpload';
 import type { UNCIPMediaRow } from '@unami/api';
 import { EmptyState } from '@unami/ui';
-import { Eye, FileText, Image } from 'lucide-react';
+import { Eye, FileText, Image, ChevronDown, ChevronRight, Paperclip } from 'lucide-react';
 
 // ─── Action display config ────────────────────────────────────────────────────
 // Maps each action to a human label and a role-colour accent.
@@ -46,6 +47,8 @@ export function AlertTimeline({
   timelineSignedUrls = {},
   onRequestTimelineUpload,
 }: Props) {
+  const [expandedMedia, setExpandedMedia] = useState<Record<string, boolean>>({});
+
   if (entries.length === 0) {
     return <EmptyState title="No actions recorded yet." icon={Eye} className="py-4" />;
   }
@@ -68,10 +71,11 @@ export function AlertTimeline({
         const actorLabel = entry.actorName
           ? `${entry.actorName} · ${UNCIP_ROLE_LABELS[entry.actorRole]}`
           : UNCIP_ROLE_LABELS[entry.actorRole];
+        const isExpanded = expandedMedia[entry.id] ?? false;
 
         return (
           <li key={entry.id} className="flex gap-3">
-            {/* Accent bar — communicates action type / institutional source */}
+            {/* Accent bar */}
             <div className="flex flex-col items-center gap-1 pt-1">
               <span className={`h-3 w-3 rounded-full shrink-0 ${config.accent}`} />
               <span className="w-px flex-1 bg-border" />
@@ -86,10 +90,10 @@ export function AlertTimeline({
                 </span>
               </div>
 
-              {/* Actor — role always shown, name when available */}
+              {/* Actor */}
               <p className="text-xs text-muted-foreground mt-0.5">{actorLabel}</p>
 
-              {/* Structured facts — rendered with visual weight */}
+              {/* Structured facts */}
               {entry.caseNumber && currentRole !== 'community' && (
                 <div className="mt-2 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm font-medium">
                   <span className="text-muted-foreground text-xs">Case</span>
@@ -108,31 +112,47 @@ export function AlertTimeline({
                 <p className="mt-1.5 text-sm text-foreground/80">{entry.note}</p>
               )}
 
-              {/* Evidence */}
+              {/* Evidence — collapsed affordance */}
               {media.length > 0 && (
-                <ul className="space-y-1 mt-2">
-                  {media.map((row) => {
-                    const signedUrl = timelineSignedUrls[row.id] ?? null;
-                    const isImage = row.mimeType.startsWith('image/');
-                    const Icon = isImage ? Image : FileText;
-                    return (
-                      <li key={row.id} className="flex items-center gap-2 text-sm">
-                        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                        {signedUrl ? (
-                          <a href={signedUrl} target="_blank" rel="noopener noreferrer"
-                            className="text-primary underline-offset-2 hover:underline truncate">
-                            {row.label ?? row.mimeType}
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground truncate">{row.label ?? row.mimeType}</span>
-                        )}
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {(row.fileSize / 1024).toFixed(0)} KB
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedMedia(prev => ({ ...prev, [entry.id]: !isExpanded }))}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Paperclip className="h-3 w-3" />
+                    <span>Evidence · {media.length} {media.length === 1 ? 'attachment' : 'attachments'}</span>
+                    {isExpanded
+                      ? <ChevronDown className="h-3 w-3" />
+                      : <ChevronRight className="h-3 w-3" />}
+                  </button>
+
+                  {isExpanded && (
+                    <ul className="mt-2 space-y-1 pl-1 border-l-2 border-border ml-1">
+                      {media.map((row) => {
+                        const signedUrl = timelineSignedUrls[row.id] ?? null;
+                        const isImage = row.mimeType.startsWith('image/');
+                        const Icon = isImage ? Image : FileText;
+                        return (
+                          <li key={row.id} className="flex items-center gap-2 text-sm pl-2">
+                            <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                            {signedUrl ? (
+                              <a href={signedUrl} target="_blank" rel="noopener noreferrer"
+                                className="text-primary underline-offset-2 hover:underline truncate">
+                                {row.label ?? row.mimeType}
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground truncate">{row.label ?? row.mimeType}</span>
+                            )}
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              {(row.fileSize / 1024).toFixed(0)} KB
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
               )}
 
               {/* Upload — entry author only, active alerts */}
