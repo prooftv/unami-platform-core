@@ -80,6 +80,44 @@ export interface ListChildrenParams {
   limit?: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type WireRecord = Record<string, any>;
+
+function fromWireGuardian(g: WireRecord): UNCIPGuardianLink {
+  return {
+    id:           g.id,
+    childId:      g.child_id,
+    userId:       g.user_id,
+    relationship: g.relationship,
+    isPrimary:    g.is_primary,
+    createdAt:    g.created_at,
+  };
+}
+
+function fromWire(r: WireRecord): UNCIPChild {
+  return {
+    id:                   r.id,
+    firstName:            r.first_name,
+    lastName:             r.last_name,
+    dateOfBirth:          r.date_of_birth,
+    gender:               r.gender,
+    photoUrl:             r.photo_url ?? null,
+    identificationNumber: r.identification_number ?? null,
+    schoolId:             r.school_id ?? null,
+    addressStreet:        r.address_street ?? null,
+    addressCity:          r.address_city ?? null,
+    addressProvince:      r.address_province ?? null,
+    addressPostalCode:    r.address_postal_code ?? null,
+    createdBy:            r.created_by,
+    createdAt:            r.created_at,
+    updatedAt:            r.updated_at,
+    uncipGuardianLinks:   Array.isArray(r.uncip_guardian_links)
+      ? r.uncip_guardian_links.map(fromWireGuardian)
+      : undefined,
+    uncipChildMedical: r.uncip_child_medical ?? undefined,
+  };
+}
+
 function toWire(input: CreateChildInput): Record<string, unknown> {
   return {
     first_name:            input.firstName,
@@ -103,25 +141,27 @@ export function createUNCIPChildrenClient(config: ApiConfig) {
       if (params?.page)  raw.page  = String(params.page);
       if (params?.limit) raw.limit = String(params.limit);
       const qs = Object.keys(raw).length ? '?' + new URLSearchParams(raw).toString() : '';
-      return apiFetch(config, `/uncip-children${qs}`);
+      return apiFetch<PaginatedResponse<WireRecord>>(config, `/uncip-children${qs}`)
+        .then(r => ({ ...r, data: r.data.map(fromWire) }));
     },
 
     get(id: string): Promise<{ data: UNCIPChild }> {
-      return apiFetch(config, `/uncip-children/${id}`);
+      return apiFetch<{ data: WireRecord }>(config, `/uncip-children/${id}`)
+        .then(r => ({ data: fromWire(r.data) }));
     },
 
     create(input: CreateChildInput): Promise<{ data: UNCIPChild }> {
-      return apiFetch(config, '/uncip-children', {
+      return apiFetch<{ data: WireRecord }>(config, '/uncip-children', {
         method: 'POST',
         body: JSON.stringify(toWire(input)),
-      });
+      }).then(r => ({ data: fromWire(r.data) }));
     },
 
     update(id: string, input: UpdateChildInput): Promise<{ data: UNCIPChild }> {
-      return apiFetch(config, `/uncip-children/${id}`, {
+      return apiFetch<{ data: WireRecord }>(config, `/uncip-children/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(toWire(input as CreateChildInput)),
-      });
+      }).then(r => ({ data: fromWire(r.data) }));
     },
 
     addGuardian(childId: string, input: AddGuardianInput): Promise<{ data: UNCIPGuardianLink }> {
