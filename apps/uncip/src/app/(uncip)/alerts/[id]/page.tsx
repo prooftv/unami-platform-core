@@ -123,7 +123,7 @@ export default async function AlertDetailPage({ params }: Props) {
     <div className="space-y-6">
       <PageHeader
         title={childName ?? (isCommunity ? 'Active incident' : 'Incident')}
-        description={headerDescription as unknown as string}
+        description={headerDescription}
         actions={
           <div className="flex items-center gap-2">
             {child && (

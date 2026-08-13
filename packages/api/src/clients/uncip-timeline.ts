@@ -14,14 +14,35 @@ export interface AddTimelineEntryInput {
   sightingLng?: number | null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type WireRecord = Record<string, any>;
+
+function fromWire(t: WireRecord): UNCIPAlertTimelineEntry {
+  return {
+    id:               t.id,
+    alertId:          t.alert_id,
+    actorId:          t.actor_id,
+    actorRole:        t.actor_role,
+    actorName:        t.actor_name ?? null,
+    action:           t.action,
+    note:             t.note ?? null,
+    caseNumber:       t.case_number ?? null,
+    sightingLocation: t.sighting_location ?? null,
+    sightingLat:      t.sighting_lat ?? null,
+    sightingLng:      t.sighting_lng ?? null,
+    timestamp:        t.timestamp,
+  };
+}
+
 export function createUNCIPTimelineClient(config: ApiConfig) {
   return {
     list(alertId: string): Promise<{ data: UNCIPAlertTimelineEntry[] }> {
-      return apiFetch(config, `/uncip-timeline?alert_id=${alertId}`);
+      return apiFetch<{ data: WireRecord[] }>(config, `/uncip-timeline?alert_id=${alertId}`)
+        .then(r => ({ data: r.data.map(fromWire) }));
     },
 
     add(input: AddTimelineEntryInput): Promise<{ data: UNCIPAlertTimelineEntry }> {
-      return apiFetch(config, '/uncip-timeline', {
+      return apiFetch<{ data: WireRecord }>(config, '/uncip-timeline', {
         method: 'POST',
         body: JSON.stringify({
           alert_id:          input.alertId,
@@ -32,7 +53,7 @@ export function createUNCIPTimelineClient(config: ApiConfig) {
           sighting_lat:      input.sightingLat ?? null,
           sighting_lng:      input.sightingLng ?? null,
         }),
-      });
+      }).then(r => ({ data: fromWire(r.data) }));
     },
   };
 }

@@ -77,6 +77,50 @@ export interface ListAlertsParams {
   childId?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type WireRecord = Record<string, any>;
+
+function fromWireTimeline(t: WireRecord): UNCIPAlertTimelineEntry {
+  return {
+    id:              t.id,
+    alertId:         t.alert_id,
+    actorId:         t.actor_id,
+    actorRole:       t.actor_role,
+    actorName:       t.actor_name ?? null,
+    action:          t.action,
+    note:            t.note ?? null,
+    caseNumber:      t.case_number ?? null,
+    sightingLocation: t.sighting_location ?? null,
+    sightingLat:     t.sighting_lat ?? null,
+    sightingLng:     t.sighting_lng ?? null,
+    timestamp:       t.timestamp,
+  };
+}
+
+function fromWire(r: WireRecord): UNCIPAlert {
+  return {
+    id:               r.id,
+    childId:          r.child_id,
+    alertType:        r.alert_type,
+    status:           r.status,
+    description:      r.description,
+    lastSeenAt:       r.last_seen_at,
+    lastSeenLocation: r.last_seen_location,
+    lastSeenLat:      r.last_seen_lat ?? null,
+    lastSeenLng:      r.last_seen_lng ?? null,
+    lastSeenWearing:  r.last_seen_wearing ?? null,
+    contactPhone:     r.contact_phone,
+    createdBy:        r.created_by,
+    createdAt:        r.created_at,
+    updatedAt:        r.updated_at,
+    resolvedAt:       r.resolved_at ?? null,
+    resolvedBy:       r.resolved_by ?? null,
+    uncipAlertTimeline: Array.isArray(r.uncip_alert_timeline)
+      ? r.uncip_alert_timeline.map(fromWireTimeline)
+      : undefined,
+  };
+}
+
 export function createUNCIPAlertsClient(config: ApiConfig) {
   return {
     list(params?: ListAlertsParams): Promise<PaginatedResponse<UNCIPAlert>> {
@@ -87,15 +131,17 @@ export function createUNCIPAlertsClient(config: ApiConfig) {
       if (params?.alertType) raw.alert_type = params.alertType;
       if (params?.childId)   raw.child_id   = params.childId;
       const qs = Object.keys(raw).length ? '?' + new URLSearchParams(raw).toString() : '';
-      return apiFetch(config, `/uncip-alerts${qs}`);
+      return apiFetch<PaginatedResponse<WireRecord>>(config, `/uncip-alerts${qs}`)
+        .then(r => ({ ...r, data: r.data.map(fromWire) }));
     },
 
     get(id: string): Promise<{ data: UNCIPAlert }> {
-      return apiFetch(config, `/uncip-alerts/${id}`);
+      return apiFetch<{ data: WireRecord }>(config, `/uncip-alerts/${id}`)
+        .then(r => ({ data: fromWire(r.data) }));
     },
 
     create(input: CreateAlertInput): Promise<{ data: UNCIPAlert }> {
-      return apiFetch(config, '/uncip-alerts', {
+      return apiFetch<{ data: WireRecord }>(config, '/uncip-alerts', {
         method: 'POST',
         body: JSON.stringify({
           child_id:           input.childId,
@@ -108,17 +154,17 @@ export function createUNCIPAlertsClient(config: ApiConfig) {
           last_seen_wearing:  input.lastSeenWearing ?? null,
           contact_phone:      input.contactPhone,
         }),
-      });
+      }).then(r => ({ data: fromWire(r.data) }));
     },
 
     changeStatus(id: string, input: ChangeAlertStatusInput): Promise<{ data: UNCIPAlert }> {
-      return apiFetch(config, `/uncip-alerts/${id}/status`, {
+      return apiFetch<{ data: WireRecord }>(config, `/uncip-alerts/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({
           status: input.status,
           note:   input.note ?? null,
         }),
-      });
+      }).then(r => ({ data: fromWire(r.data) }));
     },
   };
 }

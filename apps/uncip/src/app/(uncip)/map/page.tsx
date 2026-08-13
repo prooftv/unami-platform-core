@@ -28,7 +28,7 @@ export default async function MapPage() {
     : `${alerts.length} active alert${alerts.length !== 1 ? 's' : ''} with location data.`;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <PageHeader title="Map" description={description} />
       <UNCIPMap alerts={enriched} role={session.role} />
     </div>

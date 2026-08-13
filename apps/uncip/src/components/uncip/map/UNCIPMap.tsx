@@ -151,7 +151,7 @@ export function UNCIPMap({ alerts, role }: Props) {
   return (
     <div
       ref={mapRef}
-      className="h-[calc(100vh-12rem)] w-full rounded-md border"
+      className="h-[calc(100svh-var(--dashboard-header-height,3rem)-10rem)] min-h-96 w-full rounded-md border"
       style={{ zIndex: 0 }}
     />
   );

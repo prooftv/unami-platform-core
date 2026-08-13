@@ -6,6 +6,8 @@ import type { UNCIPAlertTimelineEntry, RequestUploadInput } from '@unami/api';
 import { TimelineMediaUpload } from '@/components/uncip/media/TimelineMediaUpload';
 import { MediaList } from '@/components/uncip/media/MediaList';
 import type { UNCIPMediaRow } from '@unami/api';
+import { EmptyState } from '@unami/ui';
+import { Eye } from 'lucide-react';
 
 // ─── Action display config ────────────────────────────────────────────────────
 // Maps each action to a human label and a role-colour accent.
@@ -43,11 +45,7 @@ export function AlertTimeline({
   onRequestTimelineUpload,
 }: Props) {
   if (entries.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-2">
-        No actions recorded yet.
-      </p>
-    );
+    return <EmptyState title="No actions recorded yet." icon={Eye} className="py-4" />;
   }
 
   const sorted = [...entries].sort(

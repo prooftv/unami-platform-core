@@ -261,6 +261,12 @@ function ParentDashboard({ alerts, children }: { alerts: UNCIPAlert[]; children:
 
   return (
     <div className="space-y-6">
+      <KPIGrid>
+        <MetricCard title="My children"      value={String(children.length)}  icon={Baby}          compact />
+        <MetricCard title="Active alerts"    value={String(active.length)}    icon={AlertTriangle} compact />
+        <MetricCard title="Recent sightings" value={String(sightings.length)} icon={MapPin}        compact />
+      </KPIGrid>
+
       <div className="flex gap-2">
         <Button asChild size="sm"><Link href="/children/new">Register child</Link></Button>
         {children.length > 0 && (

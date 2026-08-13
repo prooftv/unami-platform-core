@@ -32,6 +32,25 @@ export interface ListSchoolsParams {
   stationId?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type WireRecord = Record<string, any>;
+
+function fromWire(r: WireRecord): UNCIPSchool {
+  return {
+    id:           r.id,
+    name:         r.name,
+    emis:         r.emis ?? null,
+    province:     r.province,
+    address:      r.address,
+    contactPhone: r.contact_phone ?? null,
+    contactEmail: r.contact_email ?? null,
+    stationId:    r.station_id ?? null,
+    lat:          r.lat ?? null,
+    lng:          r.lng ?? null,
+    createdAt:    r.created_at,
+  };
+}
+
 export function createUNCIPSchoolsClient(config: ApiConfig) {
   return {
     list(params?: ListSchoolsParams): Promise<{ data: UNCIPSchool[] }> {
@@ -39,15 +58,17 @@ export function createUNCIPSchoolsClient(config: ApiConfig) {
       if (params?.province)  raw.province   = params.province;
       if (params?.stationId) raw.station_id = params.stationId;
       const qs = Object.keys(raw).length ? '?' + new URLSearchParams(raw).toString() : '';
-      return apiFetch(config, `/uncip-schools${qs}`);
+      return apiFetch<{ data: WireRecord[] }>(config, `/uncip-schools${qs}`)
+        .then(r => ({ data: r.data.map(fromWire) }));
     },
 
     get(id: string): Promise<{ data: UNCIPSchool }> {
-      return apiFetch(config, `/uncip-schools/${id}`);
+      return apiFetch<{ data: WireRecord }>(config, `/uncip-schools/${id}`)
+        .then(r => ({ data: fromWire(r.data) }));
     },
 
     create(input: CreateSchoolInput): Promise<{ data: UNCIPSchool }> {
-      return apiFetch(config, '/uncip-schools', {
+      return apiFetch<{ data: WireRecord }>(config, '/uncip-schools', {
         method: 'POST',
         body: JSON.stringify({
           name:          input.name,
@@ -60,7 +81,7 @@ export function createUNCIPSchoolsClient(config: ApiConfig) {
           lat:           input.lat ?? null,
           lng:           input.lng ?? null,
         }),
-      });
+      }).then(r => ({ data: fromWire(r.data) }));
     },
   };
 }
