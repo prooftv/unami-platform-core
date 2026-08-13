@@ -90,7 +90,7 @@ export function AlertTimeline({
               <p className="text-xs text-muted-foreground mt-0.5">{actorLabel}</p>
 
               {/* Structured facts — rendered with visual weight */}
-              {entry.caseNumber && (
+              {entry.caseNumber && currentRole !== 'community' && (
                 <div className="mt-2 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm font-medium">
                   <span className="text-muted-foreground text-xs">Case</span>
                   {entry.caseNumber}
