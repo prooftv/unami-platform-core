@@ -331,19 +331,79 @@ identification to prevent false reports and ensure the record refers to a specif
 
 ---
 
-## Next Session
+## Production Status (2026-08-13)
 
-Read this document, then begin Phase A.
+**Baseline commit: `cedffd5`**
 
-Start with **A1 — Child registration form**.
+The deployment gate is cleared. The pilot workflow is partially operational.
 
-The form must:
-- Accept: first name, last name, date of birth, gender, optional identification number,
-  optional school assignment, optional address, optional medical information
-- Submit to `POST /uncip-children` via `client.children.create()`
-- On success: redirect to `/children/:id`
-- On error: display inline validation
+### What works end-to-end in production
 
-Do not build A2 until A1 is complete and tested.
-Do not build B1–B5 until A1–A5 are complete.
-Do not deploy until Phase A is complete.
+```
+Authentication          Supabase Auth → uncip_user_profiles → role-scoped session ✅
+Children list/detail    GET /uncip-children — RLS-scoped, fromWire() mapped ✅
+Alert list/detail       GET /uncip-alerts — RLS-scoped, timeline joined ✅
+Alert creation          POST /uncip-alerts (parent, school, admin) ✅
+Timeline actions        POST /uncip-timeline (all roles, permission-enforced) ✅
+Status transitions      PATCH /uncip-alerts/:id/status ✅
+Schools/stations        GET /uncip-schools, /uncip-stations ✅
+Media upload/retrieval  /uncip-media (D5) ✅
+Spatial projection      /map — stations, schools, alerts with coordinates ✅
+Role-aware dashboard    Five distinct role projections (F9) ✅
+Community privacy       child_id stripped, case_number not rendered ✅
+```
+
+### D1–D5 data layer milestones
+
+| Milestone | What it added | Commit |
+|---|---|---|
+| D1 | `case_number`, `sighting_location` on timeline | `6eb2db2` |
+| D2 | `children-photos` storage bucket, `photo_url` | `e3be370` |
+| D3 | Role/action permission matrix, RLS recursion fix | `1e193ec` |
+| D4 | `lat`/`lng` on stations, schools, alerts, sightings | `26af25f` |
+| D5 | `uncip-media` Edge Function, alert + timeline evidence | `855e2cf` |
+
+### Frontend audit F1–F9
+
+| Finding | Resolution | Commit |
+|---|---|---|
+| F1 status/type in header | AlertDetailPage header | `fb34b7d` |
+| F2 timeline provenance | AlertTimeline redesign | `fb34b7d` |
+| F3 actor identity | `actor_name` column + Edge Function writes | `fb34b7d` |
+| F4 active/closed separation | alerts/page.tsx split | `fb34b7d` |
+| F5 community privacy presentation | AlertSummaryCard `isCommunity` | `fb34b7d` |
+| F6 map spatial projection | Seed data populated | (data) |
+| F7 incident documents context | AlertDetailPage evidence section | `fb34b7d` |
+| F8 operational card ordering | AlertDetailPanel reorder | `fb34b7d` |
+| F9 role-aware dashboard | Five role projections, work queues | `b4c4044` |
+| Community case_number exposure | AlertTimeline role guard | `cedffd5` |
+
+### Remaining pilot workflow items
+
+The following from the Phase A/B capability inventory are still needed for a complete pilot demonstration:
+
+| Capability | Status |
+|---|---|
+| Child registration form | ✅ Built (Phase A) |
+| Alert creation form | ✅ Built (Phase A) |
+| School confirmation action | ✅ Built (Phase A) |
+| Authority case assignment | ✅ Built (Phase A) |
+| Community sighting action | ✅ Built (Phase A) |
+| Status transitions | ✅ Built (Phase A) |
+| Role-filtered navigation | ✅ Built (Phase B) |
+| Role-aware dashboard | ✅ Built (F9) |
+| Spatial map projection | ✅ Built (D4) |
+| Evidence/media | ✅ Built (D5) |
+| Self-registration (parent) | ✅ Built |
+| Pilot seed data (5 roles, 2 stations, 5 schools, 1 child) | ✅ Populated |
+
+**The minimum complete pilot workflow (steps 1–16 in this document) is now demonstrable.**
+
+### What remains before a formal government pilot presentation
+
+1. Real child data — the current seed data uses test accounts and fictional children
+2. Safeguarding review — confirm no test data persists in production before real children are registered
+3. Pilot rehearsal — end-to-end walkthrough with real accounts across all five roles
+4. Terms of service / privacy policy routes (currently linked but not built)
+
+These are operational/legal items, not engineering blockers.

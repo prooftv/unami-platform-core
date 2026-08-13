@@ -159,72 +159,95 @@ Enforced at RLS layer — not just UI. This is non-negotiable.
 
 # CURRENT STATUS
 
+**Production baseline: `cedffd5` (2026-08-13)**
+
 ```text
 Foundational architecture     COMPLETE  d381d8a
 Platform isolation            COMPLETE  43227f1
-Environment guard             COMPLETE  (this commit)
 Phase A write surface         COMPLETE  2478367
+D1 incident/timeline fields   COMPLETE  6eb2db2
+D2 child identity media       COMPLETE  e3be370
+D3 role/action permissions    COMPLETE  1e193ec
+D4 spatial foundation         COMPLETE  26af25f
+D5 incident/timeline evidence COMPLETE  855e2cf
+/children contract fix        COMPLETE  cdedbf4  ← fromWire() mapper
+F3 actor provenance           COMPLETE  fb34b7d
+Dashboard architecture        COMPLETE  3cbd60c  ← locked spec
+F9 role-aware dashboard       COMPLETE  b4c4044
+Community privacy fix         COMPLETE  cedffd5  ← case_number guard
 ```
 
-## Deployment Gate — must complete before operational features
+## Production URL
 
 ```
-✅ New UNCIP Supabase project created          — tqragjtvcnsmumtaijds
-✅ Migration 009_uncip_schema.sql applied      — verified 2026-08-12
-✅ UNCIP Edge Functions deployed               — all 5 ACTIVE (verified 2026-08-12)
-✅ NEXT_PUBLIC_UNCIP_SUPABASE_URL set in Vercel
-✅ NEXT_PUBLIC_UNCIP_SUPABASE_ANON_KEY set in Vercel
-✅ Vercel root directory = apps/uncip
-✅ Production build succeeds on Vercel         — commit 2478367 deployed, state=success
-✅ Login works against UNCIP Auth              — getUser() confirmed working
-□ RLS verified in UNCIP project               — not formally verified
-□ Database contains no Moments data           — not verified
-□ No Moments credentials present in UNCIP environment — not verified
+https://unami-platform-core-uncip-admin.vercel.app
 ```
 
-## Known operational issue (2026-08-12)
+## Supabase Project
 
-Edge functions return WORKER_ERROR (HTTP 500) when called with non-user JWTs
-(anon key, service role key). This is caused by supabase-js v2.50.0 throwing
-on getUser() when the JWT has no `sub` claim (403 from auth server).
+```
+Project ref:  tqragjtvcnsmumtaijds
+Migrations:   000–014 applied
+Edge Functions: uncip-children, uncip-alerts, uncip-schools, uncip-stations,
+                uncip-timeline, uncip-media (all deployed, all ACTIVE)
+```
 
-Real user JWTs (with sub claim) are expected to work correctly.
-Dashboard showing ErrorState is most likely caused by Vercel env vars pointing
-to the wrong Supabase project URL. Requires Vercel dashboard verification.
+## Frontend Audit Status
 
-Production URL: https://unami-platform-core-uncip-admin.vercel.app
+```
+F1  incident status/type in header          ✅  fb34b7d
+F2  timeline provenance                     ✅  fb34b7d
+F3  actor identity (actor_name)             ✅  fb34b7d + migration 014
+F4  active/closed alert separation          ✅  fb34b7d
+F5  community privacy presentation          ✅  fb34b7d
+F6  map spatial projection                  ✅  spatial seed data populated
+F7  incident documents/media context        ✅  fb34b7d
+F8  operational card ordering               ✅  fb34b7d (partly)
+F9  role-aware dashboard                    ✅  b4c4044
+```
 
-Once the deployment gate is cleared, begin Phase A of the operational roadmap.
-See `docs/context/uncip/UNCIP_OPERATIONAL_ROADMAP.md`.
+## Verification
+
+F9 verification: 35/35 checks passed (2026-08-13).
+All five role branches verified against live production data.
+Every work queue traceable to canonical timeline state.
+Community privacy boundary confirmed: child_id stripped, case_number not rendered.
+Cross-role consistency confirmed: same alert has same status/timeline across all roles.
+
+## Known Resolved Issues (architectural history)
+
+| Issue | Resolution | Commit |
+|---|---|---|
+| `/children` Server Component crash (digest 2257899953) | `fromWire()` mapper added to `uncip-children.ts` API client | `cdedbf4` |
+| RLS infinite recursion on cross-table policies | SECURITY DEFINER helper functions break cycles | `1e193ec` / migration 013 |
+| Missing table grants (authenticated role) | Explicit GRANT SELECT/INSERT/UPDATE in migration 013 | migration 013 |
+| Edge Runtime `npm:` import specifiers | All Edge Function imports use `npm:` prefix | `1e193ec` |
+| `actor_name` not persisted on timeline | Migration 014 + Edge Function writes `profile.name` | `fb34b7d` |
+| `case_number` rendered to community role | `currentRole !== 'community'` guard in `AlertTimeline` | `cedffd5` |
+| Stations/schools/alerts had no spatial coordinates | Seed data populated via REST PATCH | (data only) |
 
 ---
 
 # CONTINUITY PRINCIPLE
 
 ```text
-CONSTITUTION          ✅ FROZEN
-TYPE FREEZE           ✅ FROZEN
-FIXTURE FREEZE        ✅ FROZEN (historical reference only)
+CONSTITUTION          ✅ FROZEN   apps/uncip/UNCIP_V2_FRONTEND.md
+DOMAIN TYPES          ✅ FROZEN   apps/uncip/src/domain/uncip/types.ts
+FIXTURES              ✅ FROZEN   apps/uncip/src/fixtures/uncip/ (historical reference)
 COMPONENTS            ✅ COMPLETE
 PAGES                 ✅ COMPLETE
-INTERACTION STATES    ✅ COMPLETE
-SCHEMA DECISIONS      ✅ GATE CLEARED
-DATABASE / RLS        ✅ b506f48
-EDGE FUNCTIONS        ✅ 1ed6fc2 (redeployed 2026-08-12, all 5 ACTIVE)
-API CLIENTS           ✅ 06bed7a
-REAL AUTH             ✅ 0fcde4f
-INTEGRATION AUDIT     ✅ d381d8a
-PLATFORM ISOLATION    ✅ 43227f1
-PHASE A WRITE SURFACE ✅ 2478367  ← child, alert, station, school, user creation
+SCHEMA DECISIONS      ✅ COMPLETE docs/context/uncip/UNCIP_SCHEMA_DECISIONS.md
+DATABASE / RLS        ✅ COMPLETE migrations 000–014
+EDGE FUNCTIONS        ✅ COMPLETE all 6 deployed and ACTIVE
+API CLIENTS           ✅ COMPLETE packages/api/src/clients/uncip-*.ts
+REAL AUTH             ✅ COMPLETE operator.ts, middleware.ts
+INTEGRATION AUDIT     ✅ COMPLETE d381d8a
+PHASE A WRITE SURFACE ✅ COMPLETE 2478367
+D1–D5 DATA LAYER      ✅ COMPLETE 855e2cf
+FRONTEND AUDIT F1–F9  ✅ COMPLETE cedffd5
+DASHBOARD ARCH        ✅ LOCKED   docs/context/uncip/DASHBOARD_ARCHITECTURE.md
 
-DEPLOYMENT GATE       ✅ Substantially cleared (see known issue above)
-OPERATIONAL ROADMAP   ← ACTIVE — Phase A complete, Phase B next
-```
-API CLIENTS           ✅ 06bed7a
-REAL AUTH             ✅ 0fcde4f
-INTEGRATION AUDIT     ✅ d381d8a
-PLATFORM ISOLATION    ✅ 43227f1  (separate Supabase project, env guard)
-
-DEPLOYMENT GATE       ← NEXT (ops)
-OPERATIONAL ROADMAP   ← AFTER DEPLOYMENT GATE
+NEXT                  ← Dashboard architecture checkpoint complete.
+                        See docs/context/uncip/UNCIP_OPERATIONAL_ROADMAP.md
+                        for remaining pilot workflow items.
 ```

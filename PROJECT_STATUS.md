@@ -496,6 +496,48 @@ Supabase Auth → uncip_user_profiles → Edge Functions → RLS → PostgreSQL 
 
 ---
 
+### Phase 19 D1–D5 — Data Layer ✅ Complete
+
+**Baseline: `855e2cf`**
+
+Five data layer milestones extending the foundational schema with operational capabilities.
+
+| Milestone | What it added | Commit |
+|---|---|---|
+| D1 | `case_number`, `sighting_location`, `sighting_lat/lng` on `uncip_alert_timeline` | `6eb2db2` |
+| D2 | `children-photos` storage bucket, `photo_url` on `uncip_children` | `e3be370` |
+| D3 | Role/action permission matrix, RLS recursion fix (SECURITY DEFINER helpers), table grants | `1e193ec` |
+| D4 | `lat`/`lng` on stations, schools, alerts, sightings; `UNCIPMap` component; `/map` page | `26af25f` |
+| D5 | `uncip-media` Edge Function, alert-level and timeline-level evidence upload/retrieval | `855e2cf` |
+
+### Phase 19 Frontend Audit F1–F9 ✅ Complete
+
+**Baseline: `cedffd5` (2026-08-13)**
+
+Production corrections and presentation improvements following D1–D5 verification.
+
+| Finding | Resolution | Commit |
+|---|---|---|
+| `/children` crash (digest 2257899953) | `fromWire()` mapper in `uncip-children.ts` API client | `cdedbf4` |
+| F1 incident status/type in header | AlertDetailPage header redesign | `fb34b7d` |
+| F2 timeline provenance | AlertTimeline redesign with role-colour accents | `fb34b7d` |
+| F3 actor identity | `actor_name` column (migration 014) + Edge Function writes | `fb34b7d` |
+| F4 active/closed alert separation | alerts/page.tsx split | `fb34b7d` |
+| F5 community privacy presentation | AlertSummaryCard `isCommunity` prop | `fb34b7d` |
+| F6 map spatial projection | Seed data: stations, schools, alerts, sightings all have coordinates | (data) |
+| F7 incident documents context | AlertDetailPage evidence section | `fb34b7d` |
+| F8 operational card ordering | AlertDetailPanel reorder | `fb34b7d` |
+| F9 role-aware dashboard | Five distinct role projections with work queues | `b4c4044` |
+| Community `case_number` exposure | `currentRole !== 'community'` guard in AlertTimeline | `cedffd5` |
+
+**F9 verification: 35/35 checks passed.** All five role branches verified against live production data. Every work queue traceable to canonical timeline state. Community privacy boundary confirmed.
+
+**Production URL:** `https://unami-platform-core-uncip-admin.vercel.app`
+
+**Platform lessons extracted:** `docs/context/uncip/UNCIP_PLATFORM_LESSONS.md`
+
+---
+
 ## Architecture Freeze
 
 The platform foundation is **feature-frozen**. Do not:

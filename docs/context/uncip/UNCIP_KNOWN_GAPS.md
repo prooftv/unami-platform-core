@@ -1,6 +1,12 @@
 # UNCIP_KNOWN_GAPS.md
 ## Step 11 — Known Gaps and Technical Debt
 
+> **HISTORICAL DOCUMENT — V1 Firebase system only.**
+> This document describes the original Firebase/Firestore UNCIP V1 implementation.
+> UNCIP V2 (`apps/uncip`) is a complete rewrite on Supabase. None of the issues
+> below apply to V2. This document is retained as architectural history only.
+> For current V2 status, see `docs/context/uncip/SESSION_RESET.md`.
+
 ---
 
 ## Broken Functionality

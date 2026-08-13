@@ -1,7 +1,18 @@
 # UNCIP_PRIVACY_AND_SAFEGUARDING.md
 ## Step 6 — Privacy, Security and Safeguarding Audit
 
-This is an audit of the existing implementation. It is not legal advice and does not claim regulatory compliance or non-compliance.
+> **HISTORICAL DOCUMENT — V1 Firebase system only.**
+> This document audits the original Firebase/Firestore UNCIP V1 implementation.
+> UNCIP V2 (`apps/uncip`) uses Supabase with RLS-enforced privacy boundaries.
+> The critical V1 issues (hardcoded credentials, unauthenticated APIs, plaintext
+> passwords) do not exist in V2. This document is retained as architectural history.
+>
+> For V2 privacy architecture, see:
+> - `docs/context/uncip/UNCIP_ROLES_AND_ACCESS.md`
+> - `docs/context/uncip/UNCIP_PLATFORM_LESSONS.md` (lessons 2, 5)
+> - Migration `013_fix_rls_recursion.sql` (RLS implementation)
+
+---
 
 Items marked **REQUIRES SAFEGUARDING/LEGAL REVIEW** require expert review before any production deployment handling real children's data.
 
