@@ -119,8 +119,127 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (insertError) return err(insertError.message, 500, cors);
+
+    // N2 — Dispatch notifications (post-commit, non-fatal)
+    try {
+      await dispatchNotifications(supabase, entry, profile.role);
+    } catch (_) {
+      // Notification failure never blocks the timeline entry
+    }
+
     return json({ data: entry }, 201, cors);
   }
 
   return err('Not found', 404, cors);
 });
+
+// ---------------------------------------------------------------------------
+// N2 — Notification dispatch
+// Recipient resolution is institutional logic derived from the record model.
+// Community is never a notification recipient.
+// ---------------------------------------------------------------------------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function dispatchNotifications(supabase: any, entry: any, actorRole: string) {
+  const alertId = entry.alert_id;
+
+  // Fetch alert + child for jurisdiction/school resolution
+  const { data: alert } = await supabase
+    .from('uncip_alerts')
+    .select('child_id, created_by')
+    .eq('id', alertId)
+    .single();
+  if (!alert) return;
+
+  const { data: child } = await supabase
+    .from('uncip_children')
+    .select('school_id')
+    .eq('id', alert.child_id)
+    .single();
+
+  // Resolve recipient sets per action
+  const recipientIds = new Set<string>();
+
+  const addGuardians = async () => {
+    const { data } = await supabase
+      .from('uncip_guardian_links')
+      .select('user_id')
+      .eq('child_id', alert.child_id);
+    (data ?? []).forEach((r: { user_id: string }) => recipientIds.add(r.user_id));
+  };
+
+  const addSchoolUsers = async () => {
+    if (!child?.school_id) return;
+    const { data } = await supabase
+      .from('uncip_user_profiles')
+      .select('id')
+      .eq('school_id', child.school_id)
+      .eq('role', 'school')
+      .eq('is_active', true);
+    (data ?? []).forEach((r: { id: string }) => recipientIds.add(r.id));
+  };
+
+  const addAuthorityUsers = async () => {
+    if (!child?.school_id) return;
+    // Jurisdiction: authority users at the school's station
+    const { data: school } = await supabase
+      .from('uncip_schools')
+      .select('station_id')
+      .eq('id', child.school_id)
+      .single();
+    if (!school?.station_id) return;
+    const { data } = await supabase
+      .from('uncip_user_profiles')
+      .select('id')
+      .eq('station_id', school.station_id)
+      .eq('role', 'authority')
+      .eq('is_active', true);
+    (data ?? []).forEach((r: { id: string }) => recipientIds.add(r.id));
+  };
+
+  switch (entry.action) {
+    case 'alert_raised':
+      await addSchoolUsers();
+      await addAuthorityUsers();
+      break;
+    case 'school_confirmed_last_seen':
+      await addGuardians();
+      await addAuthorityUsers();
+      break;
+    case 'authority_assigned_case':
+      await addGuardians();
+      break;
+    case 'community_sighting_reported':
+      await addGuardians();
+      await addAuthorityUsers();
+      break;
+    case 'status_changed':
+      await addGuardians();
+      await addSchoolUsers();
+      break;
+    default:
+      return; // note_added — no notification
+  }
+
+  // Remove the actor themselves from recipients
+  recipientIds.delete(entry.actor_id);
+  if (recipientIds.size === 0) return;
+
+  // Resolve roles for each recipient
+  const { data: profiles } = await supabase
+    .from('uncip_user_profiles')
+    .select('id, role')
+    .in('id', [...recipientIds]);
+
+  const roleMap = new Map<string, string>(
+    (profiles ?? []).map((p: { id: string; role: string }) => [p.id, p.role])
+  );
+
+  const rows = [...recipientIds].map((id) => ({
+    timeline_entry_id: entry.id,
+    recipient_id:      id,
+    recipient_role:    roleMap.get(id) ?? 'unknown',
+  }));
+
+  await supabase.from('uncip_notifications').insert(rows);
+}

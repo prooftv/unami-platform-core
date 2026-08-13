@@ -9,6 +9,7 @@ import { ShellThemeSwitcher, ShellLayoutControls } from '@unami/ui';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
+import { NotificationBell } from './dashboard/_components/header/notification-bell';
 
 export default async function UNCIPLayout({ children }: { children: ReactNode }) {
   const session = await getUNCIPSession();
@@ -59,6 +60,7 @@ export default async function UNCIPLayout({ children }: { children: ReactNode })
               <SearchDialog />
             </div>
             <div className="flex items-center gap-2">
+              <NotificationBell />
               <ShellLayoutControls />
               <ShellThemeSwitcher />
             </div>
