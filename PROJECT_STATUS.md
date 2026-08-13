@@ -10,7 +10,7 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 18 — Complete (18A–18G) + UNCIP Phase A |
+| Phase | Phase 18 — Complete (18A–18G) + UNCIP Phase 19 Complete |
 | Branch | `main` |
 | Workspace | `/home/ec2-user/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
@@ -407,7 +407,8 @@ Control Centre shell brought to full parity with Moments admin. Validates the pl
 Phase 16  Platform Independence          ✅ Complete
 Phase 17  Moments Product Completion     ✅ Engineering Complete (ops gates remaining)
 Phase 18  Unami Control Centre           ✅ Complete (18A–18G + settings + shell parity)
-Phase 19  UNCIP v2                       ⏳ Next
+Phase 19  UNCIP v2                       ✅ Complete (cedffd5)
+Phase 20  BeatsChain                     ⏳ Next
 Phase 20  Multi-node Federation
 Phase 21  Commercial Intelligence
 Phase 22  National Institutional Memory
@@ -419,9 +420,9 @@ Each consumes `@unami/ui`, `@unami/shared`, `@unami/api`. None modify `packages/
 
 ---
 
-## Phase 19 — UNCIP v2 ⏳ Active
+## Phase 19 — UNCIP v2 ✅ Complete
 
-**Goal:** Build UNCIP (Unami National Child Identification Programme) as `apps/uncip`.
+**Production baseline: `cedffd5` (2026-08-13)**
 Child safety platform for South African townships. Connects parents, schools, SAPS, and community.
 Strategic goal: government pilot presentation — 30 schools, 3 provinces, ~2,000 children.
 
@@ -535,6 +536,24 @@ Production corrections and presentation improvements following D1–D5 verificat
 **Production URL:** `https://unami-platform-core-uncip-admin.vercel.app`
 
 **Platform lessons extracted:** `docs/context/uncip/UNCIP_PLATFORM_LESSONS.md`
+
+---
+
+## Phase 20 — BeatsChain ⏳ Next
+
+**Goal:** Music creator ecosystem. Creator profiles, ISRC registration, rights management, marketplace.
+
+**Platform role:** Second stress test of platform primitives. Will reveal what UNCIP never needed.
+
+**Governing decisions:** D-043, D-044, D-045 (`docs/context/decisions.md`)
+
+**At each BeatsChain decision, record:**
+1. What it reuses from Core (`@unami/ui`, `@unami/shared`, `@unami/api`)
+2. What it invents that Core doesn't provide
+3. What it reveals Core is missing
+4. Whether any discovery qualifies as a Core Candidate (requires proof across ≥2 apps)
+
+**Not started.**
 
 ---
 

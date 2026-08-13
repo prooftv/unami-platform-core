@@ -461,7 +461,48 @@ Phase 19 Step 0 extractions (commit `7e952a0`):
 The constitutional principle: **the shell is shared, the application is not.**
 Platform Core owns shell technology. The product owns shell configuration.
 
-## D-042: Next.js boundary — files that import from `next/*` stay in applications
+## D-043: Platform evolution is organic — Core grows from proven application discoveries
+
+The platform grows by absorbing patterns that have been proven in production across
+multiple applications. It does not grow from anticipated future needs or single-application
+assumptions.
+
+A pattern discovered in one application is a **Core Candidate**, not a Core feature.
+Core adoption requires the abstraction to survive at least two independent domains.
+
+Applications are free to develop domain-specific capabilities. Those capabilities may
+eventually become Core Candidates, but only after proving their generality.
+
+The deletion test remains the constitutional proof: deleting any application must leave
+`packages/` compiling without modification.
+
+## D-044: UNCIP is the reference implementation for role-based operational platforms
+
+UNCIP (Phase 19) has proven the following platform-level patterns in production:
+- Wire/domain API separation (`fromWire()`/`toWire()`)
+- Database privacy ≠ UI disclosure (two separate enforcement layers)
+- Role completeness across the full stack (17 layers)
+- Work queue dashboards derived from canonical record state
+- SECURITY DEFINER RLS helper pattern for cross-table policies
+- Verification as a separate engineering phase
+
+These are Core Candidates. None are automatically promoted to `packages/`.
+Full catalogue: `docs/context/uncip/UNCIP_PLATFORM_LESSONS.md`
+
+## D-045: BeatsChain is the second stress test of platform primitives
+
+BeatsChain will consume `@unami/ui`, `@unami/shared`, `@unami/api` and own its domain
+under `apps/beatschain/src/domain/`. It must not modify `packages/`.
+
+At each BeatsChain decision, explicitly record:
+1. What it reuses from Core
+2. What it invents that Core doesn't provide
+3. What it reveals Core is missing
+4. Whether any discovery is a Core Candidate (requires proof across ≥2 apps)
+
+BeatsChain is not UNCIP with different colours. It is a distinct domain that will
+stress-test the platform in ways UNCIP never needed (multi-party ownership,
+collaborative permissions, financial information, content provenance).
 
 Files that depend on Next.js APIs cannot be extracted into `packages/ui`.
 `packages/ui` has no Next.js dependency and must not acquire one.
@@ -477,3 +518,42 @@ These files are structurally identical across applications. They are documented 
 in `PLATFORM_DASHBOARD_SHELL.md` — not extracted as shared components.
 
 The rule: if it imports from `next/`, it stays in the application.
+
+## D-043: Platform evolution is organic — Core grows from proven application discoveries
+
+The platform grows by absorbing patterns proven in production across multiple applications.
+It does not grow from anticipated future needs or single-application assumptions.
+
+A pattern discovered in one application is a **Core Candidate**, not a Core feature.
+Core adoption requires the abstraction to survive at least two independent domains.
+
+Applications are free to develop domain-specific capabilities. The deletion test remains
+the constitutional proof: deleting any application must leave `packages/` compiling.
+
+## D-044: UNCIP is the reference implementation for role-based operational platforms
+
+UNCIP (Phase 19) has proven the following platform-level patterns in production:
+- Wire/domain API separation (`fromWire()`/`toWire()`)
+- Database privacy ≠ UI disclosure (two separate enforcement layers)
+- Role completeness across the full stack (17 layers)
+- Work queue dashboards derived from canonical record state
+- SECURITY DEFINER RLS helper pattern for cross-table policies
+- Verification as a separate engineering phase
+
+These are Core Candidates. None are automatically promoted to `packages/`.
+Full catalogue: `docs/context/uncip/UNCIP_PLATFORM_LESSONS.md`
+
+## D-045: BeatsChain is the second stress test of platform primitives
+
+BeatsChain will consume `@unami/ui`, `@unami/shared`, `@unami/api` and own its domain
+under `apps/beatschain/src/domain/`. It must not modify `packages/`.
+
+At each BeatsChain decision, explicitly record:
+1. What it reuses from Core
+2. What it invents that Core doesn't provide
+3. What it reveals Core is missing
+4. Whether any discovery is a Core Candidate (requires proof across ≥2 apps)
+
+BeatsChain is not UNCIP with different colours. It is a distinct domain that will
+stress-test the platform in ways UNCIP never needed (multi-party ownership,
+collaborative permissions, financial information, content provenance).

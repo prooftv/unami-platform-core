@@ -130,13 +130,80 @@ Platform Core is one of two repositories in the Unami ecosystem.
 Phase 16  Platform Independence          ✅ Complete
 Phase 17  Moments Product Completion     ✅ Engineering Complete
 Phase 18  Unami Control Centre           ✅ Complete
-Phase 19  UNCIP v2                       ⏳ Active
-Phase 20  Multi-node Federation
-Phase 21  Commercial Intelligence
-Phase 22  National Institutional Memory
+Phase 19  UNCIP v2                       ✅ D1–D5 + F1–F9 + F9 verified (cedffd5)
+Phase 20  BeatsChain                     ⏳ Next
+Phase 21  Multi-node Federation
+Phase 22  Commercial Intelligence
+Phase 23  National Institutional Memory
 ```
 
 Current state: `PROJECT_STATUS.md`
+
+---
+
+## Platform Evolution Model
+
+The platform grows organically from proven application discoveries. It does not grow from
+anticipated future needs.
+
+```
+                    UNAMI PLATFORM CORE
+                 ┌────────────────────────┐
+                 │ Shared primitives      │
+                 │ Shared conventions     │
+                 │ Shared infrastructure  │
+                 └───────────┬────────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              ↓              ↓              ↓
+           UNCIP         BeatsChain      Umkhandlu
+              │              │              │
+        discoveries       discoveries    discoveries
+              │              │              │
+              └──────────────┼──────────────┘
+                             ↓
+                  Core Candidate patterns
+                             │
+                    proven across ≥2 apps
+                             │
+                             ↓
+                     PLATFORM CORE EVOLVES
+```
+
+**Core Candidate lifecycle:**
+
+```
+Application discovery
+        ↓
+Domain-specific solution
+        ↓
+Proven in production
+        ↓
+Recurring across multiple apps?
+        ↓
+┌───────┴────────┐
+│                │
+No               Yes
+│                │
+remain app       Core Candidate
+specific             ↓
+                 stress-test in second app
+                     ↓
+                Core adoption
+```
+
+Core adoption requires the abstraction to survive more than one domain.
+This protects Core from premature contamination with single-application assumptions.
+
+**UNCIP as reference implementation:**
+UNCIP (Phase 19) is the first substantial source of Platform Core discovery candidates.
+See `docs/context/uncip/UNCIP_PLATFORM_LESSONS.md` for the ten lessons identified.
+None are automatically promoted to Core — each requires validation across a second application.
+
+**BeatsChain as stress test:**
+BeatsChain will reveal what UNCIP never needed (multi-party ownership, collaborative permissions,
+financial information, content provenance). The question to ask at each BeatsChain decision:
+"What can it reuse from Core? What does it reveal Core is missing?"
 
 ---
 
