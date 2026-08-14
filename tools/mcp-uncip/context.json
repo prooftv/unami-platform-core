@@ -7,7 +7,6 @@
   "supabase_migrations_dir": "apps/uncip/supabase/migrations/",
   "supabase_functions_dir": "apps/uncip/supabase/functions/",
   "production_url": "https://unami-platform-core-uncip-admin.vercel.app",
-
   "monorepo": {
     "root": "unami-platform-core",
     "package_manager": "pnpm",
@@ -33,10 +32,9 @@
     "deletion_test": "Deleting apps/uncip must leave packages/ compiling without modification. This is the constitutional proof of correct layer separation.",
     "scope_rule": "When working on UNCIP, only touch: apps/uncip/, packages/api/src/clients/uncip-*.ts, supabase/migrations/009+, supabase/functions/uncip-*. Never touch other apps or their domain logic."
   },
-
   "frozen_for": "manual testing",
-  "head_commit": "f443c63",
-  "head_commit_msg": "chore(uncip): add .gitignore, untrack tsconfig.tsbuildinfo",
+  "head_commit": "0a9af25",
+  "head_commit_msg": "chore(tools): add mcp-uncip MCP server for Q CLI context management",
   "head_date": "2026-08-14",
   "migrations_applied": "000-015",
   "edge_functions": [
@@ -62,7 +60,8 @@
     "F9 role-aware dashboard (b4c4044)",
     "Community privacy fix - case_number guard (cedffd5)",
     "Notifications N1-N5 (332e093)",
-    "Map shadcn refactor + layout fixes (ea8bcf6 - f443c63)"
+    "Map shadcn refactor + layout fixes (ea8bcf6 - f443c63)",
+    "chore(tools): add mcp-uncip MCP server for Q CLI context management (0a9af25)"
   ],
   "frontend_audit": {
     "F1": "COMPLETE - incident status/type in header",
