@@ -7,13 +7,17 @@
 - Branch: `main`
 - Never touch `/workspaces/moments-v2` — reference only
 
-## MCP Context Agent (uncip-agent)
-- The UNCIP project context is managed by an MCP server registered as `uncip-agent` in Q CLI
-- Server lives at `tools/mcp-uncip/server.mjs` — do not move it
-- Context state is persisted in `tools/mcp-uncip/context.json`
-- At the start of every UNCIP session: call `get_project_context` to load full state
-- After every commit: call `record_progress` with the commit hash and message
-- Available tools: `get_project_context`, `get_current_status`, `record_progress`, `add_note`, `update_frozen_status`, `mark_remaining_item_done`, `add_remaining_item`, `get_project_id`
+## MCP Context Agents
+Each project has a dedicated MCP server registered in Q CLI (`~/.aws/amazonq/mcp.json`).
+At the start of every session, call `get_project_context` on the relevant agent.
+
+| Agent | Project | Server |
+|---|---|---|
+| `uncip-agent` | apps/uncip — UNCIP v2 child safety platform | `tools/mcp-uncip/server.mjs` |
+| `moments-agent` | apps/admin + apps/web — Moments platform | `tools/mcp-moments/server.mjs` |
+| `umkhandlu-agent` | apps/umkhandlu — Unami Control Centre | `tools/mcp-umkhandlu/server.mjs` |
+
+All context state is persisted in each server's `context.json`. Do not move the servers.
 
 ## Before writing any code
 1. Read `PROJECT_STATUS.md` — current phase, last commit, what is done and what is next

@@ -1,0 +1,82 @@
+{
+  "project": "unami-platform-core/umkhandlu",
+  "active_app": "apps/umkhandlu",
+  "repo": "prooftv/unami-platform-core",
+  "supabase_project_ref": "ufsmpqxniswdnsywjzje",
+  "supabase_dir": "apps/umkhandlu/supabase/",
+  "production_url": "https://unami-platform-core-umkhandlu.vercel.app",
+  "monorepo": {
+    "root": "unami-platform-core",
+    "package_manager": "pnpm",
+    "build_system": "turbo",
+    "platform_packages": {
+      "@unami/ui": "packages/ui — design system, shell primitives, structural components",
+      "@unami/shared": "packages/shared — platform contracts",
+      "@unami/api": "packages/api — typed HTTP clients"
+    },
+    "apps": {
+      "apps/umkhandlu": "Unami Control Centre — read-only intelligence aggregation across governance nodes. ACTIVE.",
+      "apps/admin": "Moments admin. NOT our concern.",
+      "apps/web": "Moments public PWA. NOT our concern.",
+      "apps/uncip": "UNCIP v2. NOT our concern."
+    },
+    "scope_rule": "When working on Umkhandlu, only touch: apps/umkhandlu/. Never touch other apps or their domain logic.",
+    "sovereignty_rule": "D-036: The Control Centre NEVER edits, mutates, creates, or administers node content. All write operations remain within the originating governance node.",
+    "deletion_test": "Deleting apps/umkhandlu must leave packages/ compiling without modification."
+  },
+  "frozen_for": "stable — Phase 18 complete",
+  "head_commit": "43d7892",
+  "head_commit_msg": "phase-18-complete: contract alignment + shell parity",
+  "head_date": "2026-08-12",
+  "completed_milestones": [
+    "Phase 18A — scaffold, shell, navigation, domain structure, platform tables, node registry model",
+    "Phase 18B — governance node client, node connection, read-only auth, all intelligence summaries",
+    "Phase 18C — node health view, intelligence routes (records, notices, participation, projects, audit, platform health)",
+    "Phase 18D — cross-node aggregation (side-by-side comparison, aggregated totals)",
+    "Phase 18E — commercial intelligence (RAG distribution, project status, beneficiary tracking)",
+    "Phase 18F — TCRS escalation surface (conflict logs, resolution state)",
+    "Phase 18G — institutional memory (lineage chains, Layer 5 outputs, evidence summary)",
+    "Settings — profile update, operator list, role change, invite, remove",
+    "Shell parity — ThemeSwitcher, SearchDialog, preferences store, sidebar variant/collapsible, nav-user Avatar"
+  ],
+  "live_routes": [
+    "/nodes/health — per-node health, record/notice counts, version, response time",
+    "/intelligence/records — 15 records, by status, by type, recent activity",
+    "/intelligence/notices — 8 notices, statutory breakdown, by type",
+    "/intelligence/participation — by submission type, by relationship",
+    "/intelligence/projects — 2 projects, R40M budget, 100 beneficiaries, RAG health",
+    "/intelligence/audit — lineage chains, Layer 5 outputs, evidence summary",
+    "/intelligence/nodes — cross-node comparison table with aggregated totals",
+    "/platform/health — live API health with response times per node",
+    "/settings — profile, operators, platform info"
+  ],
+  "governance_nodes": [
+    {
+      "name": "umkhandlu.unamifoundation.org",
+      "role": "First registered governance node",
+      "auth": "node-issued Bearer key (read-only)",
+      "note": "Production Umkhandlu governance app — owns governance editing. Control Centre reads only."
+    }
+  ],
+  "locked_decisions": {
+    "D-035": "Production Umkhandlu governance app owns governance editing — Platform Core does not duplicate it",
+    "D-036": "Node sovereignty — Control Centre never edits, mutates, creates, or administers node content",
+    "D-037": "GOVERNANCE_NODE_REGISTRY.md is the constitutional document for node connections",
+    "D-041": "Shell extraction — ThemeBootScript and nav types extracted to packages/ui",
+    "D-042": "Platform shell constitution — PLATFORM_DASHBOARD_SHELL.md"
+  },
+  "constitutional_docs": [
+    "docs/abstractions/umkhandlu/00_EXECUTIVE_SUMMARY.md",
+    "docs/abstractions/umkhandlu/08_INTELLIGENCE_LAYER.md",
+    "docs/abstractions/umkhandlu/09_PLATFORM_MAPPING.md",
+    "docs/context/GOVERNANCE_NODE_API.md",
+    "docs/context/GOVERNANCE_NODE_REGISTRY.md"
+  ],
+  "notes": [
+    "[2026-08-14] Umkhandlu is the Unami Control Centre — a read-oriented intelligence aggregation app. It is NOT a governance editor.",
+    "[2026-08-14] Phase 18 complete (18A-18G + settings + shell parity). Frozen as stable baseline.",
+    "[2026-08-14] Supabase project ref=ufsmpqxniswdnsywjzje. Separate from Moments (dpydmpydyfrrdhuezvgi) and UNCIP (tqragjtvcnsmumtaijds).",
+    "[2026-08-14] Next work on this app: Phase 20 multi-node federation (additional governance nodes). Not started."
+  ],
+  "next_phase": "Phase 20 — Multi-node Federation (additional governance nodes). Not started."
+}

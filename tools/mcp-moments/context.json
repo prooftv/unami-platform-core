@@ -1,0 +1,110 @@
+{
+  "project": "unami-platform-core/moments",
+  "active_apps": ["apps/admin", "apps/web"],
+  "repo": "prooftv/unami-platform-core",
+  "supabase_project_ref": "dpydmpydyfrrdhuezvgi",
+  "supabase_dir": "supabase/",
+  "supabase_migrations_dir": "supabase/migrations/",
+  "supabase_functions_dir": "supabase/functions/",
+  "production_urls": {
+    "admin": "https://unami-platform-core-admin.vercel.app",
+    "web": "https://unami-platform-core-web.vercel.app"
+  },
+  "monorepo": {
+    "root": "unami-platform-core",
+    "package_manager": "pnpm",
+    "build_system": "turbo",
+    "platform_packages": {
+      "@unami/ui": "packages/ui — design system, shell primitives, structural components",
+      "@unami/shared": "packages/shared — platform contracts: RBAC, Language, Pagination, Utilities, Auth validators",
+      "@unami/api": "packages/api — typed HTTP clients"
+    },
+    "apps": {
+      "apps/admin": "Moments admin — all 8 modules (moments, broadcasts, subscribers, moderation, authority, sponsors, campaigns, settings). ACTIVE.",
+      "apps/web": "Moments public PWA — feed, moment detail, subscribe, static pages, Sanity editorial. ACTIVE.",
+      "apps/uncip": "UNCIP v2 — child safety platform. NOT our concern.",
+      "apps/umkhandlu": "Unami Control Centre. NOT our concern."
+    },
+    "scope_rule": "When working on Moments, only touch: apps/admin/, apps/web/, supabase/migrations/000-008, supabase/functions/ (non-uncip). Never touch apps/uncip or apps/umkhandlu."
+  },
+  "frozen_for": "ops gates (production deployment)",
+  "head_commit": "ad04be2",
+  "head_commit_msg": "phase-17j-complete: security headers, rate limit audit, launch checklist, D-033",
+  "head_date": "2026-08-12",
+  "migrations_applied": "000-008",
+  "edge_functions": [
+    "moments",
+    "broadcasts",
+    "subscribers",
+    "auth",
+    "authority",
+    "sponsors",
+    "campaigns",
+    "analytics",
+    "participation",
+    "evidence",
+    "records",
+    "whatsapp"
+  ],
+  "sanity_project_id": "g4t7r2a1",
+  "sanity_dataset": "production",
+  "completed_milestones": [
+    "Phase 5 — authentication foundation",
+    "Phase 6 — all 8 admin modules wired to live API",
+    "Phase 7 — operational experience (pagination, realtime, settings CRUD)",
+    "Phase 16 — platform independence (@unami/* scope rename)",
+    "Phase 17A — public PWA foundation (16 routes)",
+    "Phase 17B — content ownership constitution (CONTENT_OWNERSHIP.md)",
+    "Phase 17C — Sanity editorial layer (10 schemas, 15 seed docs, revalidation webhook)",
+    "Phase 17D — community records (migration 008, records Edge Function, admin panel, public timeline)",
+    "Phase 17E — public participation engine (consent-gated, webhook-delivered, never stored)",
+    "Phase 17F — evidence layer (immutable, multipart upload, weather context)",
+    "Phase 17G — commercial layer (campaign types, project tracking, deliverables)",
+    "Phase 17H — intelligence foundation (analytics Edge Function, 4 KPI routes)",
+    "Phase 17I — WhatsApp integration (HELP/STATUS/MYAUTHORITY handlers, opt-in/out, template broadcast)",
+    "Phase 17J — production validation engineering complete (security headers, rate limits, launch checklist)"
+  ],
+  "phase_17_status": {
+    "17A": "COMPLETE — public PWA, 16 routes",
+    "17B": "COMPLETE — content ownership constitution",
+    "17C": "COMPLETE — Sanity integration (Sanity Studio deploy + seed verification: ops remaining)",
+    "17D": "COMPLETE — community records",
+    "17E": "COMPLETE — participation engine",
+    "17F": "COMPLETE — evidence layer",
+    "17G": "COMPLETE — commercial layer",
+    "17H": "COMPLETE — intelligence foundation",
+    "17I": "COMPLETE — WhatsApp integration (WhatsApp Business Account verification: ops remaining)",
+    "17J": "ENGINEERING COMPLETE — ops gates remaining"
+  },
+  "locked_decisions": {
+    "D-001": "000_initial_schema.sql is immutable — never modify",
+    "D-002": "No custom auth tables — Supabase Auth only",
+    "D-003": "Edge Functions are the only DB layer",
+    "D-006": "Broadcasted moments are immutable",
+    "D-010": "WhatsApp webhook always returns HTTP 200",
+    "D-011": "Admin shell is permanent — no redesigns",
+    "D-033": "Phase 17 engineering complete"
+  },
+  "remaining_ops_gates": [
+    "Supabase Pro plan upgrade",
+    "All migrations applied (000-008) on production",
+    "Storage buckets created (evidence, moments-media)",
+    "WhatsApp Business Account verified + credentials set in Supabase secrets",
+    "Vercel deployments with custom domains",
+    "Sanity Studio deployed + seed documents verified",
+    "Lighthouse scores >= 90 on apps/web",
+    "End-to-end functional validation",
+    "First real broadcast sent",
+    "Acceptance checklist signed off"
+  ],
+  "known_issues": [
+    "Advisory confidence hardcoded 0.5 — n8n not connected (P2, deferred D-023)",
+    "WhatsApp secrets unset in Supabase (P0 Ops)",
+    "Lighthouse scores not yet verified against production (P1 Ops)"
+  ],
+  "notes": [
+    "[2026-08-14] Moments is engineering-complete at Phase 17J. Frozen for ops gates. No new engineering work until ops checklist is signed off.",
+    "[2026-08-14] Supabase project ref=dpydmpydyfrrdhuezvgi. Root supabase/ dir (not apps/admin/supabase). Migrations 000-008 cover Moments domain.",
+    "[2026-08-14] apps/web uses Sanity (project g4t7r2a1) for editorial content. Supabase for operational data (moments, broadcasts, subscribers, participation, evidence, records)."
+  ]
+}
