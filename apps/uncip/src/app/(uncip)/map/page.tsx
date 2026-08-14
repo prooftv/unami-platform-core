@@ -28,9 +28,10 @@ export default async function MapPage() {
     : `${alerts.length} active alert${alerts.length !== 1 ? 's' : ''} with location data.`;
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:p-6" data-content-padding="false">
+    <div className="flex flex-col gap-4 p-4 md:p-6" data-content-padding="false">
       <PageHeader className="shrink-0" title="Map" description={description} />
-      <div className="min-h-0 flex-1 overflow-hidden">
+      {/* Explicit height: viewport minus shell header (3rem) minus page padding (1rem top + 1rem bottom = 2rem on mobile, 1.5rem+1.5rem=3rem on md) minus PageHeader (~3.5rem) */}
+      <div className="h-[calc(100svh-var(--dashboard-header-height,3rem)-10rem)] min-h-96 overflow-hidden rounded-md">
         <UNCIPMap alerts={enriched} role={session.role} />
       </div>
     </div>
