@@ -66,7 +66,7 @@ export default async function UNCIPLayout({ children }: { children: ReactNode })
             </div>
           </div>
         </header>
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 has-data-[content-padding=false]:p-0 md:p-6 md:has-data-[content-padding=false]:p-0">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-4 has-data-[content-padding=false]:p-0 md:p-6 md:has-data-[content-padding=false]:p-0">
           {children}
         </div>
       </SidebarInset>
