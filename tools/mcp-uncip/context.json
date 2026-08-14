@@ -1,0 +1,117 @@
+{
+  "project": "unami-platform-core/uncip",
+  "active_app": "apps/uncip",
+  "repo": "prooftv/unami-platform-core",
+  "supabase_project_ref": "tqragjtvcnsmumtaijds",
+  "supabase_dir": "apps/uncip/supabase/",
+  "supabase_migrations_dir": "apps/uncip/supabase/migrations/",
+  "supabase_functions_dir": "apps/uncip/supabase/functions/",
+  "production_url": "https://unami-platform-core-uncip-admin.vercel.app",
+
+  "monorepo": {
+    "root": "unami-platform-core",
+    "package_manager": "pnpm",
+    "build_system": "turbo",
+    "platform_packages": {
+      "@unami/ui": "packages/ui — design system, shell primitives, structural components (KPIGrid, MetricCard, PageHeader, DataTable, EmptyState, ErrorState, etc.)",
+      "@unami/shared": "packages/shared — platform contracts: RBAC, Language, Pagination, Utilities, Auth validators",
+      "@unami/api": "packages/api — typed HTTP clients for Edge Functions. UNCIP clients live here: uncip-children, uncip-alerts, uncip-schools, uncip-stations, uncip-timeline, uncip-media, uncip-notifications"
+    },
+    "apps": {
+      "apps/uncip": "UNCIP v2 — Child safety platform. ACTIVE. Owns domain/uncip/, shell config, all UNCIP modules.",
+      "apps/admin": "Moments admin. Owns domain/moments/, shell, admin modules. NOT our concern.",
+      "apps/web": "Moments public PWA. Owns public routing, domain/moments.ts. NOT our concern.",
+      "apps/umkhandlu": "Unami Control Centre. Read-only intelligence aggregation. NOT our concern."
+    },
+    "database_rule": "ONE APP = ONE SUPABASE PROJECT. Non-negotiable. No shared tables, no shared auth.users across apps.",
+    "supabase_projects": {
+      "Moments (admin + web)": "ref=dpydmpydyfrrdhuezvgi, dir=supabase/ (root), env prefix=NEXT_PUBLIC_SUPABASE_",
+      "Umkhandlu": "ref=ufsmpqxniswdnsywjzje, dir=apps/umkhandlu/supabase/, env prefix=NEXT_PUBLIC_UMKHANDLU_SUPABASE_",
+      "UNCIP": "ref=tqragjtvcnsmumtaijds, dir=apps/uncip/supabase/, env prefix=NEXT_PUBLIC_UNCIP_SUPABASE_"
+    },
+    "edge_functions_rule": "Edge functions are co-located with their app's supabase dir. UNCIP functions live in apps/uncip/supabase/functions/. The root supabase/functions/ is Moments ONLY.",
+    "deletion_test": "Deleting apps/uncip must leave packages/ compiling without modification. This is the constitutional proof of correct layer separation.",
+    "scope_rule": "When working on UNCIP, only touch: apps/uncip/, packages/api/src/clients/uncip-*.ts, supabase/migrations/009+, supabase/functions/uncip-*. Never touch other apps or their domain logic."
+  },
+
+  "frozen_for": "manual testing",
+  "head_commit": "f443c63",
+  "head_commit_msg": "chore(uncip): add .gitignore, untrack tsconfig.tsbuildinfo",
+  "head_date": "2026-08-14",
+  "migrations_applied": "000-015",
+  "edge_functions": [
+    "uncip-children",
+    "uncip-alerts",
+    "uncip-schools",
+    "uncip-stations",
+    "uncip-timeline",
+    "uncip-media"
+  ],
+  "completed_milestones": [
+    "Foundational architecture (d381d8a)",
+    "Platform isolation (43227f1)",
+    "Phase A write surface (2478367)",
+    "D1 incident/timeline fields (6eb2db2)",
+    "D2 child identity media (e3be370)",
+    "D3 role/action permissions (1e193ec)",
+    "D4 spatial foundation (26af25f)",
+    "D5 incident/timeline evidence (855e2cf)",
+    "/children contract fix - fromWire() mapper (cdedbf4)",
+    "F3 actor provenance (fb34b7d)",
+    "Dashboard architecture locked (3cbd60c)",
+    "F9 role-aware dashboard (b4c4044)",
+    "Community privacy fix - case_number guard (cedffd5)",
+    "Notifications N1-N5 (332e093)",
+    "Map shadcn refactor + layout fixes (ea8bcf6 - f443c63)"
+  ],
+  "frontend_audit": {
+    "F1": "COMPLETE - incident status/type in header",
+    "F2": "COMPLETE - timeline provenance",
+    "F3": "COMPLETE - actor identity (actor_name)",
+    "F4": "COMPLETE - active/closed alert separation",
+    "F5": "COMPLETE - community privacy presentation",
+    "F6": "COMPLETE - map spatial projection",
+    "F7": "COMPLETE - incident documents/media context",
+    "F8": "COMPLETE - operational card ordering",
+    "F9": "COMPLETE - role-aware dashboard"
+  },
+  "notification_system": {
+    "N1": "COMPLETE - uncip_notifications table + RLS + mark_notification_read RPC (migration 015)",
+    "N2": "COMPLETE - uncip-timeline dispatch, recipient resolution, community excluded",
+    "N3": "COMPLETE - createUNCIPNotificationsClient API client",
+    "N4": "COMPLETE - NotificationBell component with Realtime subscription",
+    "N5": "COMPLETE - NotificationBell wired into shell header"
+  },
+  "locked_decisions": {
+    "D1_identification_number": "Optional at registration, required before missing-child alert",
+    "D2_parent_station_scope": "Guardian-link only. station_id is NULL for parent rows",
+    "D3_alert_timeline_permissions": "See UNCIP_SCHEMA_DECISIONS.md permission table"
+  },
+  "safeguarding_boundary": "Community role has ZERO access to child identity, medical, or guardian data. Enforced at RLS.",
+  "pilot_workflow_status": "All 16 steps demonstrable. Frozen for manual testing.",
+  "remaining_before_pilot": [
+    "Real child data (current seed is fictional test data)",
+    "Safeguarding review - confirm no test data persists before real children registered",
+    "Pilot rehearsal - end-to-end walkthrough with real accounts across all 5 roles",
+    "Terms of service / privacy policy routes (linked but not built)"
+  ],
+  "deferred_post_pilot": [
+    "Push notifications",
+    "WhatsApp integration",
+    "Child photo upload",
+    "Multiple guardians per child",
+    "Cross-station escalation",
+    "Bulk import",
+    "Reporting / export",
+    "Multi-province dashboard",
+    "Audit log UI",
+    "Mobile-optimised PWA"
+  ],
+  "constitution_frozen": "apps/uncip/UNCIP_V2_FRONTEND.md",
+  "domain_types_frozen": "apps/uncip/src/domain/uncip/types.ts",
+  "context_docs": "docs/context/uncip/",
+  "notes": [
+    "[2026-08-14] Monorepo awareness added. UNCIP is one of four apps (uncip, admin, web, umkhandlu). Shared packages: @unami/ui, @unami/shared, @unami/api. Only touch uncip-scoped paths. Other apps are Moments/umkhandlu — do not confuse.",
+    "[2026-08-14] CORRECTION: DATABASE_BOUNDARIES.md describes the INTENDED architecture (one app = one Supabase project). The ACTUAL deployed state is different: root supabase/ (config.toml project_id=moments-v2, linked ref=tqragjtvcnsmumtaijds) contains BOTH Moments migrations (000-008) AND UNCIP migrations (009-015) in the same project. The live UNCIP edge functions are in root supabase/functions/ (not apps/uncip/supabase/functions/ which is a stale stub). apps/uncip/supabase/ is structural intent, not operational reality. All UNCIP work targets root supabase/ until the separation is executed."
+  ]
+}
