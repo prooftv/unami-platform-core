@@ -2,10 +2,18 @@
 # Auto-loaded on every session. These rules are non-negotiable.
 
 ## Workspace
-- All work happens in `/workspaces/unami-platform-core`
+- All work happens in `/home/ec2-user/unami-platform-core`
 - All pushes go to `origin` → `https://github.com/prooftv/unami-platform-core`
 - Branch: `main`
 - Never touch `/workspaces/moments-v2` — reference only
+
+## MCP Context Agent (uncip-agent)
+- The UNCIP project context is managed by an MCP server registered as `uncip-agent` in Q CLI
+- Server lives at `tools/mcp-uncip/server.mjs` — do not move it
+- Context state is persisted in `tools/mcp-uncip/context.json`
+- At the start of every UNCIP session: call `get_project_context` to load full state
+- After every commit: call `record_progress` with the commit hash and message
+- Available tools: `get_project_context`, `get_current_status`, `record_progress`, `add_note`, `update_frozen_status`, `mark_remaining_item_done`, `add_remaining_item`, `get_project_id`
 
 ## Before writing any code
 1. Read `PROJECT_STATUS.md` — current phase, last commit, what is done and what is next
