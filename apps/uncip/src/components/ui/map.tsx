@@ -7,6 +7,7 @@
  */
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import type { MapContainerProps, TileLayerProps, MarkerProps, PopupProps } from 'react-leaflet';
 import { useTheme } from 'next-themes';
@@ -141,16 +142,52 @@ function MapInvalidateSize() {
   return null;
 }
 
-// ─── MapZoomControl ───────────────────────────────────────────────────────────
+// ─── MapControlContainer ──────────────────────────────────────────────────────
+// Prevents clicks and scroll from propagating into the map.
 
-function MapZoomControl({ position = 'bottomright' }: { position?: L.ControlPosition }) {
-  const map = useMap();
+function MapControlContainer({ className, ...props }: React.ComponentProps<'div'>) {
+  const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
-    const ctrl = L.control.zoom({ position });
+    if (!ref.current) return;
+    L.DomEvent.disableClickPropagation(ref.current);
+    L.DomEvent.disableScrollPropagation(ref.current);
+  }, []);
+  return <div ref={ref} className={cn(className)} {...props} />;
+}
+
+// ─── MapZoomControl ───────────────────────────────────────────────────────────
+// Shadcn-styled zoom buttons, portalled into Leaflet's control corner.
+
+function MapZoomControl({ position = 'topleft' }: { position?: L.ControlPosition }) {
+  const map = useMap();
+  const [container, setContainer] = React.useState<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    const Ctrl = L.Control.extend({
+      onAdd() { const div = L.DomUtil.create('div'); setContainer(div); return div; },
+    });
+    const ctrl = new Ctrl({ position });
     ctrl.addTo(map);
     return () => { ctrl.remove(); };
   }, [map, position]);
-  return null;
+
+  if (!container) return null;
+
+  return createPortal(
+    <MapControlContainer className="flex flex-col rounded-md border bg-background shadow-sm overflow-hidden">
+      <button
+        onClick={() => map.zoomIn()}
+        className="flex h-8 w-8 items-center justify-center text-sm font-medium hover:bg-accent transition-colors border-b"
+        aria-label="Zoom in"
+      >+</button>
+      <button
+        onClick={() => map.zoomOut()}
+        className="flex h-8 w-8 items-center justify-center text-sm font-medium hover:bg-accent transition-colors"
+        aria-label="Zoom out"
+      >−</button>
+    </MapControlContainer>,
+    container,
+  );
 }
 
 // ─── MapFitBounds ─────────────────────────────────────────────────────────────
@@ -165,4 +202,4 @@ function MapFitBounds({ positions }: { positions: [number, number][] }) {
   return null;
 }
 
-export { Map, MapTileLayer, MapMarker, MapPopup, MapZoomControl, MapFitBounds, MapInvalidateSize };
+export { Map, MapTileLayer, MapMarker, MapPopup, MapZoomControl, MapControlContainer, MapFitBounds, MapInvalidateSize };
