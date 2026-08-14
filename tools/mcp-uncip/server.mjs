@@ -21,23 +21,19 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
-// --- TOOLS ---
-
 server.tool(
-  "get_project_context",
-  "Load full UNCIP project context. Call this at the start of every session.",
+  "uncip_get_project_context",
+  "Load full UNCIP project context. Call this at the start of every UNCIP session.",
   {},
   async () => {
     const ctx = loadContext();
-    return {
-      content: [{ type: "text", text: JSON.stringify(ctx, null, 2) }],
-    };
+    return { content: [{ type: "text", text: JSON.stringify(ctx, null, 2) }] };
   }
 );
 
 server.tool(
-  "get_current_status",
-  "Get a concise summary of current project status: head commit, frozen state, remaining items.",
+  "uncip_get_current_status",
+  "Get a concise summary of UNCIP current project status: head commit, frozen state, remaining items.",
   {},
   async () => {
     const ctx = loadContext();
@@ -51,15 +47,13 @@ server.tool(
       remaining_before_pilot: ctx.remaining_before_pilot,
       notes: ctx.notes,
     };
-    return {
-      content: [{ type: "text", text: JSON.stringify(summary, null, 2) }],
-    };
+    return { content: [{ type: "text", text: JSON.stringify(summary, null, 2) }] };
   }
 );
 
 server.tool(
-  "record_progress",
-  "Record a completed milestone or commit. Updates head_commit and adds to completed_milestones.",
+  "uncip_record_progress",
+  "Record a completed UNCIP milestone or commit.",
   {
     commit: z.string().describe("Short commit hash"),
     message: z.string().describe("Commit message or milestone description"),
@@ -75,51 +69,39 @@ server.tool(
       ctx.completed_milestones.push(entry);
     }
     saveContext(ctx);
-    return {
-      content: [{ type: "text", text: `Recorded: ${entry}` }],
-    };
+    return { content: [{ type: "text", text: `Recorded: ${entry}` }] };
   }
 );
 
 server.tool(
-  "add_note",
-  "Add a session note — decisions made, blockers, things to remember next session.",
-  {
-    note: z.string().describe("The note to persist"),
-  },
+  "uncip_add_note",
+  "Add a UNCIP session note.",
+  { note: z.string().describe("The note to persist") },
   async ({ note }) => {
     const ctx = loadContext();
     const timestamp = new Date().toISOString();
     ctx.notes.push(`[${timestamp}] ${note}`);
     saveContext(ctx);
-    return {
-      content: [{ type: "text", text: `Note saved: ${note}` }],
-    };
+    return { content: [{ type: "text", text: `Note saved: ${note}` }] };
   }
 );
 
 server.tool(
-  "update_frozen_status",
-  "Update what the project is frozen for, or clear the frozen state.",
-  {
-    status: z.string().describe("e.g. 'manual testing', 'pilot rehearsal', or 'active development'"),
-  },
+  "uncip_update_frozen_status",
+  "Update what UNCIP is frozen for, or clear the frozen state.",
+  { status: z.string().describe("e.g. 'manual testing', 'pilot rehearsal', or 'active development'") },
   async ({ status }) => {
     const ctx = loadContext();
     ctx.frozen_for = status;
     saveContext(ctx);
-    return {
-      content: [{ type: "text", text: `Frozen status updated to: ${status}` }],
-    };
+    return { content: [{ type: "text", text: `Frozen status updated to: ${status}` }] };
   }
 );
 
 server.tool(
-  "mark_remaining_item_done",
-  "Mark an item from remaining_before_pilot as complete and move it to completed_milestones.",
-  {
-    item: z.string().describe("Exact text of the remaining item to mark done"),
-  },
+  "uncip_mark_remaining_item_done",
+  "Mark a UNCIP item from remaining_before_pilot as complete.",
+  { item: z.string().describe("Exact text of the remaining item to mark done") },
   async ({ item }) => {
     const ctx = loadContext();
     const idx = ctx.remaining_before_pilot.indexOf(item);
@@ -131,39 +113,30 @@ server.tool(
     ctx.remaining_before_pilot.splice(idx, 1);
     ctx.completed_milestones.push(item);
     saveContext(ctx);
-    return {
-      content: [{ type: "text", text: `Marked done: ${item}` }],
-    };
+    return { content: [{ type: "text", text: `Marked done: ${item}` }] };
   }
 );
 
 server.tool(
-  "add_remaining_item",
-  "Add a new item to remaining_before_pilot.",
-  {
-    item: z.string().describe("Description of the remaining item"),
-  },
+  "uncip_add_remaining_item",
+  "Add a new item to UNCIP remaining_before_pilot.",
+  { item: z.string().describe("Description of the remaining item") },
   async ({ item }) => {
     const ctx = loadContext();
     ctx.remaining_before_pilot.push(item);
     saveContext(ctx);
-    return {
-      content: [{ type: "text", text: `Added to remaining: ${item}` }],
-    };
+    return { content: [{ type: "text", text: `Added to remaining: ${item}` }] };
   }
 );
 
 server.tool(
-  "get_project_id",
-  "Returns the project identifier. Use to confirm you are in the correct project context before making changes.",
+  "uncip_get_project_id",
+  "Returns the UNCIP project identifier.",
   {},
   async () => {
-    return {
-      content: [{ type: "text", text: PROJECT_ID }],
-    };
+    return { content: [{ type: "text", text: PROJECT_ID }] };
   }
 );
 
-// --- START ---
 const transport = new StdioServerTransport();
 await server.connect(transport);

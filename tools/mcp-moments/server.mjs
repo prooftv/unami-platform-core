@@ -22,8 +22,8 @@ const server = new McpServer({
 });
 
 server.tool(
-  "get_project_context",
-  "Load full Moments project context. Call this at the start of every session.",
+  "moments_get_project_context",
+  "Load full Moments project context. Call this at the start of every Moments session.",
   {},
   async () => {
     const ctx = loadContext();
@@ -32,7 +32,7 @@ server.tool(
 );
 
 server.tool(
-  "get_current_status",
+  "moments_get_current_status",
   "Get a concise summary: head commit, frozen state, remaining ops gates, known issues.",
   {},
   async () => {
@@ -53,8 +53,8 @@ server.tool(
 );
 
 server.tool(
-  "get_project_id",
-  "Returns the project identifier. Use to confirm correct context before making changes.",
+  "moments_get_project_id",
+  "Returns the Moments project identifier.",
   {},
   async () => {
     return { content: [{ type: "text", text: PROJECT_ID }] };
@@ -62,8 +62,8 @@ server.tool(
 );
 
 server.tool(
-  "record_progress",
-  "Record a completed milestone or commit. Updates head_commit and adds to completed_milestones.",
+  "moments_record_progress",
+  "Record a completed Moments milestone or commit.",
   {
     commit: z.string().describe("Short commit hash"),
     message: z.string().describe("Commit message or milestone description"),
@@ -82,8 +82,8 @@ server.tool(
 );
 
 server.tool(
-  "add_note",
-  "Add a session note — decisions made, blockers, things to remember next session.",
+  "moments_add_note",
+  "Add a Moments session note.",
   { note: z.string().describe("The note to persist") },
   async ({ note }) => {
     const ctx = loadContext();
@@ -94,8 +94,8 @@ server.tool(
 );
 
 server.tool(
-  "update_frozen_status",
-  "Update what the project is frozen for, or clear the frozen state.",
+  "moments_update_frozen_status",
+  "Update what Moments is frozen for, or clear the frozen state.",
   { status: z.string().describe("e.g. 'ops gates', 'active development'") },
   async ({ status }) => {
     const ctx = loadContext();
@@ -106,8 +106,8 @@ server.tool(
 );
 
 server.tool(
-  "mark_ops_gate_done",
-  "Mark an ops gate item as complete.",
+  "moments_mark_ops_gate_done",
+  "Mark a Moments ops gate item as complete.",
   { item: z.string().describe("Exact text of the ops gate to mark done") },
   async ({ item }) => {
     const ctx = loadContext();
@@ -123,8 +123,8 @@ server.tool(
 );
 
 server.tool(
-  "add_remaining_item",
-  "Add a new item to remaining_ops_gates.",
+  "moments_add_remaining_item",
+  "Add a new item to Moments remaining_ops_gates.",
   { item: z.string().describe("Description of the ops gate or remaining item") },
   async ({ item }) => {
     const ctx = loadContext();

@@ -22,8 +22,8 @@ const server = new McpServer({
 });
 
 server.tool(
-  "get_project_context",
-  "Load full Umkhandlu Control Centre context. Call this at the start of every session.",
+  "umkhandlu_get_project_context",
+  "Load full Umkhandlu Control Centre context. Call this at the start of every Umkhandlu session.",
   {},
   async () => {
     const ctx = loadContext();
@@ -32,8 +32,8 @@ server.tool(
 );
 
 server.tool(
-  "get_current_status",
-  "Get a concise summary: head commit, frozen state, live routes, next phase.",
+  "umkhandlu_get_current_status",
+  "Get a concise Umkhandlu summary: head commit, frozen state, live routes, next phase.",
   {},
   async () => {
     const ctx = loadContext();
@@ -52,8 +52,8 @@ server.tool(
 );
 
 server.tool(
-  "get_project_id",
-  "Returns the project identifier. Use to confirm correct context before making changes.",
+  "umkhandlu_get_project_id",
+  "Returns the Umkhandlu project identifier.",
   {},
   async () => {
     return { content: [{ type: "text", text: PROJECT_ID }] };
@@ -61,8 +61,8 @@ server.tool(
 );
 
 server.tool(
-  "record_progress",
-  "Record a completed milestone or commit. Updates head_commit and adds to completed_milestones.",
+  "umkhandlu_record_progress",
+  "Record a completed Umkhandlu milestone or commit.",
   {
     commit: z.string().describe("Short commit hash"),
     message: z.string().describe("Commit message or milestone description"),
@@ -81,8 +81,8 @@ server.tool(
 );
 
 server.tool(
-  "add_note",
-  "Add a session note — decisions made, blockers, things to remember next session.",
+  "umkhandlu_add_note",
+  "Add an Umkhandlu session note.",
   { note: z.string().describe("The note to persist") },
   async ({ note }) => {
     const ctx = loadContext();
@@ -93,8 +93,8 @@ server.tool(
 );
 
 server.tool(
-  "update_frozen_status",
-  "Update what the project is frozen for, or clear the frozen state.",
+  "umkhandlu_update_frozen_status",
+  "Update what Umkhandlu is frozen for, or clear the frozen state.",
   { status: z.string().describe("e.g. 'stable', 'active development'") },
   async ({ status }) => {
     const ctx = loadContext();
@@ -105,8 +105,8 @@ server.tool(
 );
 
 server.tool(
-  "add_governance_node",
-  "Register a new governance node in the context.",
+  "umkhandlu_add_governance_node",
+  "Register a new governance node in the Umkhandlu context.",
   {
     name: z.string().describe("Node hostname or identifier"),
     role: z.string().describe("Description of this node's role"),

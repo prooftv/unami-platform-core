@@ -9,14 +9,20 @@
 
 ## MCP Context Agents
 Each project has a dedicated MCP server registered in Q CLI (`~/.aws/amazonq/mcp.json`).
-At the start of every session, call `get_project_context` on the relevant agent.
+All four servers are loaded simultaneously in every Q session. Context is selected by calling the relevant startup tool.
 
-| Agent | Project | Server |
-|---|---|---|
-| `uncip-agent` | apps/uncip — UNCIP v2 child safety platform | `tools/mcp-uncip/server.mjs` |
-| `moments-agent` | apps/admin + apps/web — Moments platform | `tools/mcp-moments/server.mjs` |
-| `umkhandlu-agent` | apps/umkhandlu — Unami Control Centre | `tools/mcp-umkhandlu/server.mjs` |
-| `unamiplatformcore-agent` | Platform foundation — onboarding, packages/, cross-app decisions | `tools/mcp-unamiplatformcore/server.mjs` |
+All tool names are namespaced by agent to prevent collision. Do not rename tools without updating this table.
+
+| Agent | Domain | Startup tool | Server |
+|---|---|---|---|
+| `moments-agent` | apps/admin + apps/web — Moments platform | `moments_get_project_context` | `tools/mcp-moments/server.mjs` |
+| `uncip-agent` | apps/uncip — UNCIP v2 child safety platform | `uncip_get_project_context` | `tools/mcp-uncip/server.mjs` |
+| `umkhandlu-agent` | apps/umkhandlu — Unami Control Centre | `umkhandlu_get_project_context` | `tools/mcp-umkhandlu/server.mjs` |
+| `unamiplatformcore-agent` | Platform foundation — onboarding, packages/, cross-app decisions | `platform_get_project_context` | `tools/mcp-unamiplatformcore/server.mjs` |
+
+### Session startup / recovery
+At the start of every session, call the startup tool for the domain you are working in.
+To verify active context: ask "Which agent context is loaded? State agent, domain, and authority."
 
 All context state is persisted in each server's `context.json`. Do not move the servers.
 

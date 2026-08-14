@@ -13,36 +13,36 @@ function save(ctx) { writeFileSync(CONTEXT_FILE, JSON.stringify(ctx, null, 2)); 
 
 const server = new McpServer({ name: "mcp-unamiplatformcore", version: "1.0.0" });
 
-server.tool("get_project_context", "Load full platform context. Call at the start of every platform-level session.", {},
+server.tool("platform_get_project_context", "Load full platform context. Call at the start of every platform-level session.", {},
   async () => ({ content: [{ type: "text", text: JSON.stringify(load(), null, 2) }] })
 );
 
-server.tool("get_project_id", "Returns the platform identifier.", {},
+server.tool("platform_get_project_id", "Returns the platform identifier.", {},
   async () => ({ content: [{ type: "text", text: PROJECT_ID }] })
 );
 
-server.tool("get_onboarding_checklist", "Get the full checklist for onboarding a new app to the platform.", {},
+server.tool("platform_get_onboarding_checklist", "Get the full checklist for onboarding a new app to the platform.", {},
   async () => {
     const ctx = load();
     return { content: [{ type: "text", text: JSON.stringify(ctx.onboarding_checklist, null, 2) }] };
   }
 );
 
-server.tool("get_platform_rules", "Get the non-negotiable platform rules.", {},
+server.tool("platform_get_platform_rules", "Get the non-negotiable platform rules.", {},
   async () => {
     const ctx = load();
     return { content: [{ type: "text", text: JSON.stringify(ctx.platform_rules, null, 2) }] };
   }
 );
 
-server.tool("get_registered_apps", "Get all registered apps, their agents, Supabase refs, and status.", {},
+server.tool("platform_get_registered_apps", "Get all registered apps, their agents, Supabase refs, and status.", {},
   async () => {
     const ctx = load();
     return { content: [{ type: "text", text: JSON.stringify(ctx.registered_apps, null, 2) }] };
   }
 );
 
-server.tool("register_new_app",
+server.tool("platform_register_new_app",
   "Register a new application in the platform. Call when starting a new app onboarding.",
   {
     name: z.string().describe("App name e.g. beatschain"),
@@ -59,8 +59,8 @@ server.tool("register_new_app",
   }
 );
 
-server.tool("record_progress",
-  "Record a completed milestone or commit. Updates head_commit.",
+server.tool("platform_record_progress",
+  "Record a completed platform milestone or commit.",
   {
     commit: z.string().describe("Short commit hash"),
     message: z.string().describe("Commit message or milestone description"),
@@ -76,7 +76,7 @@ server.tool("record_progress",
   }
 );
 
-server.tool("add_note", "Add a session note — decisions made, blockers, things to remember.",
+server.tool("platform_add_note", "Add a platform session note.",
   { note: z.string() },
   async ({ note }) => {
     const ctx = load();
@@ -86,7 +86,7 @@ server.tool("add_note", "Add a session note — decisions made, blockers, things
   }
 );
 
-server.tool("add_core_candidate",
+server.tool("platform_add_core_candidate",
   "Record a new Core Candidate pattern discovered in an application.",
   {
     pattern: z.string().describe("Description of the pattern"),
@@ -101,7 +101,7 @@ server.tool("add_core_candidate",
   }
 );
 
-server.tool("update_app_status",
+server.tool("platform_update_app_status",
   "Update the status of a registered app.",
   {
     name: z.string().describe("App name e.g. moments, uncip, umkhandlu"),
