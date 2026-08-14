@@ -126,6 +126,21 @@ function MapPopup({ children, ...props }: MapPopupProps) {
   return <Popup {...props}>{children}</Popup>;
 }
 
+// ─── MapInvalidateSize ────────────────────────────────────────────────────────
+// Forces Leaflet to recalculate tile coverage after the container has a real
+// height. Without this, MapContainer initialises at 0px height and renders
+// a full-world tile grid.
+
+function MapInvalidateSize() {
+  const map = useMap();
+  React.useEffect(() => {
+    // rAF ensures the DOM has painted and the container has a computed height
+    const id = requestAnimationFrame(() => { map.invalidateSize(); });
+    return () => cancelAnimationFrame(id);
+  }, [map]);
+  return null;
+}
+
 // ─── MapZoomControl ───────────────────────────────────────────────────────────
 
 function MapZoomControl({ position = 'bottomright' }: { position?: L.ControlPosition }) {
@@ -150,4 +165,4 @@ function MapFitBounds({ positions }: { positions: [number, number][] }) {
   return null;
 }
 
-export { Map, MapTileLayer, MapMarker, MapPopup, MapZoomControl, MapFitBounds };
+export { Map, MapTileLayer, MapMarker, MapPopup, MapZoomControl, MapFitBounds, MapInvalidateSize };

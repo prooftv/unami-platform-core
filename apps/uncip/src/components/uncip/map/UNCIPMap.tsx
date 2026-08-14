@@ -8,7 +8,7 @@
  */
 
 import type { UNCIPAlert, UNCIPRole } from '@unami/api';
-import { Map, MapTileLayer, MapMarker, MapPopup, MapZoomControl, MapFitBounds } from '@/components/ui/map';
+import { Map, MapTileLayer, MapMarker, MapPopup, MapZoomControl, MapFitBounds, MapInvalidateSize } from '@/components/ui/map';
 import { Badge } from '@/components/ui/badge';
 
 const DEFAULT_CENTER: [number, number] = [-26.2041, 28.0473];
@@ -56,6 +56,7 @@ export function UNCIPMap({ alerts, role }: Props) {
 
   return (
     <Map center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} className="h-full w-full">
+      <MapInvalidateSize />
       <MapTileLayer />
       <MapZoomControl position="bottomright" />
       {plotted.length > 0 && <MapFitBounds positions={plotted} />}

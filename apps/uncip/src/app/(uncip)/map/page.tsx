@@ -30,7 +30,7 @@ export default async function MapPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6" data-content-padding="false">
       <PageHeader className="shrink-0" title="Map" description={description} />
-      <div className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <UNCIPMap alerts={enriched} role={session.role} />
       </div>
     </div>
