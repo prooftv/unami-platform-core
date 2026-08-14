@@ -1,0 +1,215 @@
+{
+  "project": "unami-platform-core",
+  "repo": "prooftv/unami-platform-core",
+  "workspace": "/home/ec2-user/unami-platform-core",
+  "platform_version": "v1.0.0",
+  "frozen_for": "stable — platform foundation frozen, application validation active",
+
+  "registered_apps": {
+    "moments": {
+      "apps": ["apps/admin", "apps/web"],
+      "agent": "moments-agent",
+      "supabase_ref": "dpydmpydyfrrdhuezvgi",
+      "status": "Phase 17J engineering complete — frozen for ops gates",
+      "production_urls": {
+        "admin": "https://unami-platform-core-admin.vercel.app",
+        "web": "https://unami-platform-core-web.vercel.app"
+      }
+    },
+    "umkhandlu": {
+      "apps": ["apps/umkhandlu"],
+      "agent": "umkhandlu-agent",
+      "supabase_ref": "ufsmpqxniswdnsywjzje",
+      "status": "Phase 18 complete — stable",
+      "production_url": "https://unami-platform-core-umkhandlu.vercel.app"
+    },
+    "uncip": {
+      "apps": ["apps/uncip"],
+      "agent": "uncip-agent",
+      "supabase_ref": "tqragjtvcnsmumtaijds",
+      "status": "Phase 19 complete — frozen for manual testing / pilot",
+      "production_url": "https://unami-platform-core-uncip-admin.vercel.app"
+    }
+  },
+
+  "platform_packages": {
+    "@unami/ui": {
+      "path": "packages/ui",
+      "exports": [
+        "ThemeBootScript", "ShellLayoutControls", "ShellThemeSwitcher", "ShellNavUser",
+        "NavGroup", "NavMainItem", "NavMainLinkItem", "NavMainParentItem", "NavSubItem", "NavBadge",
+        "PreferencesStoreProvider", "usePreferencesStore", "PREFERENCE_DEFAULTS", "PREFERENCE_REGISTRY",
+        "THEME_PRESET_OPTIONS", "fontOptions",
+        "PageHeader", "KPIGrid", "MetricCard", "TablePagination", "TableToolbar", "BulkActionBar",
+        "DataTable", "EmptyState", "ErrorState", "PageSkeleton", "TableSkeleton", "StatusBadge",
+        "AnalyticsCard", "LineChart", "BarChart", "PieChart", "AreaChart", "ActivityFeed", "QuickActions"
+      ],
+      "rules": ["no Supabase", "no auth", "no Next.js imports", "no domain knowledge", "no app references"],
+      "frozen": true
+    },
+    "@unami/shared": {
+      "path": "packages/shared",
+      "contains": ["Language", "ModerationStatus", "MessageType", "AdminRole", "Pagination", "PaginatedResponse", "AdminUser", "SystemSetting", "Message", "auth validators", "settings validators", "phone/formatting/failOpen helpers"],
+      "rules": ["no React", "no Next.js", "no Supabase", "no domain logic"],
+      "frozen": true
+    },
+    "@unami/api": {
+      "path": "packages/api",
+      "contains": ["createApiClient", "createPublicApiClient", "typed HTTP clients for all Edge Functions and governance node APIs"],
+      "rules": ["typed HTTP only", "domain types inlined as string literals", "no domain package dependency"],
+      "frozen": true
+    }
+  },
+
+  "platform_rules": {
+    "deletion_test": "Deleting any app must leave packages/ compiling without modification. Non-negotiable.",
+    "edge_functions_only": "Edge Functions are the only layer that touches the database. No direct Supabase calls from apps.",
+    "api_clients_only": "Frontend communicates through packages/api typed clients only.",
+    "domain_ownership": "Each app owns its domain under apps/[name]/src/domain/. Nothing leaks into packages/.",
+    "packages_frozen": "packages/ is frozen at v1.0. No new packages, no restructuring, no domain logic.",
+    "one_supabase_per_app": "ONE APP = ONE SUPABASE PROJECT. Non-negotiable.",
+    "no_next_in_packages": "packages/ui has no Next.js dependency and must not acquire one.",
+    "core_candidate_rule": "Platform grows from patterns proven across ≥2 apps. Never from anticipated future needs."
+  },
+
+  "onboarding_checklist": {
+    "description": "Every new app onboarded to Unami Platform Core must complete all steps.",
+    "phase_0_decision": [
+      "Define the app name and path: apps/[name]/",
+      "Define the Supabase project (new project — never share with another app)",
+      "Define the domain: what does this app own that no other app touches?",
+      "Record the phase definition in PROJECT_STATUS.md",
+      "Record the app in docs/context/ECOSYSTEM.md",
+      "Add locked decisions to docs/context/decisions.md"
+    ],
+    "phase_1_scaffold": [
+      "Copy shell layout template from PLATFORM_DASHBOARD_SHELL.md → src/app/(app)/layout.tsx",
+      "Copy root layout template → src/app/layout.tsx",
+      "Copy nav-main.tsx from apps/umkhandlu or apps/uncip (clean version)",
+      "Copy nav-user.tsx — update ROLE_LABELS for product roles",
+      "Copy search-dialog.tsx — update placeholder string",
+      "Copy server/server-actions.ts — no changes needed",
+      "Copy lib/fonts/registry.ts — no changes needed",
+      "Create src/config/app-config.ts — set name and subtitle",
+      "Create src/navigation/sidebar/sidebar-items.ts — import types from @unami/ui",
+      "Create src/components/sidebar/app-sidebar.tsx — set product icon",
+      "Create lib/auth/operator.ts — implement session validation"
+    ],
+    "phase_2_shadcn": [
+      "Install all 31 shadcn primitives (UNCIP-validated complete set):",
+      "alert, alert-dialog, avatar, badge, breadcrumb, button, card, checkbox, collapsible,",
+      "command, dialog, dropdown-menu, input, input-group, label, pagination, popover, progress,",
+      "radio-group, scroll-area, select, separator, sheet, sidebar, skeleton, sonner, switch,",
+      "table, tabs, textarea, toggle, toggle-group, tooltip"
+    ],
+    "phase_3_shell_parity": [
+      "PreferencesStoreProvider in root layout",
+      "getPreference() reads sidebar_variant + sidebar_collapsible from cookies at layout render",
+      "AppSidebar uses isSynced pattern — preferences store drives variant/collapsible after hydration",
+      "ShellLayoutControls from @unami/ui in header",
+      "ShellThemeSwitcher from @unami/ui in header",
+      "SearchDialog in header (⌘J command palette)",
+      "data-content-layout CSS selectors on SidebarInset",
+      "data-navbar-style CSS selectors on header",
+      "Avatar/AvatarFallback in nav-user.tsx",
+      "Verify TypeScript: zero errors",
+      "Verify deletion test: deleting this app leaves packages/ compiling"
+    ],
+    "phase_4_settings": [
+      "settings/layout.tsx — PageHeader + SettingsNav + content slot",
+      "settings/page.tsx — redirect to /settings/profile",
+      "settings/profile/page.tsx — display name, email",
+      "settings/appearance/page.tsx — full AppearanceForm",
+      "settings/platform/page.tsx — app name, version, environment"
+    ],
+    "phase_5_route_states": [
+      "loading.tsx on every route (PageSkeleton or TableSkeleton)",
+      "error.tsx on data-fetching routes (ErrorState with retry)",
+      "not-found.tsx at app root",
+      "global-error.tsx at app root"
+    ],
+    "phase_6_database": [
+      "Create new Supabase project — never share with another app",
+      "Update docs/DATABASE_SCHEMA.md with new tables",
+      "Write migration file (next sequential number)",
+      "Define RLS policies — every table",
+      "Add table grants: GRANT SELECT/INSERT/UPDATE to authenticated",
+      "Use SECURITY DEFINER helpers for cross-table RLS to avoid recursion"
+    ],
+    "phase_7_edge_functions": [
+      "Create supabase/functions/[appname]-[resource]/ for each domain resource",
+      "Use npm: import specifiers (Deno Edge Runtime requirement)",
+      "Pin major versions: npm:zod@3, npm:@supabase/supabase-js@2",
+      "Implement _shared/auth.ts and _shared/cors.ts",
+      "All routes require authentication — no debug routes ever"
+    ],
+    "phase_8_api_clients": [
+      "Create packages/api/src/clients/[appname]-[resource].ts for each Edge Function",
+      "Implement fromWire() mapper for every client (snake_case → camelCase)",
+      "Implement toWire() mapper for outbound requests",
+      "Export from packages/api/src/index.ts",
+      "Domain types inlined as string literals — no import from app domain"
+    ],
+    "phase_9_verification": [
+      "TypeScript: zero errors",
+      "Role verification: each role sees correct data",
+      "Privacy verification: each role does NOT see incorrect data",
+      "Cross-role consistency: same record has same state across roles",
+      "Deletion test: deleting this app leaves packages/ compiling"
+    ]
+  },
+
+  "new_app_template": {
+    "next_app": "BeatsChain",
+    "path": "apps/beatschain",
+    "domain": "Music creator ecosystem — creator profiles, ISRC registration, rights management, marketplace",
+    "decision_ref": "D-045",
+    "status": "Not started — Phase 20"
+  },
+
+  "platform_roadmap": {
+    "Phase 16": "Platform Independence ✅ Complete",
+    "Phase 17": "Moments Product Completion ✅ Engineering Complete",
+    "Phase 18": "Unami Control Centre ✅ Complete",
+    "Phase 19": "UNCIP v2 ✅ Complete",
+    "Phase 20": "BeatsChain ⏳ Next",
+    "Phase 21": "Multi-node Federation",
+    "Phase 22": "Commercial Intelligence",
+    "Phase 23": "National Institutional Memory"
+  },
+
+  "core_candidates": {
+    "description": "Patterns discovered in apps that may be promoted to packages/ once proven across ≥2 apps.",
+    "source": "docs/context/uncip/UNCIP_PLATFORM_LESSONS.md",
+    "candidates": [
+      "Wire/domain API separation — fromWire()/toWire() pattern",
+      "Database privacy ≠ UI disclosure — two separate enforcement layers",
+      "Role completeness across full stack — 17 layers",
+      "Work queue dashboards derived from canonical record state",
+      "SECURITY DEFINER RLS helper pattern for cross-table policies",
+      "Verification as a separate engineering phase",
+      "Actor name denormalisation at write time for audit/timeline records"
+    ],
+    "status": "None promoted yet — all require validation across a second application"
+  },
+
+  "constitutional_docs": [
+    "docs/context/PLATFORM.md — what the platform is, ownership boundaries",
+    "docs/context/ARCHITECTURE.md — layer boundaries, data flow, stack",
+    "docs/context/ECOSYSTEM.md — two-repository model, ownership rules",
+    "docs/context/PLATFORM_DASHBOARD_SHELL.md — shell spec, templates, onboarding checklist",
+    "docs/context/decisions.md — all locked decisions D-001 through D-045",
+    "docs/context/DATABASE_BOUNDARIES.md — one app = one Supabase project",
+    "PROJECT_STATUS.md — current phase and execution state"
+  ],
+
+  "head_commit": "3c77996",
+  "head_commit_msg": "chore(tools): add moments-agent and umkhandlu-agent MCP servers",
+  "head_date": "2026-08-14",
+
+  "notes": [
+    "[2026-08-14] Platform foundation frozen at v1.0. Three apps complete: Moments (17J), Umkhandlu (18), UNCIP (19). Next app: BeatsChain (Phase 20).",
+    "[2026-08-14] unamiplatformcore-agent is the platform-level agent. Use it when onboarding a new app, making cross-app decisions, or evolving packages/.",
+    "[2026-08-14] For app-specific work use the dedicated agent: uncip-agent, moments-agent, umkhandlu-agent."
+  ]
+}

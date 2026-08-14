@@ -16,6 +16,7 @@ At the start of every session, call `get_project_context` on the relevant agent.
 | `uncip-agent` | apps/uncip — UNCIP v2 child safety platform | `tools/mcp-uncip/server.mjs` |
 | `moments-agent` | apps/admin + apps/web — Moments platform | `tools/mcp-moments/server.mjs` |
 | `umkhandlu-agent` | apps/umkhandlu — Unami Control Centre | `tools/mcp-umkhandlu/server.mjs` |
+| `unamiplatformcore-agent` | Platform foundation — onboarding, packages/, cross-app decisions | `tools/mcp-unamiplatformcore/server.mjs` |
 
 All context state is persisted in each server's `context.json`. Do not move the servers.
 
