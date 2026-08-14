@@ -33,8 +33,8 @@
     "scope_rule": "When working on UNCIP, only touch: apps/uncip/, packages/api/src/clients/uncip-*.ts, supabase/migrations/009+, supabase/functions/uncip-*. Never touch other apps or their domain logic."
   },
   "frozen_for": "manual testing",
-  "head_commit": "0a9af25",
-  "head_commit_msg": "chore(tools): add mcp-uncip MCP server for Q CLI context management",
+  "head_commit": "a8bf95b",
+  "head_commit_msg": "chore(tools): sync mcp-uncip context.json to latest head commit",
   "head_date": "2026-08-14",
   "migrations_applied": "000-015",
   "edge_functions": [
@@ -61,7 +61,8 @@
     "Community privacy fix - case_number guard (cedffd5)",
     "Notifications N1-N5 (332e093)",
     "Map shadcn refactor + layout fixes (ea8bcf6 - f443c63)",
-    "chore(tools): add mcp-uncip MCP server for Q CLI context management (0a9af25)"
+    "chore(tools): add mcp-uncip MCP server for Q CLI context management (0a9af25)",
+    "chore(tools): sync mcp-uncip context.json to latest head commit (a8bf95b)"
   ],
   "frontend_audit": {
     "F1": "COMPLETE - incident status/type in header",
