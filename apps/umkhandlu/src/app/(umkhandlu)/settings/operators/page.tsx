@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { OperatorList } from '../_components/OperatorList';
 import { InviteOperatorForm } from '../_components/InviteOperatorForm';
 
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const SUPABASE_ADMIN_URL = new URL('/auth/v1/admin/users', process.env.NEXT_PUBLIC_SUPABASE_URL!).toString();
+const SERVICE_KEY = process.env.UMKHANDLU_SUPABASE_SERVICE_ROLE_KEY!;
+const SUPABASE_ADMIN_URL = new URL('/auth/v1/admin/users', process.env.NEXT_PUBLIC_UMKHANDLU_SUPABASE_URL!).toString();
 
 type AuthUser = {
   id: string;

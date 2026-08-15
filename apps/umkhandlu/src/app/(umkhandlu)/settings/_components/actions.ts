@@ -4,8 +4,8 @@ import { getOperatorSession, isSuperAdmin } from '@/lib/auth/operator';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const SUPABASE_ADMIN_BASE = new URL('/auth/v1/admin', process.env.NEXT_PUBLIC_SUPABASE_URL!).toString();
+const SERVICE_KEY = process.env.UMKHANDLU_SUPABASE_SERVICE_ROLE_KEY!;
+const SUPABASE_ADMIN_BASE = new URL('/auth/v1/admin', process.env.NEXT_PUBLIC_UMKHANDLU_SUPABASE_URL!).toString();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function assertUUID(value: string): void {
