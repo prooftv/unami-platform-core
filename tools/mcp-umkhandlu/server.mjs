@@ -121,5 +121,64 @@ server.tool(
   }
 );
 
+// ─── Participation Intelligence ───────────────────────────────────────────────
+// Reads anonymised participation intelligence from the Control Centre's own
+// participation_signals table (ufsmpqxniswdnsywjzje).
+// Credentials come exclusively from runtime environment — never from source.
+
+server.tool(
+  "umkhandlu_get_participation_intelligence",
+  "Return anonymised participation intelligence from the Control Centre participation_signals table. Optionally scope to a specific Record/Notice by sanityId. Without sanityId, returns platform-wide aggregate.",
+  {
+    sanityId: z.string().optional().describe("Sanity document ID of a specific Record or Notice. Omit for platform-wide aggregate."),
+  },
+  async ({ sanityId }) => {
+    const url = process.env.UMKHANDLU_SUPABASE_URL;
+    const key = process.env.UMKHANDLU_SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "Supabase credentials not configured in MCP environment." }) }] };
+    }
+
+    const params = new URLSearchParams({ select: "node_id,sanity_id,response_count,by_type,by_relationship,last_submission" });
+    if (sanityId) params.set("sanity_id", `eq.${sanityId}`);
+
+    const res = await fetch(`${url}/rest/v1/participation_signals?${params}`, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Accept: "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: `Supabase query failed: ${res.status}` }) }] };
+    }
+
+    const rows = await res.json();
+
+    if (!rows.length) {
+      return { content: [{ type: "text", text: JSON.stringify({ total: 0, byType: {}, byRelationship: {}, lastSubmission: null, rowCount: 0 }) }] };
+    }
+
+    const byType = { comment: 0, support: 0, objection: 0, question: 0 };
+    const byRelationship = { resident: 0, landowner: 0, business: 0, community: 0, organisation: 0, other: 0 };
+    let total = 0;
+    let lastSubmission = null;
+
+    for (const row of rows) {
+      total += row.response_count ?? 0;
+      for (const k of Object.keys(byType)) byType[k] += (row.by_type?.[k] ?? 0);
+      for (const k of Object.keys(byRelationship)) byRelationship[k] += (row.by_relationship?.[k] ?? 0);
+      if (row.last_submission && (!lastSubmission || row.last_submission > lastSubmission)) {
+        lastSubmission = row.last_submission;
+      }
+    }
+
+    const result = { total, byType, byRelationship, lastSubmission, rowCount: rows.length };
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
 const transport = new StdioServerTransport();
 await server.connect(transport);
