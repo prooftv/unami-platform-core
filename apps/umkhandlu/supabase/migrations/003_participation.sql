@@ -75,3 +75,14 @@ CREATE INDEX participation_log_submitted_at_idx
 
 CREATE INDEX participation_signals_node_sanity_idx
   ON public.participation_signals (node_id, sanity_id);
+
+-- ============================================================
+-- Grants
+-- ============================================================
+
+-- service_role needs SELECT on governance_nodes to validate node_id in Edge Functions
+GRANT SELECT ON public.governance_nodes TO service_role;
+
+-- service_role needs full write access to participation tables (Edge Function path)
+GRANT SELECT, INSERT, UPDATE ON public.participation_log TO service_role;
+GRANT SELECT, INSERT, UPDATE ON public.participation_signals TO service_role;
