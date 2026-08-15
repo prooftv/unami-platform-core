@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getNodeClient } from '@/lib/api/client';
 import type { NodeWithHealth } from '@/app/(umkhandlu)/dashboard/widgets/OverviewWidgets';
 import type {
@@ -268,6 +268,62 @@ export async function fetchAggregatedParticipation(): Promise<ParticipationSumma
       other:        acc.byRelationship.other        + r.byRelationship.other,
     },
   }));
+}
+
+/**
+ * Reads anonymised participation intelligence from the Control Centre's own
+ * participation_signals table (ufsmpqxniswdnsywjzje).
+ *
+ * This is the canonical live source for participation signals.
+ * activeNotices is governance content — sourced from the node Intelligence API.
+ *
+ * @param sanityId — when provided, returns the signal for a specific record/notice.
+ *                   When omitted, returns an aggregate across all signals for all nodes.
+ */
+export async function fetchParticipationSignals(
+  sanityId?: string,
+): Promise<ParticipationSummary | null> {
+  const supabase = await createServiceClient();
+
+  let query = supabase
+    .from('participation_signals')
+    .select('response_count, by_type, by_relationship, last_submission');
+
+  if (sanityId) {
+    query = query.eq('sanity_id', sanityId);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data || data.length === 0) return null;
+
+  // Aggregate all matching signal rows into a single ParticipationSummary
+  const byType = { comment: 0, support: 0, objection: 0, question: 0 };
+  const byRelationship = { resident: 0, landowner: 0, business: 0, community: 0, organisation: 0, other: 0 };
+  let total = 0;
+
+  for (const row of data) {
+    total += row.response_count ?? 0;
+    const bt = row.by_type as Record<string, number> ?? {};
+    const br = row.by_relationship as Record<string, number> ?? {};
+    for (const k of Object.keys(byType) as (keyof typeof byType)[]) {
+      byType[k] += bt[k] ?? 0;
+    }
+    for (const k of Object.keys(byRelationship) as (keyof typeof byRelationship)[]) {
+      byRelationship[k] += br[k] ?? 0;
+    }
+  }
+
+  // activeNotices is governance content — source from node Intelligence API
+  const nodes = await getRegisteredNodes();
+  const nodeResults = await Promise.all(
+    nodes.map((n) => safe(() => getNodeClient(n.url, n.api_key).participationSummary())),
+  );
+  const activeNotices = nodeResults
+    .filter((r): r is ParticipationSummary => r !== null)
+    .reduce((sum, r) => sum + r.activeNotices, 0);
+
+  return { total, byType, byRelationship, activeNotices, timestamp: new Date().toISOString() };
 }
 
 export async function fetchAggregatedEvidence(): Promise<EvidenceSummary | null> {

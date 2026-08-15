@@ -7,7 +7,7 @@ import {
   fetchAggregatedCommercial,
   fetchAggregatedLineage,
   fetchAggregatedTcrs,
-  fetchAggregatedParticipation,
+  fetchParticipationSignals,
   fetchAggregatedEvidence,
 } from '@/lib/nodes/fetcher';
 import { DashboardClient } from './DashboardClient';
@@ -23,7 +23,7 @@ export default async function DashboardPage() {
     fetchAggregatedCommercial(),
     fetchAggregatedLineage(),
     fetchAggregatedTcrs(),
-    fetchAggregatedParticipation(),
+    fetchParticipationSignals(),
     fetchAggregatedEvidence(),
   ]);
 
