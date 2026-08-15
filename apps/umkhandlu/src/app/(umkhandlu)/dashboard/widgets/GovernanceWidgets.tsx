@@ -114,15 +114,30 @@ export function RecentRecordsWidget({ summary }: { summary: RecordsSummary | nul
           <p className="text-sm text-muted-foreground text-center py-6">No recent activity</p>
         ) : (
           <ul className="space-y-2 pt-1">
-            {items.map((item) => (
-              <li key={item.id} className="flex items-center justify-between text-sm">
-                <div className="flex flex-col min-w-0 mr-2">
-                  <span className="truncate font-medium">{decodeEntities(item.title)}</span>
-                  <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
+            {items.map((item) => {
+              const params = new URLSearchParams({ nodeUrl: item.nodeUrl ?? '' });
+              if (item.title)     params.set('title',  item.title);
+              if (item.type)      params.set('type',   item.type);
+              if (item.status)    params.set('status', item.status);
+              if (item.createdAt) params.set('date',   item.createdAt);
+              const href = item.nodeUrl
+                ? `/intelligence/records/${item.id}?${params.toString()}`
+                : undefined;
+              const row = (
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex flex-col min-w-0 mr-2">
+                    <span className={`truncate font-medium${href ? ' hover:underline' : ''}`}>{decodeEntities(item.title)}</span>
+                    <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
+                  </div>
+                  {item.status && <Badge variant="outline">{item.status}</Badge>}
                 </div>
-                {item.status && <Badge variant="outline">{item.status}</Badge>}
-              </li>
-            ))}
+              );
+              return href ? (
+                <li key={item.id}><a href={href} className="block">{row}</a></li>
+              ) : (
+                <li key={item.id}>{row}</li>
+              );
+            })}
           </ul>
         )}
       </CardContent>

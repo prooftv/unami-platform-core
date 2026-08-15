@@ -15,6 +15,7 @@ import type {
 
 export interface GovernanceNodeRow {
   id: string;
+  node_id: string | null;
   name: string;
   authority: string;
   location: string | null;
@@ -324,6 +325,45 @@ export async function fetchParticipationSignals(
     .reduce((sum, r) => sum + r.activeNotices, 0);
 
   return { total, byType, byRelationship, activeNotices, timestamp: new Date().toISOString() };
+}
+
+/**
+ * Fetch participation intelligence for a specific record, scoped by BOTH
+ * node_id and sanity_id to prevent cross-node sanity_id collisions.
+ *
+ * nodeUrl is resolved to governance_nodes.node_id via the registry.
+ * Returns null if the node has no node_id seeded or no signals exist.
+ */
+export async function fetchRecordParticipation(
+  nodeUrl: string,
+  sanityId: string,
+): Promise<{ total: number; byType: Record<string, number>; byRelationship: Record<string, number>; lastSubmission: string | null } | null> {
+  // Resolve nodeUrl → node_id via the registry
+  const supabase = createServiceClient();
+  const { data: nodeRow } = await supabase
+    .from('governance_nodes')
+    .select('node_id')
+    .eq('url', nodeUrl)
+    .maybeSingle();
+
+  const nodeId = nodeRow?.node_id;
+  if (!nodeId) return null;
+
+  const { data, error } = await supabase
+    .from('participation_signals')
+    .select('response_count, by_type, by_relationship, last_submission')
+    .eq('node_id', nodeId)
+    .eq('sanity_id', sanityId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    total: data.response_count ?? 0,
+    byType: (data.by_type as Record<string, number>) ?? {},
+    byRelationship: (data.by_relationship as Record<string, number>) ?? {},
+    lastSubmission: data.last_submission ?? null,
+  };
 }
 
 export async function fetchAggregatedEvidence(): Promise<EvidenceSummary | null> {
