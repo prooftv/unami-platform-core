@@ -4,10 +4,12 @@
   "workspace": "/home/ec2-user/unami-platform-core",
   "platform_version": "v1.0.0",
   "frozen_for": "stable — platform foundation frozen, application validation active",
-
   "registered_apps": {
     "moments": {
-      "apps": ["apps/admin", "apps/web"],
+      "apps": [
+        "apps/admin",
+        "apps/web"
+      ],
       "agent": "moments-agent",
       "supabase_ref": "dpydmpydyfrrdhuezvgi",
       "status": "Phase 17J engineering complete — frozen for ops gates",
@@ -17,50 +19,112 @@
       }
     },
     "umkhandlu": {
-      "apps": ["apps/umkhandlu"],
+      "apps": [
+        "apps/umkhandlu"
+      ],
       "agent": "umkhandlu-agent",
       "supabase_ref": "ufsmpqxniswdnsywjzje",
       "status": "Phase 18 complete — stable",
       "production_url": "https://unami-platform-core-umkhandlu.vercel.app"
     },
     "uncip": {
-      "apps": ["apps/uncip"],
+      "apps": [
+        "apps/uncip"
+      ],
       "agent": "uncip-agent",
       "supabase_ref": "tqragjtvcnsmumtaijds",
       "status": "Phase 19 complete — frozen for manual testing / pilot",
       "production_url": "https://unami-platform-core-uncip-admin.vercel.app"
     }
   },
-
   "platform_packages": {
     "@unami/ui": {
       "path": "packages/ui",
       "exports": [
-        "ThemeBootScript", "ShellLayoutControls", "ShellThemeSwitcher", "ShellNavUser",
-        "NavGroup", "NavMainItem", "NavMainLinkItem", "NavMainParentItem", "NavSubItem", "NavBadge",
-        "PreferencesStoreProvider", "usePreferencesStore", "PREFERENCE_DEFAULTS", "PREFERENCE_REGISTRY",
-        "THEME_PRESET_OPTIONS", "fontOptions",
-        "PageHeader", "KPIGrid", "MetricCard", "TablePagination", "TableToolbar", "BulkActionBar",
-        "DataTable", "EmptyState", "ErrorState", "PageSkeleton", "TableSkeleton", "StatusBadge",
-        "AnalyticsCard", "LineChart", "BarChart", "PieChart", "AreaChart", "ActivityFeed", "QuickActions"
+        "ThemeBootScript",
+        "ShellLayoutControls",
+        "ShellThemeSwitcher",
+        "ShellNavUser",
+        "NavGroup",
+        "NavMainItem",
+        "NavMainLinkItem",
+        "NavMainParentItem",
+        "NavSubItem",
+        "NavBadge",
+        "PreferencesStoreProvider",
+        "usePreferencesStore",
+        "PREFERENCE_DEFAULTS",
+        "PREFERENCE_REGISTRY",
+        "THEME_PRESET_OPTIONS",
+        "fontOptions",
+        "PageHeader",
+        "KPIGrid",
+        "MetricCard",
+        "TablePagination",
+        "TableToolbar",
+        "BulkActionBar",
+        "DataTable",
+        "EmptyState",
+        "ErrorState",
+        "PageSkeleton",
+        "TableSkeleton",
+        "StatusBadge",
+        "AnalyticsCard",
+        "LineChart",
+        "BarChart",
+        "PieChart",
+        "AreaChart",
+        "ActivityFeed",
+        "QuickActions"
       ],
-      "rules": ["no Supabase", "no auth", "no Next.js imports", "no domain knowledge", "no app references"],
+      "rules": [
+        "no Supabase",
+        "no auth",
+        "no Next.js imports",
+        "no domain knowledge",
+        "no app references"
+      ],
       "frozen": true
     },
     "@unami/shared": {
       "path": "packages/shared",
-      "contains": ["Language", "ModerationStatus", "MessageType", "AdminRole", "Pagination", "PaginatedResponse", "AdminUser", "SystemSetting", "Message", "auth validators", "settings validators", "phone/formatting/failOpen helpers"],
-      "rules": ["no React", "no Next.js", "no Supabase", "no domain logic"],
+      "contains": [
+        "Language",
+        "ModerationStatus",
+        "MessageType",
+        "AdminRole",
+        "Pagination",
+        "PaginatedResponse",
+        "AdminUser",
+        "SystemSetting",
+        "Message",
+        "auth validators",
+        "settings validators",
+        "phone/formatting/failOpen helpers"
+      ],
+      "rules": [
+        "no React",
+        "no Next.js",
+        "no Supabase",
+        "no domain logic"
+      ],
       "frozen": true
     },
     "@unami/api": {
       "path": "packages/api",
-      "contains": ["createApiClient", "createPublicApiClient", "typed HTTP clients for all Edge Functions and governance node APIs"],
-      "rules": ["typed HTTP only", "domain types inlined as string literals", "no domain package dependency"],
+      "contains": [
+        "createApiClient",
+        "createPublicApiClient",
+        "typed HTTP clients for all Edge Functions and governance node APIs"
+      ],
+      "rules": [
+        "typed HTTP only",
+        "domain types inlined as string literals",
+        "no domain package dependency"
+      ],
       "frozen": true
     }
   },
-
   "platform_rules": {
     "deletion_test": "Deleting any app must leave packages/ compiling without modification. Non-negotiable.",
     "edge_functions_only": "Edge Functions are the only layer that touches the database. No direct Supabase calls from apps.",
@@ -71,7 +135,6 @@
     "no_next_in_packages": "packages/ui has no Next.js dependency and must not acquire one.",
     "core_candidate_rule": "Platform grows from patterns proven across ≥2 apps. Never from anticipated future needs."
   },
-
   "onboarding_checklist": {
     "description": "Every new app onboarded to Unami Platform Core must complete all steps.",
     "phase_0_decision": [
@@ -158,7 +221,6 @@
       "Deletion test: deleting this app leaves packages/ compiling"
     ]
   },
-
   "new_app_template": {
     "next_app": "BeatsChain",
     "path": "apps/beatschain",
@@ -166,7 +228,6 @@
     "decision_ref": "D-045",
     "status": "Not started — Phase 20"
   },
-
   "platform_roadmap": {
     "Phase 16": "Platform Independence ✅ Complete",
     "Phase 17": "Moments Product Completion ✅ Engineering Complete",
@@ -177,7 +238,6 @@
     "Phase 22": "Commercial Intelligence",
     "Phase 23": "National Institutional Memory"
   },
-
   "core_candidates": {
     "description": "Patterns discovered in apps that may be promoted to packages/ once proven across ≥2 apps.",
     "source": "docs/context/uncip/UNCIP_PLATFORM_LESSONS.md",
@@ -192,7 +252,6 @@
     ],
     "status": "None promoted yet — all require validation across a second application"
   },
-
   "constitutional_docs": [
     "docs/context/PLATFORM.md — what the platform is, ownership boundaries",
     "docs/context/ARCHITECTURE.md — layer boundaries, data flow, stack",
@@ -202,14 +261,16 @@
     "docs/context/DATABASE_BOUNDARIES.md — one app = one Supabase project",
     "PROJECT_STATUS.md — current phase and execution state"
   ],
-
-  "head_commit": "3c77996",
-  "head_commit_msg": "chore(tools): add moments-agent and umkhandlu-agent MCP servers",
+  "head_commit": "d727c08",
+  "head_commit_msg": "Platform boundary audit complete. Repository, API clients, packages, agents, registry all clean. One open item: Supabase project separation cannot be confirmed from repo inspection — requires live query. Blocks Supabase MCP work and BeatsChain onboarding.",
   "head_date": "2026-08-14",
-
   "notes": [
     "[2026-08-14] Platform foundation frozen at v1.0. Three apps complete: Moments (17J), Umkhandlu (18), UNCIP (19). Next app: BeatsChain (Phase 20).",
     "[2026-08-14] unamiplatformcore-agent is the platform-level agent. Use it when onboarding a new app, making cross-app decisions, or evolving packages/.",
-    "[2026-08-14] For app-specific work use the dedicated agent: uncip-agent, moments-agent, umkhandlu-agent."
+    "[2026-08-14] For app-specific work use the dedicated agent: uncip-agent, moments-agent, umkhandlu-agent.",
+    "[2026-08-14T18:01:13.989Z] [2026-08-14] Architecture validation sequence complete. Tests 1-3 + tool routing: all PASS. Key finding: one Q session loads all MCP servers; context is determined by tool invocation, not session identity. This is the actual architecture, not a failure. Defect #1 (tool name collision on get_project_context) fixed at cd4d65a. Defect #2 (power-loss recovery ambiguity) largely resolved by namespace fix; explicit identity metadata deferred as operator-experience improvement. Expansion freeze is now satisfied by evidence.",
+    "[2026-08-14T18:05:13.893Z] [2026-08-14] Platform boundary audit (d727c08): all boundaries clean except Supabase ownership — cannot confirm from repo alone whether UNCIP project (tqragjtvcnsmumtaijds) is genuinely separate from Moments (dpydmpydyfrrdhuezvgi) or co-deployed via root supabase/. Requires: supabase projects list or dashboard check. This is a blocking gate for Supabase MCP work and BeatsChain onboarding.",
+    "[2026-08-14T18:15:31.458Z] [2026-08-14] SUPABASE BOUNDARY AUDIT — CLOSED. Live verification confirms three genuinely separate Supabase projects: Moments=dpydmpydyfrrdhuezvgi (HTTP+JWT confirmed), UNCIP=tqragjtvcnsmumtaijds (API confirmed, name=uncip-reimagined, eu-central-1, ACTIVE_HEALTHY), Umkhandlu=ufsmpqxniswdnsywjzje (HTTP confirmed). ONE-SUPABASE-PER-APP: COMPLIANT. Root supabase/migrations/ contains UNCIP migrations 009–015 as historical artifacts — repo hygiene issue only, not a database ownership violation. Step 4 (Supabase MCP contract) is now unblocked.",
+    "[2026-08-14T18:18:30.904Z] [2026-08-14] SUPABASE MCP CONTRACT v1.0 — READY. Architectural contract defined for app-specific Supabase MCPs. Key decisions: (1) Identity declared at config, verified against registry before any operation. (2) Scope = structural inspection only — schema, RLS, migrations, project status. No row data. (3) Mutation NOT PERMITTED in v1. (4) Boundary enforced by fixed ref at config time, not runtime logic. (5) MCP answers questions, does not make decisions. (6) Credentials never in agent context. (7) Failure = stop and report, never infer. (8) Audit via agent add_note. (9) Not promoted to platform core until proven in ≥2 apps (core_candidate_rule). (10) Minimum UNCIP surface: 4 tools — get_schema, get_rls_policies, get_migration_state, get_project_status. First proof: UNCIP (tqragjtvcnsmumtaijds)."
   ]
 }

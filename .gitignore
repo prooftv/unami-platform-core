@@ -28,3 +28,5 @@ Thumbs.db
 q-dev-chat-*.md
 apps/uncip/supabase/.temp/
 apps/uncip/supabase/supabase/
+apps/umkhandlu/supabase/.temp/
+apps/umkhandlu/tsconfig.tsbuildinfo
