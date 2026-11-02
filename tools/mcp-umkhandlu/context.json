@@ -24,10 +24,10 @@
     "sovereignty_rule": "D-036: The Control Centre NEVER edits, mutates, creates, or administers node content. All write operations remain within the originating governance node.",
     "deletion_test": "Deleting apps/umkhandlu must leave packages/ compiling without modification."
   },
-  "frozen_for": "stable — Phase 18 complete",
-  "head_commit": "04afb9a",
-  "head_commit_msg": "GEM-03 — RecordGem module proof case. RecordGem.types.ts, resolveActions.ts, AttendanceAction, CalendarAction, ShareAction. Meeting notice wired in /notices/[slug] — additive, reversible. Zero GEM type errors.",
-  "head_date": "2026-08-15",
+  "frozen_for": "stable — Phase 18 complete + snapshot polling added",
+  "head_commit": "platform-snapshot-polling",
+  "head_commit_msg": "feat(umkhandlu): node snapshot polling — 003_node_snapshots.sql, /api/poll-nodes route, Vercel cron every 15min, staleness indicator on /nodes/health",
+  "head_date": "2026-08-16",
   "completed_milestones": [
     "Phase 18A — scaffold, shell, navigation, domain structure, platform tables, node registry model",
     "Phase 18B — governance node client, node connection, read-only auth, all intelligence summaries",
@@ -41,7 +41,8 @@
     "feat(umkhandlu): phase-5 — fetchParticipationSignals reads participation_signals table; activeNotices remains node API (68476e4)",
     "feat(umkhandlu): phase-6 — umkhandlu_get_participation_intelligence MCP tool; reads participation_signals via runtime env credentials (0c4d6ff)",
     "feat(umkhandlu): phase-7 — first Record Intelligence surface; governance_nodes.node_id, fetchRecordParticipation(node_id+sanity_id), /intelligence/records/[id], Recent Records linked (e2fd2fd)",
-    "GEM-03 — RecordGem module proof case. RecordGem.types.ts, resolveActions.ts, AttendanceAction, CalendarAction, ShareAction. Meeting notice wired in /notices/[slug] — additive, reversible. Zero GEM type errors. (04afb9a)"
+    "GEM-03 — RecordGem module proof case. RecordGem.types.ts, resolveActions.ts, AttendanceAction, CalendarAction, ShareAction. Meeting notice wired in /notices/[slug] — additive, reversible. Zero GEM type errors. (04afb9a)",
+    "Node snapshot polling — 003_node_snapshots.sql migration, /api/poll-nodes route (Vercel cron every 15min), staleness indicator on /nodes/health page"
   ],
   "live_routes": [
     "/nodes/health — per-node health, record/notice counts, version, response time",

@@ -2,5 +2,11 @@
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "cd ../.. && pnpm --filter @unami/umkhandlu build",
   "outputDirectory": ".next",
-  "ignoreCommand": "exit 1"
+  "ignoreCommand": "exit 1",
+  "crons": [
+    {
+      "path": "/api/poll-nodes",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }

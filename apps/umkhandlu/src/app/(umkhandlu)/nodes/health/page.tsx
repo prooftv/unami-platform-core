@@ -1,9 +1,10 @@
 import { PageHeader } from '@unami/ui';
-import { getAllNodes } from '@/lib/nodes/fetcher';
+import { getAllNodes, type GovernanceNodeRow } from '@/lib/nodes/fetcher';
 import { getNodeClient } from '@/lib/api/client';
+import { createServiceClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, AlertTriangle, WifiOff, FileText, Bell, Cpu } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, WifiOff, FileText, Bell, Cpu, Clock } from 'lucide-react';
 import type { NodeHealth } from '@unami/api';
 
 const STATUS_ICON = {
@@ -22,11 +23,48 @@ async function safeHealth(url: string, apiKey: string): Promise<NodeHealth | nul
   try { return await getNodeClient(url, apiKey).health(); } catch { return null; }
 }
 
+async function getLastSnapshotTime(nodeId: string): Promise<string | null> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from('node_snapshots')
+    .select('captured_at')
+    .eq('node_id', nodeId)
+    .order('captured_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.captured_at ?? null;
+}
+
+function StalenessIndicator({ capturedAt }: { capturedAt: string | null }) {
+  if (!capturedAt) {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Clock className="h-3 w-3" />
+        No snapshot yet — polling not configured
+      </div>
+    );
+  }
+  const ageMs = Date.now() - new Date(capturedAt).getTime();
+  const ageMin = Math.floor(ageMs / 60000);
+  const isStale = ageMin > 30;
+  return (
+    <div className={`flex items-center gap-1.5 text-xs ${isStale ? 'text-amber-600' : 'text-muted-foreground'}`}>
+      <Clock className="h-3 w-3" />
+      Last snapshot: {ageMin < 1 ? 'just now' : `${ageMin}m ago`}
+      {isStale && ' — snapshot may be stale'}
+    </div>
+  );
+}
+
 export default async function NodeHealthPage() {
   const nodes = await getAllNodes();
   const active = nodes.filter((n) => n.active);
   const results = await Promise.all(
-    active.map(async (node) => ({ node, health: await safeHealth(node.url, node.api_key) })),
+    active.map(async (node) => ({
+      node,
+      health: await safeHealth(node.url, node.api_key),
+      lastSnapshot: await getLastSnapshotTime(node.id),
+    })),
   );
 
   const healthy     = results.filter((r) => r.health?.status === 'healthy').length;
@@ -59,7 +97,7 @@ export default async function NodeHealthPage() {
       </div>
 
       <div className="max-w-3xl space-y-4">
-        {results.map(({ node, health }) => (
+        {results.map(({ node, health, lastSnapshot }) => (
           <Card key={node.id}>
             <CardHeader className="border-b pb-4">
               <div className="flex items-start justify-between gap-2">
@@ -108,6 +146,7 @@ export default async function NodeHealthPage() {
                       <p className="text-xs text-muted-foreground">
                         Last updated {new Date(health.lastUpdated).toLocaleString()}
                       </p>
+                      <StalenessIndicator capturedAt={lastSnapshot} />
                     </div>
                   )}
                 </div>
