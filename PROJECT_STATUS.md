@@ -10,11 +10,11 @@ Read this first when resuming work or starting a new session.
 | Field | Value |
 |---|---|
 | Version | `v1.0.0-unami-platform` |
-| Phase | Phase 18 — Complete (18A–18G) + UNCIP Phase 19 Complete |
+| Phase | Phase 18 — Complete (18A–18G) + Amajuba Expansion + GEM Phase D |
 | Branch | `main` |
-| Workspace | `/home/ec2-user/unami-platform-core` |
+| Workspace | `/workspaces/unami-platform-core` |
 | Remote | `origin` → `https://github.com/prooftv/unami-platform-core` |
-| Last commit | `2478367` |
+| Last commit | `a14d67b` |
 | Build | ✅ Passing |
 | Typecheck | ✅ Passing |
 
@@ -398,6 +398,63 @@ Control Centre shell brought to full parity with Moments admin. Validates the pl
 | Missing shadcn components added: `avatar`, `command`, `alert`, `progress`, `switch`, `tabs`, `input-group` | ✅ |
 | `cmdk` dependency added to `package.json` | ✅ |
 | Typecheck: zero errors | ✅ |
+
+### Amajuba District Expansion ✅ Complete (Governance Node)
+
+Geographic hierarchy for Amajuba District added to `umkhandlu.unamifoundation.org`.
+
+| Task | Status |
+|---|---|
+| `areaLevel`, `wardNumber`, `municipality`, `parentArea` fields added to `listing.ts` schema | ✅ |
+| Areas page: municipality-grouped hierarchical view (district → municipality → ward → TA → isigodi) | ✅ |
+| Area detail: `AreaHero` with classification badges and parent area breadcrumb | ✅ |
+| Sanity queries updated to include all new geographic fields | ✅ |
+| Mobile: container padding corrected (`px-4 sm:px-6 lg:px-10`) | ✅ |
+| Mobile: notice list layout fixed (min-w-0, whitespace-nowrap date) | ✅ |
+| Mobile: dev notice list layout fixed (deadline/reference in content column) | ✅ |
+| Mobile: dev notice detail `DetailRow` stacks on mobile | ✅ |
+| Mobile: notice detail h1 scaled (`text-2xl md:text-4xl`) | ✅ |
+| Mobile: record detail h1 scaled + RecordMeta stacks on mobile | ✅ |
+| Mobile: records list `RecordRow` layout fixed | ✅ |
+| Committed `5676232` → `0fa6bd7` on `trunk` — pushed | ✅ |
+
+### GEM Phase D ✅ Complete (Governance Node)
+
+All action components extracted and wired. RecordGem is now fully operational across all record types.
+
+| Task | Status |
+|---|---|
+| `ParticipationAction` — wraps `PublicCommentForm`, shown for open dev notices | ✅ |
+| `DocumentsAction` — renders evidence/document arrays | ✅ |
+| `JourneyAction` — links to governance journey | ✅ |
+| `LineageCertAction` — links to lineage certificate | ✅ |
+| `ProofOfPubAction` — links to proof of publication | ✅ |
+| `RecordGem.tsx` updated to render all Phase D actions | ✅ |
+| Biome: zero errors | ✅ |
+| Typecheck: zero errors | ✅ |
+
+### Intelligence API v1.1 ✅ Complete (Governance Node)
+
+Authoritative record detail endpoint added to the Governance Node API contract.
+
+| Task | Status |
+|---|---|
+| `GET /api/intelligence/records/detail?id=<sanityId>` — full record with lineage, evidence, approver | ✅ |
+| `RecordDetail` type added to `packages/api/src/clients/governance-node.ts` | ✅ |
+| `recordDetail(sanityId)` method added to `GovernanceNodeClient` | ✅ |
+| Control Centre `/intelligence/records/[id]` page upgraded to use authoritative node data | ✅ |
+| Falls back gracefully if node is unavailable | ✅ |
+
+### Node Snapshot Polling ✅ Implemented (Platform Core) ⚠️ Pending Supabase migration
+
+| Task | Status |
+|---|---|
+| `003_node_snapshots.sql` migration written | ✅ |
+| `/api/poll-nodes` cron route implemented | ✅ |
+| `vercel.json` cron schedule (`*/15 * * * *`) added | ✅ |
+| `StalenessIndicator` on node health page | ✅ |
+| Migration applied to `ufsmpqxniswdnsywjzje` | ⚠️ Requires founder: apply `003_node_snapshots.sql` in Supabase SQL editor for project `ufsmpqxniswdnsywjzje` |
+| `POLL_NODES_SECRET` env var set in Vercel | ⚠️ Requires founder: set in Vercel project for `apps/umkhandlu` |
 
 ---
 
