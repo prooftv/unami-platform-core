@@ -239,10 +239,40 @@ export interface OperatorsSummary {
   timestamp: string;
 }
 
+// ─── Record detail (API v1.1) ─────────────────────────────────────────────────
+
+export interface RecordEvidence {
+  _key: string;
+  title: string;
+  url: string | null;
+}
+
+export interface RecordDetail {
+  _id: string;
+  title: string;
+  slug: string;
+  recordType: string;
+  date: string | null;
+  summary: string | null;
+  status: string | null;
+  verificationNote: string | null;
+  externalUrl: string | null;
+  source: string | null;
+  approvedBy: { firstName: string; lastName: string; role: string | null } | null;
+  evidence: RecordEvidence[];
+  originNotice: { _id: string; title: string; slug: string; noticeType: string; date: string | null } | null;
+  parentRecord: { _id: string; title: string; slug: string; recordType: string } | null;
+  relatedArea: { name: string; slug: string } | null;
+  relatedCampaign: { title: string; slug: string; status: string | null } | null;
+  location: string | null;
+  attendance: number | null;
+  childRecords: { _id: string; title: string; slug: string; recordType: string; date: string | null; status: string | null }[];
+}
+
 // ─── Client factory ───────────────────────────────────────────────────────────
 
 /**
- * Read-only typed client for the Governance Node API contract (v1.0).
+ * Read-only typed client for the Governance Node API contract (v1.0 / v1.1).
  * Pass the node's base URL and its node-issued API key.
  * One client works for every governance node — no node-specific logic here.
  *
@@ -300,6 +330,11 @@ export function createGovernanceNodeClient(config: ApiConfig) {
     /** GET /api/intelligence/operators — operator registry for this node */
     operatorsSummary(): Promise<OperatorsSummary> {
       return apiFetch(config, `${base}/operators`);
+    },
+
+    /** GET /api/intelligence/records/detail?id=<sanityId> — API v1.1 authoritative record detail */
+    recordDetail(sanityId: string): Promise<{ record: RecordDetail; timestamp: string }> {
+      return apiFetch(config, `${base}/records/detail?id=${encodeURIComponent(sanityId)}`);
     },
   };
 }
