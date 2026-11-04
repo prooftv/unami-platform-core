@@ -3,8 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { OperatorList } from '../_components/OperatorList';
 import { InviteOperatorForm } from '../_components/InviteOperatorForm';
 
-const SERVICE_KEY = process.env.UMKHANDLU_SUPABASE_SERVICE_ROLE_KEY!;
-const SUPABASE_ADMIN_URL = new URL('/auth/v1/admin/users', process.env.NEXT_PUBLIC_UMKHANDLU_SUPABASE_URL!).toString();
+export const dynamic = 'force-dynamic';
 
 type AuthUser = {
   id: string;
@@ -16,8 +15,12 @@ type AuthUser = {
 
 async function getOperators(): Promise<AuthUser[]> {
   try {
-    const res = await fetch(SUPABASE_ADMIN_URL, {
-      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+    const serviceKey = process.env.UMKHANDLU_SUPABASE_SERVICE_ROLE_KEY;
+    const baseUrl = process.env.NEXT_PUBLIC_UMKHANDLU_SUPABASE_URL;
+    if (!serviceKey || !baseUrl) return [];
+    const adminUrl = new URL('/auth/v1/admin/users', baseUrl).toString();
+    const res = await fetch(adminUrl, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
       cache: 'no-store',
     });
     if (!res.ok) return [];

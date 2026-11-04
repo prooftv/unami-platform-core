@@ -4,8 +4,6 @@ import { getOperatorSession, isSuperAdmin } from '@/lib/auth/operator';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-const SERVICE_KEY = process.env.UMKHANDLU_SUPABASE_SERVICE_ROLE_KEY!;
-const SUPABASE_ADMIN_BASE = new URL('/auth/v1/admin', process.env.NEXT_PUBLIC_UMKHANDLU_SUPABASE_URL!).toString();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function assertUUID(value: string): void {
@@ -13,13 +11,17 @@ function assertUUID(value: string): void {
 }
 
 async function adminFetch(path: string, options: RequestInit) {
-  const url = new URL(path, SUPABASE_ADMIN_BASE + '/').toString();
+  const serviceKey = process.env.UMKHANDLU_SUPABASE_SERVICE_ROLE_KEY;
+  const baseUrl = process.env.NEXT_PUBLIC_UMKHANDLU_SUPABASE_URL;
+  if (!serviceKey || !baseUrl) throw new Error('Supabase admin credentials not configured');
+  const adminBase = new URL('/auth/v1/admin', baseUrl).toString();
+  const url = new URL(path, adminBase + '/').toString();
   const res = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      apikey: SERVICE_KEY,
-      Authorization: `Bearer ${SERVICE_KEY}`,
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
       ...(options.headers ?? {}),
     },
   });
