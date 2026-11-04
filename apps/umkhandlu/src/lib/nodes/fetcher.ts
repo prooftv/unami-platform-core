@@ -284,7 +284,8 @@ export async function fetchAggregatedParticipation(): Promise<ParticipationSumma
 export async function fetchParticipationSignals(
   sanityId?: string,
 ): Promise<ParticipationSummary | null> {
-  const supabase = await createServiceClient();
+  if (!process.env.UMKHANDLU_SUPABASE_SERVICE_ROLE_KEY) return null;
+  const supabase = createServiceClient();
 
   let query = supabase
     .from('participation_signals')
@@ -338,6 +339,7 @@ export async function fetchRecordParticipation(
   nodeUrl: string,
   sanityId: string,
 ): Promise<{ total: number; byType: Record<string, number>; byRelationship: Record<string, number>; lastSubmission: string | null } | null> {
+  if (!process.env.UMKHANDLU_SUPABASE_SERVICE_ROLE_KEY) return null;
   // Resolve nodeUrl → node_id via the registry
   const supabase = createServiceClient();
   const { data: nodeRow } = await supabase
