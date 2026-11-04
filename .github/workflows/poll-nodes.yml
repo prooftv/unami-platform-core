@@ -1,0 +1,22 @@
+name: Poll Governance Nodes
+
+on:
+  schedule:
+    # Every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger node snapshot poll
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.POLL_NODES_SECRET }}" \
+            "${{ secrets.UMKHANDLU_APP_URL }}/api/poll-nodes")
+          echo "Response: $response"
+          if [ "$response" != "200" ]; then
+            echo "Poll failed with status $response"
+            exit 1
+          fi
