@@ -2,8 +2,10 @@ import {
   Activity,
   BarChart3,
   Briefcase,
+  Database,
   GitBranch,
   LayoutDashboard,
+  Map,
   Network,
   Settings,
   ShieldAlert,
@@ -40,13 +42,21 @@ export const sidebarItems: NavGroup[] = [
   },
   {
     id: 4,
+    label: 'Spatial',
+    items: [
+      { id: 'spatial-sources', title: 'Data Sources',   url: '/spatial/sources', icon: Database },
+      { id: 'spatial-map',     title: 'Geographic View', url: '/spatial/map',     icon: Map },
+    ],
+  },
+  {
+    id: 5,
     label: 'Analytics',
     items: [
       { id: 'intel-nodes', title: 'Cross-Node View', url: '/dashboard', icon: BarChart3 },
     ],
   },
   {
-    id: 5,
+    id: 6,
     label: 'System',
     items: [
       { id: 'settings', title: 'Settings', url: '/settings', icon: Settings },
