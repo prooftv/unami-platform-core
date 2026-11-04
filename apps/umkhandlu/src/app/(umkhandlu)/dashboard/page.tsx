@@ -1,4 +1,5 @@
 import { getOperatorSession } from '@/lib/auth/operator';
+import { redirect } from 'next/navigation';
 import {
   fetchRegisteredNodes,
   fetchNodeSnapshots,
@@ -14,6 +15,7 @@ import { DashboardClient } from './DashboardClient';
 
 export default async function DashboardPage() {
   const session = await getOperatorSession();
+  if (!session) redirect('/login');
 
   const [nodes, snapshots, records, notices, commercial, lineage, tcrs, participation, evidence] = await Promise.all([
     fetchRegisteredNodes(),
@@ -29,7 +31,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      operatorEmail={session!.email}
+      operatorEmail={session.email}
       overview={{ nodes, records, notices, tcrs }}
       nodes={{ snapshots }}
       governance={{ records, notices }}
