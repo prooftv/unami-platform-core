@@ -684,6 +684,88 @@ unami-platform-core/
 
 ---
 
+## GIS, Spatial Intelligence, Risk and Compliance Workstream
+
+Active workstream running in parallel with Phase 20+.
+Constitutional reference: `docs/context/GIS_INTEGRATION.md`
+
+### Phase GIS-1 — Foundation
+
+| Item | Status |
+|---|---|
+| Constitutional docs (both repos) | ✅ Written |
+| `spatial_sources` + `spatial_imports` migration (005) | ✅ Applied to `ufsmpqxniswdnsywjzje` |
+| ArcGIS REST connector | ✅ `apps/umkhandlu/src/lib/gis/arcgis-connector.ts` |
+| Source registry UI | ✅ `apps/umkhandlu/src/app/(umkhandlu)/spatial/sources/` |
+| Geographic view placeholder | ✅ `apps/umkhandlu/src/app/(umkhandlu)/spatial/map/` |
+| Sidebar spatial section | ✅ `apps/umkhandlu/src/navigation/sidebar/sidebar-items.ts` |
+| `listing` boundary fields (Sanity schema) | ✅ Governance node |
+| `campaign` site + geographic association fields | ✅ Governance node |
+| GIS commit pushed to origin/trunk | ⏳ Pending — local commit `b6c161b` not yet pushed |
+| Amajuba GIS form submission | ⏳ Founder action — PDF alignment issue, do not submit misaligned version |
+
+### Phase GIS-2 — Full CRUD and Source Management
+
+| Item | Status |
+|---|---|
+| Source CRUD (create, edit, deactivate) | ⏳ |
+| Source health check pipeline (Edge Function + scheduled) | ⏳ |
+| `spatial_datasets` migration | ⏳ |
+| `spatial_pipeline_runs` migration | ⏳ |
+| `spatial_staged_features` migration | ⏳ |
+| Dataset/layer registry UI | ⏳ |
+| Pipeline execution UI (run, history, replay) | ⏳ |
+| Staging review UI (approve/reject features) | ⏳ |
+| GDAL/OGR processing pipeline | ⏳ |
+
+### Phase GIS-3 — Risk and Compliance
+
+| Item | Status |
+|---|---|
+| Risk/compliance migrations (006+) | ⏳ |
+| Risk register + assessment CRUD | ⏳ |
+| Compliance obligations CRUD | ⏳ |
+| Controls + test recording | ⏳ |
+| Evidence management | ⏳ |
+| Findings, exceptions, incidents | ⏳ |
+| Remediation actions | ⏳ |
+| Audit log viewer | ⏳ |
+| Management reporting dashboard | ⏳ |
+
+### Phase GIS-4 — Spatial Publication and Map Rendering
+
+| Item | Status |
+|---|---|
+| Leaflet boundary polygon rendering | ⏳ Governance node |
+| `/api/intelligence/spatial/summary` | ⏳ Governance node |
+| `developmentNotice` geographic fields | ⏳ Governance node Sanity |
+| Geographic view in Control Centre | ⏳ |
+| Ward boundary import (awaiting COGTA permission) | ⏳ |
+| Amajuba DM boundary import (awaiting form response) | ⏳ |
+
+### Phase GIS-5 — Automation and Monitoring
+
+| Item | Status |
+|---|---|
+| Scheduled pipeline infrastructure (pg_cron) | ⏳ |
+| Data freshness monitoring | ⏳ |
+| Alert generation and notification | ⏳ |
+| Pipeline configuration UI | ⏳ |
+| Reconciliation pipeline | ⏳ |
+| Operational observability dashboard | ⏳ |
+
+### External dependencies (founder actions)
+
+| Item | Action |
+|---|---|
+| Amajuba GIS form | Submit correctly aligned PDF to Mr Udiv Budhal |
+| Water/sanitation data | Contact Ms Thubelihle Buthelezi — thubelihleb@amajuba.gov.za |
+| COGTA redistribution permission | Confirm before caching or publishing COGTA data |
+| Newcastle PMU data-sharing agreement | Required before attributed project data is used |
+| SIFT correct indicator datasets | Identify — `PSDF_10_8_2_WebMap` is a web map reference only |
+
+---
+
 ## Rules — Do Not Violate
 
 1. All work in `/workspaces/unami-platform-core`, pushed to `origin`.
