@@ -704,27 +704,30 @@ Constitutional reference: `docs/context/GIS_INTEGRATION.md`
 | GIS commit pushed to origin/trunk | ⏳ Pending — local commit `b6c161b` not yet pushed |
 | Amajuba GIS form submission | ⏳ Founder action — PDF alignment issue, do not submit misaligned version |
 
-### Phase GIS-2 — Full CRUD and Source Management
+### Phase GIS-2 — Full CRUD and Source Management ✅ Complete
 
 | Item | Status |
 |---|---|
-| Source CRUD (create, edit, deactivate) | ⏳ |
-| Source health check pipeline (Edge Function + scheduled) | ⏳ |
-| `spatial_datasets` migration | ⏳ |
-| `spatial_pipeline_runs` migration | ⏳ |
-| `spatial_staged_features` migration | ⏳ |
-| Dataset/layer registry UI | ⏳ |
-| Pipeline execution UI (run, history, replay) | ⏳ |
-| Staging review UI (approve/reject features) | ⏳ |
-| GDAL/OGR processing pipeline | ⏳ |
+| Source CRUD (create, edit, deactivate, reactivate) | ✅ `562a2c4` |
+| Source health check pipeline (server action + Edge Function) | ✅ `562a2c4` |
+| `spatial_datasets` migration (`006_gis_datasets_pipelines.sql`) | ✅ `562a2c4` |
+| `spatial_pipeline_runs` migration | ✅ `562a2c4` |
+| `spatial_staged_features` migration | ✅ `562a2c4` |
+| Dataset/layer registry UI (list + register form) | ✅ `562a2c4` |
+| Pipeline execution UI (run, history, replay) | ✅ `562a2c4` |
+| Staging review UI (approve/reject features with geometry display) | ✅ `562a2c4` |
+| `spatial-pipelines` Edge Function | ✅ `562a2c4` |
+| GDAL/OGR processing pipeline | ⏳ GIS-5 (requires server-side GDAL) |
 
-### Phase GIS-3 — Risk and Compliance
+### Phase GIS-3 — Risk and Compliance ✅ Schema + List UI Complete
 
 | Item | Status |
 |---|---|
-| Risk/compliance migrations (006+) | ⏳ |
-| Risk register + assessment CRUD | ⏳ |
-| Compliance obligations CRUD | ⏳ |
+| Risk/compliance migrations (`007_risk_compliance.sql`) | ✅ `562a2c4` |
+| Risk register list UI (exposure scoring, RAG colouring) | ✅ `562a2c4` |
+| Compliance obligations list UI (overdue detection) | ✅ `562a2c4` |
+| Risk create/edit form | ⏳ |
+| Compliance obligation create/edit form | ⏳ |
 | Controls + test recording | ⏳ |
 | Evidence management | ⏳ |
 | Findings, exceptions, incidents | ⏳ |
