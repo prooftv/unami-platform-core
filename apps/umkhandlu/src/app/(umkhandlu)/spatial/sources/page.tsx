@@ -2,6 +2,8 @@ import { PageHeader } from '@unami/ui';
 import { fetchSpatialSources, fetchRecentImports } from '@/lib/gis/spatial-sources-fetcher';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +44,11 @@ export default async function SpatialSourcesPage() {
       <PageHeader
         title="Spatial Data Sources"
         description="Institutional GIS sources, connection status and import history for Amajuba District."
+        actions={
+          <Button asChild>
+            <Link href="/spatial/sources/new">Add source</Link>
+          </Button>
+        }
       />
 
       <div className="grid grid-cols-3 gap-4">
@@ -72,7 +79,8 @@ export default async function SpatialSourcesPage() {
         <CardContent className="p-0">
           <div className="divide-y">
             {sources.map((source) => (
-              <div key={source.id} className="px-6 py-4 space-y-1">
+              <div key={source.id} className="relative px-6 py-4 space-y-1 hover:bg-muted/30">
+                <Link href={`/spatial/sources/${source.id}`} className="absolute inset-0" aria-label={source.name} />
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="font-medium text-sm">{source.name}</p>
@@ -85,6 +93,9 @@ export default async function SpatialSourcesPage() {
                     <Badge variant="outline" className="text-xs">
                       {sourceTypeLabel[source.source_type] ?? source.source_type}
                     </Badge>
+                    {!source.active && (
+                      <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                    )}
                   </div>
                 </div>
                 {source.description && (
@@ -97,6 +108,9 @@ export default async function SpatialSourcesPage() {
                   <span>Coverage: {source.geographic_coverage}</span>
                   <span>CRS: {source.coordinate_system}</span>
                   {source.custodian_name && <span>Custodian: {source.custodian_name}</span>}
+                  {source.last_checked_at && (
+                    <span>Checked: {new Date(source.last_checked_at).toLocaleDateString()}</span>
+                  )}
                   {source.last_successful_import_at && (
                     <span>Last import: {new Date(source.last_successful_import_at).toLocaleDateString()}</span>
                   )}
