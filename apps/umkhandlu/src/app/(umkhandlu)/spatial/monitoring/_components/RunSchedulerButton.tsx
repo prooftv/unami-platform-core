@@ -14,12 +14,7 @@ export function RunSchedulerButton() {
     setPending(true);
     setResult(null);
     try {
-      const res = await fetch('/api/run-spatial-scheduler', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SPATIAL_SCHEDULER_SECRET ?? ''}`,
-        },
-      });
+      const res = await fetch('/api/run-spatial-scheduler', { method: 'GET' });
       const data = await res.json();
       if (res.ok) {
         setResult(`Ran: ${data.ran?.join(', ') ?? 'all pipelines'}`);

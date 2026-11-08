@@ -5,6 +5,7 @@ import {
   CheckSquare,
   Database,
   GitBranch,
+  Globe,
   Inbox,
   LayoutDashboard,
   Layers,
@@ -54,6 +55,7 @@ export const sidebarItems: NavGroup[] = [
       { id: 'spatial-pipelines',  title: 'Pipeline Runs',   url: '/spatial/pipelines',  icon: Activity },
       { id: 'spatial-staging',    title: 'Staging Review',  url: '/spatial/staging',    icon: Inbox },
       { id: 'spatial-monitoring', title: 'Monitoring',      url: '/spatial/monitoring', icon: BarChart3 },
+      { id: 'spatial-cogta',      title: 'COGTA Catalogue', url: '/spatial/cogta',      icon: Globe },
       { id: 'spatial-map',        title: 'Geographic View', url: '/spatial/map',        icon: Map },
     ],
   },
@@ -69,13 +71,6 @@ export const sidebarItems: NavGroup[] = [
   },
   {
     id: 6,
-    label: 'Analytics',
-    items: [
-      { id: 'intel-nodes', title: 'Cross-Node View', url: '/dashboard', icon: BarChart3 },
-    ],
-  },
-  {
-    id: 7,
     label: 'System',
     items: [
       { id: 'settings', title: 'Settings', url: '/settings', icon: Settings },

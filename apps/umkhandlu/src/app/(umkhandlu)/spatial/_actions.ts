@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getOperatorSession } from '@/lib/auth/operator';
+import { inspectService, inspectLayer } from '@/lib/gis/arcgis-connector';
 
 async function requireOperator() {
   const session = await getOperatorSession();
@@ -162,6 +163,71 @@ export async function runHealthCheckAction(sourceId?: string) {
   revalidatePath('/spatial/sources');
   revalidatePath('/spatial/pipelines');
   return { success: true, results };
+}
+
+/**
+ * Inspect the layer catalogue of an ArcGIS source.
+ * Returns layer list and spatial reference from the service root.
+ * Does NOT attempt feature queries — those are blocked from external IPs on COGTA.
+ */
+export async function inspectSourceLayersAction(sourceId: string) {
+  await requireOperator();
+  const supabase = createServiceClient();
+
+  const { data: source } = await supabase
+    .from('spatial_sources')
+    .select('id, name, base_url, source_type')
+    .eq('id', sourceId)
+    .single();
+
+  if (!source?.base_url) return { error: 'Source has no base_url configured.' };
+  if (!source.source_type.startsWith('arcgis')) {
+    return { error: 'Layer inspection is only available for ArcGIS sources.' };
+  }
+
+  const result = await inspectService(source.base_url);
+  if (!result.ok) return { error: result.error.message };
+
+  // Update source with confirmed layer count
+  const now = new Date().toISOString();
+  await supabase.from('spatial_sources').update({
+    last_checked_at: now,
+    updated_at: now,
+  }).eq('id', sourceId);
+
+  revalidatePath(`/spatial/sources/${sourceId}`);
+  return { success: true, layers: result.data.layers, spatialReference: result.data.spatialReference };
+}
+
+/**
+ * Inspect a single layer's field schema.
+ */
+export async function inspectLayerFieldsAction(sourceId: string, layerId: number) {
+  await requireOperator();
+  const supabase = createServiceClient();
+
+  const { data: source } = await supabase
+    .from('spatial_sources')
+    .select('base_url')
+    .eq('id', sourceId)
+    .single();
+
+  if (!source?.base_url) return { error: 'Source has no base_url.' };
+
+  const result = await inspectLayer(source.base_url, layerId);
+  if (!result.ok) return { error: result.error.message };
+
+  return {
+    success: true,
+    layer: {
+      id: result.data.id,
+      name: result.data.name,
+      geometryType: result.data.geometryType,
+      fields: result.data.fields,
+      description: result.data.description,
+      copyrightText: result.data.copyrightText,
+    },
+  };
 }
 
 export async function createDatasetAction(formData: FormData) {

@@ -1,17 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { getOperatorSession } from '@/lib/auth/operator';
 
 export const dynamic = 'force-dynamic';
 
-function authenticate(request: NextRequest): boolean {
-  const secret = process.env.SPATIAL_SCHEDULER_SECRET;
-  if (!secret) return false;
-  const header = request.headers.get('authorization') ?? '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  return token === secret;
-}
-
 export async function GET(request: NextRequest) {
-  if (!authenticate(request)) {
+  const session = await getOperatorSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -19,7 +13,7 @@ export async function GET(request: NextRequest) {
   const serviceKey  = process.env.UMKHANDLU_SUPABASE_SERVICE_ROLE_KEY;
   const schedulerSecret = process.env.SPATIAL_SCHEDULER_SECRET;
 
-  if (!supabaseUrl || !serviceKey || !schedulerSecret) {
+  if (!supabaseUrl || !serviceKey) {
     return NextResponse.json({ error: 'Scheduler not configured' }, { status: 503 });
   }
 
@@ -27,15 +21,13 @@ export async function GET(request: NextRequest) {
   const edgeFnUrl = `${supabaseUrl}/functions/v1/spatial-scheduler?pipeline=${pipeline}`;
 
   try {
-    const res = await fetch(edgeFnUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${serviceKey}`,
-        'x-scheduler-secret': schedulerSecret,
-        'Content-Type': 'application/json',
-      },
-    });
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${serviceKey}`,
+      'Content-Type': 'application/json',
+    };
+    if (schedulerSecret) headers['x-scheduler-secret'] = schedulerSecret;
 
+    const res = await fetch(edgeFnUrl, { method: 'POST', headers });
     const data = await res.json();
     return NextResponse.json({ status: res.status, ...data });
   } catch (e) {
