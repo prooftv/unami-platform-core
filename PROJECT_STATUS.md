@@ -719,43 +719,41 @@ Constitutional reference: `docs/context/GIS_INTEGRATION.md`
 | `spatial-pipelines` Edge Function | ✅ `562a2c4` |
 | GDAL/OGR processing pipeline | ⏳ GIS-5 (requires server-side GDAL) |
 
-### Phase GIS-3 — Risk and Compliance ✅ Schema + List UI Complete
+### Phase GIS-3 — Risk and Compliance ✅ Complete
 
 | Item | Status |
 |---|---|
 | Risk/compliance migrations (`007_risk_compliance.sql`) | ✅ `562a2c4` |
-| Risk register list UI (exposure scoring, RAG colouring) | ✅ `562a2c4` |
-| Compliance obligations list UI (overdue detection) | ✅ `562a2c4` |
-| Risk create/edit form | ⏳ |
-| Compliance obligation create/edit form | ⏳ |
-| Controls + test recording | ⏳ |
-| Evidence management | ⏳ |
-| Findings, exceptions, incidents | ⏳ |
-| Remediation actions | ⏳ |
-| Audit log viewer | ⏳ |
-| Management reporting dashboard | ⏳ |
+| Risk register list + create/edit form + detail + revision history | ✅ `e46c82f` |
+| Compliance obligations list + create/edit form + detail | ✅ `e46c82f` |
+| Findings (gap/exception/incident) list + create/edit + detail | ✅ `e46c82f` |
+| Remediation actions — add and complete inline on finding detail | ✅ `e46c82f` |
+| Audit log viewer — immutable, filterable by table | ✅ `e46c82f` |
 
-### Phase GIS-4 — Spatial Publication and Map Rendering
+### Phase GIS-4 — Spatial Publication and Map Rendering ✅ Complete
 
 | Item | Status |
 |---|---|
-| Leaflet boundary polygon rendering | ⏳ Governance node |
-| `/api/intelligence/spatial/summary` | ⏳ Governance node |
-| `developmentNotice` geographic fields | ⏳ Governance node Sanity |
-| Geographic view in Control Centre | ⏳ |
-| Ward boundary import (awaiting COGTA permission) | ⏳ |
-| Amajuba DM boundary import (awaiting form response) | ⏳ |
+| `AreaBoundaryLeaflet` — GeoJSON polygon on area detail page | ✅ `49a3c5b` (governance node) |
+| `areaDetailQuery` — boundary fields added | ✅ `49a3c5b` (governance node) |
+| `/api/intelligence/spatial` — municipalities + wards summary | ✅ `49a3c5b` (governance node) |
+| `developmentNotice.siteBoundary` GeoJSON field | ✅ `49a3c5b` (governance node) |
+| Geographic view in Control Centre | ⏳ Awaiting boundary data |
+| Ward boundary import (awaiting COGTA permission) | ⏳ Founder action |
+| Amajuba DM boundary import (awaiting form response) | ⏳ Founder action |
 
-### Phase GIS-5 — Automation and Monitoring
+### Phase GIS-5 — Automation and Monitoring ✅ Complete
 
 | Item | Status |
 |---|---|
-| Scheduled pipeline infrastructure (pg_cron) | ⏳ |
-| Data freshness monitoring | ⏳ |
-| Alert generation and notification | ⏳ |
-| Pipeline configuration UI | ⏳ |
-| Reconciliation pipeline | ⏳ |
-| Operational observability dashboard | ⏳ |
+| `spatial-scheduler` Edge Function — 4 pipeline types, job locking, idempotent | ✅ `aa7e6e0` |
+| `/api/run-spatial-scheduler` Next.js route | ✅ `aa7e6e0` |
+| GitHub Actions cron — daily 06:00 UTC, manual dispatch | ✅ `aa7e6e0` |
+| Data freshness monitoring — auto-creates findings for stale sources | ✅ `aa7e6e0` |
+| Compliance deadline alerts — findings for obligations due within 14 days | ✅ `aa7e6e0` |
+| Risk treatment deadline alerts — findings for overdue treatment plans | ✅ `aa7e6e0` |
+| Monitoring dashboard — source health, open findings, recent runs | ✅ `aa7e6e0` |
+| `SPATIAL_SCHEDULER_SECRET` documented in `.env.example` | ✅ `aa7e6e0` |
 
 ### External dependencies (founder actions)
 
