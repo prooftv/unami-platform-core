@@ -38,7 +38,7 @@ for (const fn of FUNCTIONS) {
   console.log(`\nDeploying ${fn}...`);
   try {
     execSync(
-      `npx supabase functions deploy ${fn} --project-ref ${PROJECT_REF}`,
+      `npx supabase functions deploy ${fn} --project-ref ${PROJECT_REF} --yes`,
       {
         cwd: '/workspaces/unami-platform-core',
         env: { ...process.env, SUPABASE_ACCESS_TOKEN: token },
