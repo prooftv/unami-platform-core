@@ -59,8 +59,10 @@ export const sidebarItems: NavGroup[] = [
     id: 5,
     label: 'Risk & Compliance',
     items: [
-      { id: 'risk',       title: 'Risk Register',  url: '/risk',       icon: ShieldAlert },
-      { id: 'compliance', title: 'Compliance',     url: '/compliance', icon: ShieldCheck },
+      { id: 'risk',        title: 'Risk Register',  url: '/risk',        icon: ShieldAlert },
+      { id: 'compliance',  title: 'Compliance',     url: '/compliance',  icon: ShieldCheck },
+      { id: 'findings',    title: 'Findings',       url: '/findings',    icon: CheckSquare },
+      { id: 'audit-log',   title: 'Audit Log',      url: '/audit-log',   icon: GitBranch },
     ],
   },
   {
