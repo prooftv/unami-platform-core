@@ -1,0 +1,29 @@
+name: Spatial Scheduler
+
+on:
+  schedule:
+    # Daily at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      pipeline:
+        description: 'Pipeline to run (all | health-check | freshness-check | compliance-alert | risk-reminder)'
+        required: false
+        default: 'all'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run spatial scheduler
+        run: |
+          PIPELINE="${{ github.event.inputs.pipeline || 'all' }}"
+          response=$(curl -s -o /tmp/scheduler_response.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.SPATIAL_SCHEDULER_SECRET }}" \
+            "${{ secrets.UMKHANDLU_APP_URL }}/api/run-spatial-scheduler?pipeline=${PIPELINE}")
+          echo "HTTP status: $response"
+          cat /tmp/scheduler_response.json
+          if [ "$response" != "200" ]; then
+            echo "Scheduler failed with status $response"
+            exit 1
+          fi

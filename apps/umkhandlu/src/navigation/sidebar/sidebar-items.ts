@@ -48,11 +48,12 @@ export const sidebarItems: NavGroup[] = [
     id: 4,
     label: 'Spatial',
     items: [
-      { id: 'spatial-sources',   title: 'Data Sources',    url: '/spatial/sources',   icon: Database },
-      { id: 'spatial-datasets',  title: 'Datasets',        url: '/spatial/datasets',  icon: Layers },
-      { id: 'spatial-pipelines', title: 'Pipeline Runs',   url: '/spatial/pipelines', icon: Activity },
-      { id: 'spatial-staging',   title: 'Staging Review',  url: '/spatial/staging',   icon: Inbox },
-      { id: 'spatial-map',       title: 'Geographic View', url: '/spatial/map',       icon: Map },
+      { id: 'spatial-sources',    title: 'Data Sources',    url: '/spatial/sources',    icon: Database },
+      { id: 'spatial-datasets',   title: 'Datasets',        url: '/spatial/datasets',   icon: Layers },
+      { id: 'spatial-pipelines',  title: 'Pipeline Runs',   url: '/spatial/pipelines',  icon: Activity },
+      { id: 'spatial-staging',    title: 'Staging Review',  url: '/spatial/staging',    icon: Inbox },
+      { id: 'spatial-monitoring', title: 'Monitoring',      url: '/spatial/monitoring', icon: BarChart3 },
+      { id: 'spatial-map',        title: 'Geographic View', url: '/spatial/map',        icon: Map },
     ],
   },
   {
