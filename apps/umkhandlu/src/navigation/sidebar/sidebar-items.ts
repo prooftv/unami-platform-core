@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Users,
+  BookOpen,
 } from 'lucide-react';
 import type { NavGroup } from '@unami/ui';
 
@@ -78,6 +79,7 @@ export const sidebarItems: NavGroup[] = [
     label: 'System',
     items: [
       { id: 'settings', title: 'Settings', url: '/settings', icon: Settings },
+      { id: 'founders', title: 'Founders Briefing', url: '/founders', icon: BookOpen },
     ],
   },
 ];
