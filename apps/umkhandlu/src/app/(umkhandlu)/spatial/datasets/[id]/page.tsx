@@ -1,0 +1,153 @@
+import { notFound } from 'next/navigation';
+import { PageHeader } from '@unami/ui';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
+import { createServiceClient } from '@/lib/supabase/server';
+import { GeoJSONUpload } from '../_components/GeoJSONUpload';
+
+export const dynamic = 'force-dynamic';
+
+const statusColour: Record<string, string> = {
+  pending:    'bg-gray-100 text-gray-700',
+  processing: 'bg-blue-100 text-blue-800',
+  staged:     'bg-amber-100 text-amber-800',
+  published:  'bg-green-100 text-green-800',
+  rejected:   'bg-red-100 text-red-800',
+  archived:   'bg-gray-200 text-gray-600',
+};
+
+const runStatusColour: Record<string, string> = {
+  running: 'bg-blue-100 text-blue-800',
+  success: 'bg-green-100 text-green-800',
+  failed:  'bg-red-100 text-red-800',
+  partial: 'bg-amber-100 text-amber-800',
+};
+
+interface Props { params: Promise<{ id: string }> }
+
+export default async function DatasetDetailPage({ params }: Props) {
+  const { id } = await params;
+  const supabase = createServiceClient();
+
+  const [{ data: dataset }, { data: runs }] = await Promise.all([
+    supabase
+      .from('spatial_datasets')
+      .select('*, spatial_sources(name, institution, coordinate_system)')
+      .eq('id', id)
+      .single(),
+    supabase
+      .from('spatial_pipeline_runs')
+      .select('id, pipeline_type, status, started_at, completed_at, features_fetched, features_processed, error_message, triggered_by')
+      .eq('dataset_id', id)
+      .order('started_at', { ascending: false })
+      .limit(20),
+  ]);
+
+  if (!dataset) notFound();
+
+  const src = Array.isArray(dataset.spatial_sources)
+    ? (dataset.spatial_sources[0] as { name: string; institution: string; coordinate_system: string } | undefined)
+    : (dataset.spatial_sources as { name: string; institution: string; coordinate_system: string } | null);
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={dataset.name}
+        description={src?.institution ?? ''}
+        actions={<Button variant="outline" asChild><Link href="/spatial/datasets">Back</Link></Button>}
+      />
+
+      <div className="max-w-3xl space-y-6">
+        <div className="grid grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="pt-6 space-y-2 text-sm">
+              <p><span className="text-muted-foreground">Source:</span> {src?.name ?? '—'}</p>
+              <p><span className="text-muted-foreground">CRS:</span> {dataset.crs}</p>
+              <p><span className="text-muted-foreground">Coverage:</span> {dataset.geographic_coverage}</p>
+              {dataset.dataset_date && (
+                <p><span className="text-muted-foreground">Data date:</span> {dataset.dataset_date}</p>
+              )}
+              {dataset.feature_count != null && (
+                <p><span className="text-muted-foreground">Features:</span> {dataset.feature_count}</p>
+              )}
+              {dataset.custodian_name && (
+                <p><span className="text-muted-foreground">Custodian:</span> {dataset.custodian_name}</p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6 flex flex-col items-center justify-center gap-2">
+              <span className={`text-sm px-3 py-1 rounded-full font-medium ${statusColour[dataset.status] ?? ''}`}>
+                {dataset.status}
+              </span>
+              <span className={`text-xs font-medium ${dataset.permission_status === 'confirmed' ? 'text-green-600' : 'text-amber-600'}`}>
+                Permission: {dataset.permission_status}
+              </span>
+              {dataset.published_at && (
+                <p className="text-xs text-muted-foreground">
+                  Published {new Date(dataset.published_at).toLocaleDateString()}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {dataset.description && (
+          <Card>
+            <CardContent className="pt-6 text-sm">{dataset.description}</CardContent>
+          </Card>
+        )}
+
+        {dataset.provenance && (
+          <Card>
+            <CardHeader><CardTitle>Provenance</CardTitle></CardHeader>
+            <CardContent className="text-sm">{dataset.provenance}</CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader><CardTitle>Ingest Data</CardTitle></CardHeader>
+          <CardContent>
+            <GeoJSONUpload datasetId={dataset.id} datasetStatus={dataset.status} />
+          </CardContent>
+        </Card>
+
+        {runs && runs.length > 0 && (
+          <Card>
+            <CardHeader><CardTitle>Pipeline History</CardTitle></CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y">
+                {runs.map((run) => {
+                  const duration = run.completed_at
+                    ? Math.round((new Date(run.completed_at).getTime() - new Date(run.started_at).getTime()) / 1000)
+                    : null;
+                  return (
+                    <div key={run.id} className="px-6 py-3 flex items-center justify-between gap-4 text-sm">
+                      <div className="min-w-0 space-y-0.5">
+                        <p>{run.pipeline_type}</p>
+                        {run.features_processed > 0 && (
+                          <p className="text-xs text-muted-foreground">{run.features_processed} features processed</p>
+                        )}
+                        {run.error_message && (
+                          <p className="text-xs text-destructive">{run.error_message}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 text-xs text-muted-foreground">
+                        {duration != null && <span>{duration}s</span>}
+                        <span className={`px-2 py-0.5 rounded-full font-medium ${runStatusColour[run.status] ?? ''}`}>
+                          {run.status}
+                        </span>
+                        <span>{new Date(run.started_at).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

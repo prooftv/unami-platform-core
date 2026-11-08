@@ -266,6 +266,118 @@ export async function createDatasetAction(formData: FormData) {
   return { success: true };
 }
 
+/**
+ * Ingest a GeoJSON FeatureCollection into the staging pipeline.
+ * Validates geometry presence, records a pipeline run, and stages all features
+ * for operator review. Does not publish — staging review is always required.
+ */
+export async function ingestGeoJSONAction(
+  datasetId: string,
+  geojsonText: string,
+) {
+  await requireOperator();
+  const supabase = createServiceClient();
+
+  let collection: { type: string; features: unknown[] };
+  try {
+    collection = JSON.parse(geojsonText);
+  } catch {
+    return { error: 'Invalid JSON.' };
+  }
+
+  if (collection.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
+    return { error: 'Expected a GeoJSON FeatureCollection.' };
+  }
+
+  if (collection.features.length === 0) {
+    return { error: 'FeatureCollection contains no features.' };
+  }
+
+  if (collection.features.length > 10_000) {
+    return { error: 'FeatureCollection exceeds 10,000 features. Split into smaller files.' };
+  }
+
+  const started = new Date().toISOString();
+
+  // Create pipeline run record
+  const { data: run, error: runErr } = await supabase
+    .from('spatial_pipeline_runs')
+    .insert({
+      pipeline_type: 'gdal-process',
+      dataset_id: datasetId,
+      status: 'running',
+      triggered_by: 'operator',
+      started_at: started,
+      log: [{ ts: started, msg: `Ingesting ${collection.features.length} features from operator upload` }],
+    })
+    .select('id')
+    .single();
+
+  if (runErr || !run) return { error: 'Failed to create pipeline run.' };
+
+  // Stage each feature
+  type RawFeature = { type: string; geometry: unknown; properties: Record<string, unknown> | null };
+  const staged = (collection.features as RawFeature[]).map((f) => {
+    const geom = f.geometry as { type?: string; coordinates?: unknown } | null;
+    const hasGeom = !!geom?.type && geom.coordinates !== undefined;
+    const issues: string[] = [];
+    if (!hasGeom) issues.push('Missing or null geometry');
+    if (geom && !['Point','MultiPoint','LineString','MultiLineString','Polygon','MultiPolygon','GeometryCollection'].includes(geom.type ?? '')) {
+      issues.push(`Unknown geometry type: ${geom.type}`);
+    }
+    return {
+      dataset_id: datasetId,
+      pipeline_run_id: run.id,
+      feature_geojson: geom ?? {},
+      feature_properties: f.properties ?? {},
+      geometry_valid: issues.length === 0,
+      geometry_issues: issues.length ? issues : null,
+      operator_status: 'pending',
+    };
+  });
+
+  // Insert in batches of 500
+  let inserted = 0;
+  for (let i = 0; i < staged.length; i += 500) {
+    const { error: insErr } = await supabase
+      .from('spatial_staged_features')
+      .insert(staged.slice(i, i + 500));
+    if (insErr) {
+      await supabase.from('spatial_pipeline_runs').update({
+        status: 'failed',
+        completed_at: new Date().toISOString(),
+        error_message: insErr.message,
+      }).eq('id', run.id);
+      return { error: `Failed to stage features: ${insErr.message}` };
+    }
+    inserted += Math.min(500, staged.length - i);
+  }
+
+  const invalid = staged.filter((f) => !f.geometry_valid).length;
+  const completed = new Date().toISOString();
+
+  await supabase.from('spatial_pipeline_runs').update({
+    status: 'success',
+    completed_at: completed,
+    features_fetched: staged.length,
+    features_processed: inserted,
+    log: [
+      { ts: started, msg: `Ingesting ${staged.length} features from operator upload` },
+      { ts: completed, msg: `Staged ${inserted} features. ${invalid} with geometry issues.` },
+    ],
+  }).eq('id', run.id);
+
+  // Move dataset to staged status
+  await supabase.from('spatial_datasets')
+    .update({ status: 'staged', updated_at: completed })
+    .eq('id', datasetId);
+
+  revalidatePath('/spatial/staging');
+  revalidatePath('/spatial/datasets');
+  revalidatePath('/spatial/pipelines');
+  return { success: true, staged: inserted, invalid };
+}
+
 export async function reviewStagedFeaturesAction(
   datasetId: string,
   featureIds: string[],

@@ -74,7 +74,8 @@ export default async function DatasetsPage() {
               {rows.map((d) => {
                 const src = d.spatial_sources as { name: string; institution: string } | null;
                 return (
-                  <div key={d.id} className="px-6 py-4 space-y-1">
+                  <div key={d.id} className="relative px-6 py-4 space-y-1 hover:bg-muted/30">
+                    <Link href={`/spatial/datasets/${d.id}`} className="absolute inset-0" aria-label={d.name} />
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <p className="font-medium text-sm">{d.name}</p>
