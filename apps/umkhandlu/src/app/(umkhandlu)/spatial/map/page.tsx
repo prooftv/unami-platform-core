@@ -1,7 +1,7 @@
 import nextDynamic from 'next/dynamic';
 import { PageHeader } from '@unami/ui';
 import { createServiceClient } from '@/lib/supabase/server';
-import type { PublishedDataset } from './_components/SpatialMap';
+import type { PublishedDataset, NoticeMarker } from './_components/SpatialMap';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,13 +72,33 @@ export default async function SpatialMapPage() {
     };
   });
 
+  // Notices with coordinates — shown as map overlay markers
+  const { data: noticeRows } = await supabase
+    .from('notices')
+    .select('id, type, title, status, is_statutory, comment_deadline, ward_ref, latitude, longitude')
+    .in('status', ['published', 'open'])
+    .not('latitude', 'is', null)
+    .not('longitude', 'is', null);
+
+  const noticeMarkers: NoticeMarker[] = (noticeRows ?? []).map((n) => ({
+    id: n.id,
+    type: n.type as string,
+    title: n.title,
+    status: n.status,
+    is_statutory: n.is_statutory,
+    comment_deadline: n.comment_deadline,
+    ward_ref: n.ward_ref,
+    latitude: n.latitude as number,
+    longitude: n.longitude as number,
+  }));
+
   return (
     <div className="space-y-4">
       <PageHeader
         title="Geographic View"
-        description="Published spatial datasets for Amajuba District. Only approved and published data is displayed."
+        description="Published spatial datasets and active notices for Amajuba District."
       />
-      <SpatialMap datasets={publishedDatasets} />
+      <SpatialMap datasets={publishedDatasets} notices={noticeMarkers} />
     </div>
   );
 }

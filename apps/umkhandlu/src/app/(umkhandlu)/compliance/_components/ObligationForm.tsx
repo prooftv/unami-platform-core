@@ -22,9 +22,13 @@ interface Obligation {
   source: string; responsible_party: string; due_date: string | null;
   recurrence: string | null; status: string;
 }
-interface Props { obligation?: Obligation }
+interface Prefill {
+  identifier?: string; title?: string; source?: string;
+  responsible_party?: string; due_date?: string;
+}
+interface Props { obligation?: Obligation; prefill?: Prefill }
 
-export function ObligationForm({ obligation }: Props) {
+export function ObligationForm({ obligation, prefill }: Props) {
   const router = useRouter();
   const isEdit = !!obligation;
 
@@ -48,7 +52,7 @@ export function ObligationForm({ obligation }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="identifier">Identifier *</Label>
-                <Input id="identifier" name="identifier" required defaultValue={obligation?.identifier} placeholder="e.g. C-001" />
+                <Input id="identifier" name="identifier" required defaultValue={obligation?.identifier ?? prefill?.identifier} placeholder="e.g. C-001" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="status">Status</Label>
@@ -62,7 +66,7 @@ export function ObligationForm({ obligation }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="title">Title *</Label>
-              <Input id="title" name="title" required defaultValue={obligation?.title} />
+              <Input id="title" name="title" required defaultValue={obligation?.title ?? prefill?.title} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="description">Description</Label>
@@ -76,16 +80,16 @@ export function ObligationForm({ obligation }: Props) {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="source">Source (legislation / regulation / policy) *</Label>
-              <Input id="source" name="source" required defaultValue={obligation?.source} placeholder="e.g. MFMA s.65, POPIA s.22" />
+              <Input id="source" name="source" required defaultValue={obligation?.source ?? prefill?.source} placeholder="e.g. MFMA s.65, POPIA s.22" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="responsible_party">Responsible party *</Label>
-              <Input id="responsible_party" name="responsible_party" required defaultValue={obligation?.responsible_party} />
+              <Input id="responsible_party" name="responsible_party" required defaultValue={obligation?.responsible_party ?? prefill?.responsible_party} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="due_date">Due date</Label>
-                <Input id="due_date" name="due_date" type="date" defaultValue={obligation?.due_date ?? ''} />
+                <Input id="due_date" name="due_date" type="date" defaultValue={obligation?.due_date ?? prefill?.due_date ?? ''} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="recurrence">Recurrence</Label>

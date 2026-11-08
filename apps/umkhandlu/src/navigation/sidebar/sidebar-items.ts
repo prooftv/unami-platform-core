@@ -4,6 +4,7 @@ import {
   Briefcase,
   CheckSquare,
   Database,
+  FileText,
   GitBranch,
   Globe,
   Inbox,
@@ -61,16 +62,23 @@ export const sidebarItems: NavGroup[] = [
   },
   {
     id: 5,
-    label: 'Risk & Compliance',
+    label: 'Governance',
     items: [
-      { id: 'risk',        title: 'Risk Register',  url: '/risk',        icon: ShieldAlert },
-      { id: 'compliance',  title: 'Compliance',     url: '/compliance',  icon: ShieldCheck },
-      { id: 'findings',    title: 'Findings',       url: '/findings',    icon: CheckSquare },
-      { id: 'audit-log',   title: 'Audit Log',      url: '/audit-log',   icon: GitBranch },
+      { id: 'notices', title: 'Notices', url: '/notices', icon: FileText },
     ],
   },
   {
     id: 6,
+    label: 'Risk & Compliance',
+    items: [
+      { id: 'risk',       title: 'Risk Register', url: '/risk',       icon: ShieldAlert },
+      { id: 'compliance', title: 'Compliance',    url: '/compliance', icon: ShieldCheck },
+      { id: 'findings',   title: 'Findings',      url: '/findings',   icon: CheckSquare },
+      { id: 'audit-log',  title: 'Audit Log',     url: '/audit-log',  icon: GitBranch },
+    ],
+  },
+  {
+    id: 7,
     label: 'System',
     items: [
       { id: 'settings', title: 'Settings', url: '/settings', icon: Settings },

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { Map as LeafletMap, GeoJSON as LeafletGeoJSON } from 'leaflet';
+import Link from 'next/link';
+import type { Map as LeafletMap, GeoJSON as LeafletGeoJSON, Marker } from 'leaflet';
 
 export interface PublishedDataset {
   id: string;
@@ -10,6 +11,18 @@ export interface PublishedDataset {
   feature_count: number | null;
   dataset_date: string | null;
   geojson: GeoJSONFeatureCollection | null;
+}
+
+export interface NoticeMarker {
+  id: string;
+  type: string;
+  title: string;
+  status: string;
+  is_statutory: boolean;
+  comment_deadline: string | null;
+  ward_ref: string | null;
+  latitude: number;
+  longitude: number;
 }
 
 interface GeoJSONFeatureCollection {
@@ -25,6 +38,7 @@ interface GeoJSONFeature {
 
 interface Props {
   datasets: PublishedDataset[];
+  notices: NoticeMarker[];
 }
 
 const AMAJUBA_CENTRE: [number, number] = [-28.05, 29.0];
@@ -35,19 +49,26 @@ const LAYER_COLOURS = [
   '#0891b2', '#be185d', '#65a30d', '#ea580c', '#6366f1',
 ];
 
-export function SpatialMap({ datasets }: Props) {
+const noticeColour = (isStatutory: boolean) => isStatutory ? '#dc2626' : '#2563eb';
+
+export function SpatialMap({ datasets, notices }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRefs = useRef<Map<string, LeafletGeoJSON>>(new Map());
+  const noticeMarkerRefs = useRef<Marker[]>([]);
+
   const [visibleLayers, setVisibleLayers] = useState<Set<string>>(
     new Set(datasets.map((d) => d.id)),
   );
+  const [showNotices, setShowNotices] = useState(true);
   const [selectedFeature, setSelectedFeature] = useState<{
     datasetName: string;
     properties: Record<string, unknown>;
   } | null>(null);
+  const [selectedNotice, setSelectedNotice] = useState<NoticeMarker | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
+  // Initialise map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     let cancelled = false;
@@ -57,7 +78,6 @@ export function SpatialMap({ datasets }: Props) {
       await import('leaflet/dist/leaflet.css');
       if (cancelled || !containerRef.current) return;
 
-      // Fix webpack broken default icon paths
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
@@ -66,10 +86,7 @@ export function SpatialMap({ datasets }: Props) {
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       });
 
-      const map = L.map(containerRef.current!, {
-        center: AMAJUBA_CENTRE,
-        zoom: AMAJUBA_ZOOM,
-      });
+      const map = L.map(containerRef.current!, { center: AMAJUBA_CENTRE, zoom: AMAJUBA_ZOOM });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -84,6 +101,7 @@ export function SpatialMap({ datasets }: Props) {
     return () => { cancelled = true; };
   }, []);
 
+  // Sync dataset layers
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
 
@@ -104,22 +122,14 @@ export function SpatialMap({ datasets }: Props) {
         if (!dataset.geojson?.features?.length) return;
 
         const layer = L.geoJSON(dataset.geojson as Parameters<typeof L.geoJSON>[0], {
-          style: () => ({
-            color: colour, weight: 2, opacity: 0.8,
-            fillOpacity: 0.15, fillColor: colour,
-          }),
+          style: () => ({ color: colour, weight: 2, opacity: 0.8, fillOpacity: 0.15, fillColor: colour }),
           pointToLayer: (_f, latlng) =>
-            L.circleMarker(latlng, {
-              radius: 6, fillColor: colour, color: colour,
-              weight: 1, opacity: 1, fillOpacity: 0.8,
-            }),
+            L.circleMarker(latlng, { radius: 6, fillColor: colour, color: colour, weight: 1, opacity: 1, fillOpacity: 0.8 }),
           onEachFeature: (feature, fl) => {
-            fl.on('click', () =>
-              setSelectedFeature({
-                datasetName: dataset.name,
-                properties: feature.properties ?? {},
-              }),
-            );
+            fl.on('click', () => {
+              setSelectedFeature({ datasetName: dataset.name, properties: feature.properties ?? {} });
+              setSelectedNotice(null);
+            });
           },
         });
 
@@ -130,6 +140,40 @@ export function SpatialMap({ datasets }: Props) {
 
     syncLayers();
   }, [mapReady, datasets, visibleLayers]);
+
+  // Sync notice markers
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return;
+
+    async function syncNotices() {
+      const L = (await import('leaflet')).default;
+      const map = mapRef.current!;
+
+      noticeMarkerRefs.current.forEach((m) => map.removeLayer(m));
+      noticeMarkerRefs.current = [];
+
+      if (!showNotices) return;
+
+      notices.forEach((notice) => {
+        const colour = noticeColour(notice.is_statutory);
+        const icon = L.divIcon({
+          className: '',
+          html: `<div style="width:12px;height:12px;border-radius:50%;background:${colour};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4)"></div>`,
+          iconSize: [12, 12],
+          iconAnchor: [6, 6],
+        });
+        const marker = L.marker([notice.latitude, notice.longitude], { icon });
+        marker.on('click', () => {
+          setSelectedNotice(notice);
+          setSelectedFeature(null);
+        });
+        marker.addTo(map);
+        noticeMarkerRefs.current.push(marker);
+      });
+    }
+
+    syncNotices();
+  }, [mapReady, notices, showNotices]);
 
   function toggleLayer(id: string) {
     setVisibleLayers((prev) => {
@@ -175,9 +219,9 @@ export function SpatialMap({ datasets }: Props) {
             </button>
           </div>
 
-          {datasets.length === 0 && (
+          {datasets.length === 0 && notices.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              No published datasets. Approve and publish a staged dataset to display it here.
+              No published datasets. Upload and approve a dataset to display it here.
             </p>
           )}
 
@@ -220,8 +264,32 @@ export function SpatialMap({ datasets }: Props) {
               ))}
             </div>
           )}
+
+          {/* Notices overlay toggle */}
+          <div className="pt-2 border-t">
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="layer-notices"
+                checked={showNotices}
+                onChange={() => setShowNotices((v) => !v)}
+                className="mt-0.5 rounded shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <label htmlFor="layer-notices" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
+                  <span className="inline-flex gap-0.5">
+                    <span className="inline-block size-2.5 rounded-full shrink-0 bg-red-600" />
+                    <span className="inline-block size-2.5 rounded-full shrink-0 bg-blue-600" />
+                  </span>
+                  <span>Notices {notices.length > 0 ? `(${notices.length})` : '(none)'}</span>
+                </label>
+                <p className="text-xs text-muted-foreground pl-6">Red = statutory · Blue = governance</p>
+              </div>
+            </div>
+          </div>
         </div>
 
+        {/* Selected dataset feature inspector */}
         {selectedFeature && (
           <div className="rounded-lg border bg-card p-3 space-y-2">
             <div className="flex items-center justify-between">
@@ -239,6 +307,35 @@ export function SpatialMap({ datasets }: Props) {
                   </div>
                 ))}
             </div>
+          </div>
+        )}
+
+        {/* Selected notice inspector */}
+        {selectedNotice && (
+          <div className="rounded-lg border bg-card p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span
+                  className="inline-block size-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: noticeColour(selectedNotice.is_statutory) }}
+                />
+                <p className="text-sm font-medium truncate">{selectedNotice.title}</p>
+              </div>
+              <button onClick={() => setSelectedNotice(null)} className="text-xs text-muted-foreground hover:text-foreground shrink-0">✕</button>
+            </div>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p className="capitalize">{selectedNotice.type.replace(/-/g, ' ')} · {selectedNotice.status}</p>
+              {selectedNotice.ward_ref && <p>Ward: {selectedNotice.ward_ref}</p>}
+              {selectedNotice.comment_deadline && (
+                <p>Deadline: {new Date(selectedNotice.comment_deadline).toLocaleDateString()}</p>
+              )}
+            </div>
+            <Link
+              href={`/notices/${selectedNotice.id}`}
+              className="text-xs text-blue-600 hover:underline"
+            >
+              View notice →
+            </Link>
           </div>
         )}
 
