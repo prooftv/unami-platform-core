@@ -19,7 +19,55 @@ that serves the 2027 launch.
 
 ---
 
-## Two-System Architecture — Preserved
+## How the GIS and Governance Node Connect
+
+### 1. Unami Control Centre — Spatial and Intelligence Infrastructure
+
+Unami Control Centre owns and operates the shared spatial and intelligence infrastructure. This includes the spatial source registry, geographic datasets, ingestion and validation pipelines, staging and publication workflows, approved geographic boundaries, GIS mapping, platform-level monitoring, and risk and compliance infrastructure.
+
+It provides the geographic foundation against which information from governance nodes and external data sources can be understood and connected.
+
+The Control Centre aggregates information from Governance Nodes through defined, read-only API contracts. It does not take ownership of their governance records or administer their institutional workflows.
+
+### 2. Umkhandlu Governance Node — Operational Governance Information
+
+Umkhandlu owns and maintains its operational governance information through its own data models, administrative interfaces and workflows.
+
+This includes governance records, notices, development matters, projects, activities, participation, evidence, institutional information and governance histories.
+
+The node maintains geographic associations on its records using the shared GeoRef model. Geographic information may reference a district, municipality, ward, traditional-authority area, locality or coordinates, depending on the accuracy and availability of the underlying information.
+
+The Governance Node exposes these records and their geographic references through its intelligence APIs, including spatial summaries and record-level activity information.
+
+### 3. Shared Geographic Reference Model
+
+The two systems use a shared geographic reference vocabulary to connect information without sharing ownership of their underlying records.
+
+The GeoRef contract provides record identity, record type, geographic context and relevant temporal information. Geographic references are resolved against the Control Centre's published spatial datasets.
+
+Where precise coordinates are unavailable, records may still be associated with verified administrative or locality references. Geographic precision and source confidence must be retained rather than inferred.
+
+### 4. Unified Geographic Intelligence Experience
+
+The Control Centre brings published geography and aggregated Governance Node information into a unified spatial experience.
+
+This allows geographic boundaries, infrastructure, development projects, governance activity, statutory processes, spatial risks, compliance matters and supporting evidence to be viewed in their relevant geographic context.
+
+Each information layer retains its originating system, record identity, provenance and ownership. Related records can be cross-referenced without creating duplicate authoritative records or transferring responsibility between systems.
+
+### 5. System Ownership and Operational Boundaries
+
+The Control Centre owns the shared spatial and intelligence infrastructure.
+
+The Governance Node owns its governance information and operational workflows.
+
+The Control Centre reads and aggregates node information; it does not write governance records into the node. The node consumes the published geographic references it needs; it does not need to duplicate the Control Centre's spatial infrastructure.
+
+Together, these systems provide a connected geographic governance intelligence capability while preserving their distinct administrative, data and operational responsibilities.
+
+---
+
+## Two-System Architecture — Technical
 
 **Umkhandlu Governance Node** (`umkhandlu.unamifoundation.org` / `prooftv/Umkhandlu`)
 - Owns all geographic content: area listings, boundaries, project-to-geography relationships
