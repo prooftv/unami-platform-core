@@ -2,7 +2,7 @@
 
 Constitutional reference — Unami Platform Core + Umkhandlu Governance Node
 Status: Active implementation workstream
-Last updated: 2026-11-09
+Last updated: 2026-11-12
 Mandate: Full lifecycle management, end-to-end automation, risk and compliance capability
 
 ---
@@ -613,12 +613,125 @@ Completeness of geographic coverage depends on the actual records maintained in 
 
 | Step | What | Status |
 |---|---|---|
-| Leaflet boundary polygon rendering | Governance node | ⏳ |
+| Leaflet boundary polygon rendering | Governance node | ✅ |
 | `/api/intelligence/spatial/summary` with `geoRefs[]` | Governance node | ✅ |
 | `developmentNotice` geographic fields | Governance node Sanity | ⏳ |
+| `/map` page — full-screen map, mobile bottom drawer, filter/search panel | Governance node | ✅ |
+| `/map` build fix — `ssr:false` client wrapper `GovernanceMapClient` | Governance node | ✅ |
 | Geographic view in Control Centre | `apps/umkhandlu` | ⏳ |
-| Ward boundary import (COGTA data) | Governance node | ⏳ (awaiting data) |
+| Ward boundary import (COGTA data) | Governance node | ⏳ (awaiting COGTA form approval) |
 | Amajuba DM boundary import | Governance node | ⏳ (awaiting form response) |
+| **Phase A — Place-first interaction** | Governance node `/map` | ⏳ Active |
+| **Phase B — COGTA layer toggles** | Governance node `/map` | ⏳ After COGTA approval |
+| **Phase C — Ward-level filtering** | Governance node `/map` | ⏳ After ward boundaries |
+
+---
+
+## Governance Node `/map` — Spatial Dashboard Roadmap
+
+### Current state (2026-11-12)
+
+| Capability | State |
+|---|---|
+| Full-screen map, mobile-responsive | ✅ Live |
+| Bottom drawer on mobile (open) | ✅ Live |
+| Bottom drawer close | ❌ Bug — toggle button hidden behind open drawer |
+| Filter pills (Records / Notices / Campaigns) | ✅ Live |
+| Search input | ✅ Live |
+| Municipality dropdown | ✅ Live |
+| Item list → fly to marker | ✅ Live |
+| District + LM boundaries rendered | ✅ Live (DPME, reference permission) |
+| Ward boundaries | ❌ Not available — awaiting COGTA form approval |
+| Click boundary → governance context panel | ❌ Phase A — not yet built |
+| COGTA data layer toggles | ❌ Phase B — awaiting COGTA form approval |
+| Ward-level filtering | ❌ Phase C — awaiting ward boundaries |
+
+### Data state (2026-11-12)
+
+| Data | State |
+|---|---|
+| Governance records with geopoints | 0 — records reference areas, areas have geopoints |
+| Areas with geopoints | Exists — Khathide, Mndozo, KwaGudlucingo need populating |
+| Areas with boundaries | 2 published (district + 3 LMs via DPME) |
+| Ward boundaries | None — COGTA form not yet submitted |
+| COGTA FeatureServers | 9 sources registered, service roots reachable, query endpoints return 502 |
+| spatial_imports | Empty — no features ingested yet |
+
+### COGTA investigation findings (2026-11-12)
+
+- 9 COGTA sources registered in Control Centre, all `permission_classification: pending`
+- COGTA stated position: transparent for use by willing organisations with proper attribution
+- Access mechanism: formal Microsoft Forms data request (KZN COGTA Data and Map Request Form)
+- Form URL: `https://forms.cloud.microsoft/pages/responsepage.aspx?id=2sAsy_V1WE2rCRZ90-lTc8uciLXY2fBEvP3Iq0efCSxUN0dIME5KMzk4STdJQ0RZTDJMMlZNOUc0Ny4u`
+- Form conditions: copyright remains with COGTA, no 3rd-party redistribution without GIS Manager written permission, attribution mandatory in all outputs, data locked to stated purpose, COGTA may reject or redirect to actual custodian
+- Permission classification stays `pending` until form submitted AND approved
+- Infrastructure 2022 source stays `restricted` — water/sanitation restriction from Amajuba DM is independent
+- COGTA GIS server (`giswebmaps1.kzncogta.gov.za`) service roots accessible, query endpoints return 502 — IP-level block, not resolved by form submission alone
+- COGTA form draft prepared — see COGTA Form Submission section below
+
+### COGTA Form Submission — Draft
+
+**Status:** Draft prepared, not yet submitted. Founder action required.
+
+| Field | Value |
+|---|---|
+| Company name | Unami Foundation NPC |
+| Contact person | Bhekithemba Simelane |
+| Telephone | 072 700 2502 |
+| Email | info@unamifoundation.org |
+| Type of Request | Data |
+
+**Purpose of Request:**
+Community governance intelligence and spatial planning support. The data will be used to build a read-only public governance platform that displays spatial context alongside community records, development notices, and governance activities across KwaZulu-Natal. No commercial use. No redistribution. Attribution to KZN COGTA will appear on all map outputs and in the platform's data provenance disclosure.
+
+**Description of Request:**
+We are requesting access to the following datasets from the KZN COGTA GIS infrastructure for use in a community governance platform serving traditional authority and municipal communities across KwaZulu-Natal:
+
+- Ward Profile V3 — ward boundaries, ward profiles, district municipal boundaries (SDE.DistrictMunicipalBoundary2021)
+- Disaster Incidents — point locations of recorded disaster incidents
+- Flood Risk — municipal flood risk indicators (SRK_Munic_Flood_Related_Indicators)
+- Disaster Risk Reduction ILIS — PDMC flood incidents, affected schools and health facilities
+- Land Use Scheme Pillar 2026 — land use scheme layers relevant to community planning
+- Land Tenure Component v2 — land tenure classification layers
+- Road Transport — road network layers
+
+Preferred format: GeoJSON or Shapefile. Coordinate system: WGS84 (EPSG:4326). We are also requesting API access to the FeatureServer endpoints at giswebmaps1.kzncogta.gov.za if available.
+
+**All acknowledgements (Q9–Q14):** Yes
+
+**Action required:** Founder to submit form. Record submission date in `notes` field of each COGTA source record in Control Centre DB.
+
+### Phase A — Place-first interaction (active)
+
+Goal: click/tap a boundary on the map → panel shows everything associated with that place.
+
+| Step | What | Status |
+|---|---|---|
+| Fix mobile drawer close bug | Toggle button hidden behind open drawer | ⏳ |
+| Boundary click handler | `addBoundaries` fires `onSelectBoundary` callback | ⏳ |
+| `MapArea` interface | Boundary identity, area level, municipality, induna, slug | ⏳ |
+| Place context panel | Area name, level, municipality, induna, associated records/notices/campaigns | ⏳ |
+| Area page link | Link from panel to `/areas/[slug]` | ⏳ |
+| Pass area data from page | `page.tsx` GROQ query extended with induna + area-level record counts | ⏳ |
+
+### Phase B — COGTA layer toggles (blocked on COGTA approval)
+
+| Step | What | Status |
+|---|---|---|
+| Layer toggle UI | Sidebar section: available layers, locked layers with status | ⏳ |
+| Flood risk layer | Polygon overlay, toggleable | ⏳ (awaiting data) |
+| Disaster incidents layer | Point overlay, toggleable | ⏳ (awaiting data) |
+| Ward boundaries layer | Polygon overlay, toggleable | ⏳ (awaiting data) |
+| Feature click → attributes + provenance | Per-feature panel with source attribution | ⏳ |
+
+### Phase C — Ward-level filtering (blocked on ward boundaries)
+
+| Step | What | Status |
+|---|---|---|
+| Ward filter dropdown | Filter all content by ward number | ⏳ |
+| Cross-layer analysis | Records within flood risk zones | ⏳ |
+
+---
 
 ### Next Milestone — Amajuba Governance Data Population and Geographic Coverage
 
@@ -634,6 +747,14 @@ back to its authoritative governance record.
 | Ward and locality identifiers consistent across records | Consistent |
 | Map feature → authoritative governance record navigation | Working |
 | Source attribution visible on every map feature | Implemented |
+
+**Immediate unblocking actions:**
+
+1. Submit COGTA data request form (founder action)
+2. Add geopoints to Sanity areas: Khathide, Mndozo, KwaGudlucingo
+3. Remove generic centroid coordinates from 2 Sanity notices (false precision)
+4. Fix mobile drawer close bug on `/map`
+5. Build Phase A place-first boundary click interaction
 
 **Four technical refinements required before this milestone is complete:**
 
