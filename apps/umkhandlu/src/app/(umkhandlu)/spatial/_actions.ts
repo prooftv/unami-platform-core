@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getOperatorSession } from '@/lib/auth/operator';
 import { inspectService, inspectLayer } from '@/lib/gis/arcgis-connector';
+import type { PermissionClassification } from '@/lib/gis/spatial-sources-fetcher';
 
 async function requireOperator() {
   const session = await getOperatorSession();
@@ -11,73 +12,248 @@ async function requireOperator() {
   return session;
 }
 
+// ---------------------------------------------------------------------------
+// Permission enforcement
+// ---------------------------------------------------------------------------
+
+// Classifications that block ingestion regardless of context
+const BLOCKS_INGESTION: PermissionClassification[] = [
+  'restricted', 'prohibited', 'pending', 'reference', 'display',
+];
+
+// Permitted operations per classification
+const PERMITTED_OPS: Record<PermissionClassification, string[]> = {
+  reference:    [],
+  display:      ['display'],
+  internal:     ['display', 'ingest', 'process'],
+  download:     ['display', 'ingest', 'process', 'download'],
+  redistribute: ['display', 'ingest', 'process', 'download', 'publish', 'redistribute'],
+  restricted:   [],
+  prohibited:   [],
+  pending:      [],
+};
+
+function canPerform(classification: PermissionClassification, operation: string): boolean {
+  return PERMITTED_OPS[classification]?.includes(operation) ?? false;
+}
+
+// Returns an error string if ingestion is blocked, null if permitted.
+// Enforces: most restrictive permission prevails; dataset cannot override source restriction.
+async function checkIngestionPermission(
+  supabase: ReturnType<typeof createServiceClient>,
+  datasetId: string,
+): Promise<string | null> {
+  const { data: dataset } = await supabase
+    .from('spatial_datasets')
+    .select('id, name, permission_classification, source_id')
+    .eq('id', datasetId)
+    .single();
+
+  if (!dataset) return 'Dataset not found.';
+
+  const datasetClass = (dataset.permission_classification ?? 'pending') as PermissionClassification;
+
+  const { data: source } = await supabase
+    .from('spatial_sources')
+    .select('id, name, permission_classification, restriction_authority, restriction_basis')
+    .eq('id', dataset.source_id)
+    .single();
+
+  if (!source) return 'Source not found for dataset.';
+
+  const sourceClass = (source.permission_classification ?? 'pending') as PermissionClassification;
+
+  // Source-level restriction always prevails — cannot be overridden by dataset
+  if (sourceClass === 'restricted') {
+    return `Ingestion blocked: source "${source.name}" is restricted. Authority: ${source.restriction_authority ?? 'not recorded'}. Basis: ${source.restriction_basis ?? 'not recorded'}.`;
+  }
+  if (sourceClass === 'prohibited') {
+    return `Ingestion blocked: source "${source.name}" is prohibited.`;
+  }
+
+  // Dataset-level check
+  if (BLOCKS_INGESTION.includes(datasetClass)) {
+    return `Ingestion blocked: dataset permission classification is "${datasetClass}". Only internal, download or redistribute permit ingestion.`;
+  }
+
+  // Source must also permit ingestion
+  if (!canPerform(sourceClass, 'ingest')) {
+    return `Ingestion blocked: source permission classification is "${sourceClass}". Only internal, download or redistribute permit ingestion.`;
+  }
+
+  return null;
+}
+
+async function checkPublicationPermission(
+  supabase: ReturnType<typeof createServiceClient>,
+  datasetId: string,
+): Promise<string | null> {
+  const { data: dataset } = await supabase
+    .from('spatial_datasets')
+    .select('id, name, permission_classification, source_id')
+    .eq('id', datasetId)
+    .single();
+
+  if (!dataset) return 'Dataset not found.';
+
+  const datasetClass = (dataset.permission_classification ?? 'pending') as PermissionClassification;
+
+  const { data: source } = await supabase
+    .from('spatial_sources')
+    .select('id, name, permission_classification, restriction_authority')
+    .eq('id', dataset.source_id)
+    .single();
+
+  if (!source) return 'Source not found for dataset.';
+
+  const sourceClass = (source.permission_classification ?? 'pending') as PermissionClassification;
+
+  if (sourceClass === 'restricted') {
+    return `Publication blocked: source "${source.name}" is restricted. Authority: ${source.restriction_authority ?? 'not recorded'}.`;
+  }
+  if (sourceClass === 'prohibited') {
+    return `Publication blocked: source "${source.name}" is prohibited.`;
+  }
+  if (!canPerform(sourceClass, 'publish')) {
+    return `Publication blocked: source permission classification is "${sourceClass}". Only redistribute permits publication.`;
+  }
+  if (!canPerform(datasetClass, 'publish')) {
+    return `Publication blocked: dataset permission classification is "${datasetClass}". Only redistribute permits publication.`;
+  }
+
+  return null;
+}
+
+async function writePermissionAudit(
+  supabase: ReturnType<typeof createServiceClient>,
+  tableName: string,
+  recordId: string,
+  actor: string,
+  prevClass: string | null,
+  newClass: string,
+  prevRestrictionAuthority: string | null,
+  newRestrictionAuthority: string | null,
+  reason: string,
+) {
+  await supabase.from('spatial_permission_changes').insert({
+    table_name: tableName,
+    record_id: recordId,
+    actor,
+    previous_classification: prevClass,
+    new_classification: newClass,
+    previous_restriction_authority: prevRestrictionAuthority,
+    new_restriction_authority: newRestrictionAuthority,
+    reason,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Source actions
+// ---------------------------------------------------------------------------
+
 export async function createSourceAction(formData: FormData) {
   await requireOperator();
   const supabase = await createClient();
 
-  const name               = formData.get('name') as string;
-  const institution        = formData.get('institution') as string;
-  const source_type        = formData.get('source_type') as string;
-  const base_url           = formData.get('base_url') as string;
-  const layer_id           = formData.get('layer_id') as string;
-  const description        = formData.get('description') as string;
-  const geographic_coverage = formData.get('geographic_coverage') as string;
-  const coordinate_system  = formData.get('coordinate_system') as string;
-  const permission_status  = formData.get('permission_status') as string;
-  const permission_notes   = formData.get('permission_notes') as string;
-  const custodian_name     = formData.get('custodian_name') as string;
-  const custodian_email    = formData.get('custodian_email') as string;
-  const dataset_date       = formData.get('dataset_date') as string;
-  const notes              = formData.get('notes') as string;
+  const name                      = formData.get('name') as string;
+  const institution               = formData.get('institution') as string;
+  const source_type               = formData.get('source_type') as string;
+  const permission_classification = (formData.get('permission_classification') as PermissionClassification) ?? 'pending';
 
   if (!name || !institution || !source_type) {
     return { error: 'Name, institution and source type are required.' };
   }
 
-  const { error } = await supabase.from('spatial_sources').insert({
-    name, institution, source_type,
-    base_url: base_url || null,
-    layer_id: layer_id || null,
-    description: description || null,
-    geographic_coverage: geographic_coverage || 'amajuba',
-    coordinate_system: coordinate_system || 'EPSG:4326',
-    requires_auth: false,
-    permission_status: permission_status || 'pending',
-    permission_notes: permission_notes || null,
-    custodian_name: custodian_name || null,
-    custodian_email: custodian_email || null,
-    dataset_date: dataset_date || null,
-    notes: notes || null,
-  });
+  const { data, error } = await supabase.from('spatial_sources').insert({
+    name,
+    institution,
+    source_type,
+    base_url:                  (formData.get('base_url') as string) || null,
+    source_url:                (formData.get('source_url') as string) || null,
+    dataset_identifier:        (formData.get('dataset_identifier') as string) || null,
+    layer_id:                  (formData.get('layer_id') as string) || null,
+    description:               (formData.get('description') as string) || null,
+    geographic_coverage:       (formData.get('geographic_coverage') as string) || 'amajuba',
+    coordinate_system:         (formData.get('coordinate_system') as string) || 'EPSG:4326',
+    requires_auth:             false,
+    permission_status:         permission_classification,
+    permission_classification,
+    permission_notes:          (formData.get('permission_notes') as string) || null,
+    attribution:               (formData.get('attribution') as string) || null,
+    licence_terms:             (formData.get('licence_terms') as string) || null,
+    restriction_authority:     (formData.get('restriction_authority') as string) || null,
+    restriction_basis:         (formData.get('restriction_basis') as string) || null,
+    custodian_name:            (formData.get('custodian_name') as string) || null,
+    custodian_email:           (formData.get('custodian_email') as string) || null,
+    dataset_date:              (formData.get('dataset_date') as string) || null,
+    availability_status:       (formData.get('availability_status') as string) || 'unknown',
+    technical_usability:       (formData.get('technical_usability') as string) || 'unknown',
+    authority_status:          (formData.get('authority_status') as string) || 'unknown',
+    assessment_notes:          (formData.get('assessment_notes') as string) || null,
+    notes:                     (formData.get('notes') as string) || null,
+  }).select('id').single();
 
   if (error) return { error: error.message };
+
   revalidatePath('/spatial/sources');
   return { success: true };
 }
 
 export async function updateSourceAction(id: string, formData: FormData) {
-  await requireOperator();
+  const session = await requireOperator();
   const supabase = await createClient();
+  const sb = createServiceClient();
+
+  const newClass = (formData.get('permission_classification') as PermissionClassification) ?? 'pending';
+
+  // Read previous state for audit
+  const { data: prev } = await sb.from('spatial_sources')
+    .select('permission_classification, restriction_authority')
+    .eq('id', id)
+    .single();
 
   const { error } = await supabase.from('spatial_sources').update({
-    name:                formData.get('name') as string,
-    institution:         formData.get('institution') as string,
-    source_type:         formData.get('source_type') as string,
-    base_url:            (formData.get('base_url') as string) || null,
-    layer_id:            (formData.get('layer_id') as string) || null,
-    description:         (formData.get('description') as string) || null,
-    geographic_coverage: (formData.get('geographic_coverage') as string) || 'amajuba',
-    coordinate_system:   (formData.get('coordinate_system') as string) || 'EPSG:4326',
-    permission_status:   (formData.get('permission_status') as string) || 'pending',
-    permission_notes:    (formData.get('permission_notes') as string) || null,
-    custodian_name:      (formData.get('custodian_name') as string) || null,
-    custodian_email:     (formData.get('custodian_email') as string) || null,
-    dataset_date:        (formData.get('dataset_date') as string) || null,
-    notes:               (formData.get('notes') as string) || null,
-    updated_at:          new Date().toISOString(),
+    name:                      formData.get('name') as string,
+    institution:               formData.get('institution') as string,
+    source_type:               formData.get('source_type') as string,
+    base_url:                  (formData.get('base_url') as string) || null,
+    source_url:                (formData.get('source_url') as string) || null,
+    dataset_identifier:        (formData.get('dataset_identifier') as string) || null,
+    layer_id:                  (formData.get('layer_id') as string) || null,
+    description:               (formData.get('description') as string) || null,
+    geographic_coverage:       (formData.get('geographic_coverage') as string) || 'amajuba',
+    coordinate_system:         (formData.get('coordinate_system') as string) || 'EPSG:4326',
+    permission_status:         newClass,
+    permission_classification: newClass,
+    permission_notes:          (formData.get('permission_notes') as string) || null,
+    attribution:               (formData.get('attribution') as string) || null,
+    licence_terms:             (formData.get('licence_terms') as string) || null,
+    restriction_authority:     (formData.get('restriction_authority') as string) || null,
+    restriction_basis:         (formData.get('restriction_basis') as string) || null,
+    custodian_name:            (formData.get('custodian_name') as string) || null,
+    custodian_email:           (formData.get('custodian_email') as string) || null,
+    dataset_date:              (formData.get('dataset_date') as string) || null,
+    availability_status:       (formData.get('availability_status') as string) || 'unknown',
+    technical_usability:       (formData.get('technical_usability') as string) || 'unknown',
+    authority_status:          (formData.get('authority_status') as string) || 'unknown',
+    assessment_notes:          (formData.get('assessment_notes') as string) || null,
+    notes:                     (formData.get('notes') as string) || null,
+    updated_at:                new Date().toISOString(),
   }).eq('id', id);
 
   if (error) return { error: error.message };
+
+  // Audit permission classification changes
+  if (prev && prev.permission_classification !== newClass) {
+    await writePermissionAudit(
+      sb, 'spatial_sources', id, session.id,
+      prev.permission_classification, newClass,
+      prev.restriction_authority,
+      (formData.get('restriction_authority') as string) || null,
+      'operator update via source form',
+    );
+  }
+
   revalidatePath('/spatial/sources');
   revalidatePath(`/spatial/sources/${id}`);
   return { success: true };
@@ -104,6 +280,10 @@ export async function reactivateSourceAction(id: string) {
   revalidatePath('/spatial/sources');
   return { success: true };
 }
+
+// ---------------------------------------------------------------------------
+// Health check
+// ---------------------------------------------------------------------------
 
 export async function runHealthCheckAction(sourceId?: string) {
   await requireOperator();
@@ -165,11 +345,10 @@ export async function runHealthCheckAction(sourceId?: string) {
   return { success: true, results };
 }
 
-/**
- * Inspect the layer catalogue of an ArcGIS source.
- * Returns layer list and spatial reference from the service root.
- * Does NOT attempt feature queries — those are blocked from external IPs on COGTA.
- */
+// ---------------------------------------------------------------------------
+// ArcGIS inspection
+// ---------------------------------------------------------------------------
+
 export async function inspectSourceLayersAction(sourceId: string) {
   await requireOperator();
   const supabase = createServiceClient();
@@ -188,7 +367,6 @@ export async function inspectSourceLayersAction(sourceId: string) {
   const result = await inspectService(source.base_url);
   if (!result.ok) return { error: result.error.message };
 
-  // Update source with confirmed layer count
   const now = new Date().toISOString();
   await supabase.from('spatial_sources').update({
     last_checked_at: now,
@@ -199,9 +377,6 @@ export async function inspectSourceLayersAction(sourceId: string) {
   return { success: true, layers: result.data.layers, spatialReference: result.data.spatialReference };
 }
 
-/**
- * Inspect a single layer's field schema.
- */
 export async function inspectLayerFieldsAction(sourceId: string, layerId: number) {
   await requireOperator();
   const supabase = createServiceClient();
@@ -230,35 +405,40 @@ export async function inspectLayerFieldsAction(sourceId: string, layerId: number
   };
 }
 
+// ---------------------------------------------------------------------------
+// Dataset actions
+// ---------------------------------------------------------------------------
+
 export async function createDatasetAction(formData: FormData) {
   await requireOperator();
   const supabase = await createClient();
 
-  const source_id         = formData.get('source_id') as string;
-  const name              = formData.get('name') as string;
-  const layer_id          = formData.get('layer_id') as string;
-  const description       = formData.get('description') as string;
-  const crs               = formData.get('crs') as string;
-  const dataset_date      = formData.get('dataset_date') as string;
-  const permission_status = formData.get('permission_status') as string;
-  const permission_notes  = formData.get('permission_notes') as string;
-  const custodian_name    = formData.get('custodian_name') as string;
-  const custodian_email   = formData.get('custodian_email') as string;
-  const provenance        = formData.get('provenance') as string;
+  const source_id               = formData.get('source_id') as string;
+  const name                    = formData.get('name') as string;
+  const permission_classification = (formData.get('permission_classification') as PermissionClassification) ?? 'pending';
 
   if (!source_id || !name) return { error: 'Source and name are required.' };
 
   const { error } = await supabase.from('spatial_datasets').insert({
-    source_id, name,
-    layer_id: layer_id || null,
-    description: description || null,
-    crs: crs || 'EPSG:4326',
-    dataset_date: dataset_date || null,
-    permission_status: permission_status || 'pending',
-    permission_notes: permission_notes || null,
-    custodian_name: custodian_name || null,
-    custodian_email: custodian_email || null,
-    provenance: provenance || null,
+    source_id,
+    name,
+    layer_id:               (formData.get('layer_id') as string) || null,
+    description:            (formData.get('description') as string) || null,
+    geographic_coverage:    (formData.get('geographic_coverage') as string) || 'amajuba',
+    crs:                    (formData.get('crs') as string) || 'EPSG:4326',
+    dataset_date:           (formData.get('dataset_date') as string) || null,
+    permission_status:      permission_classification,
+    permission_classification,
+    permission_notes:       (formData.get('permission_notes') as string) || null,
+    attribution:            (formData.get('attribution') as string) || null,
+    licence_terms:          (formData.get('licence_terms') as string) || null,
+    restriction_authority:  (formData.get('restriction_authority') as string) || null,
+    restriction_basis:      (formData.get('restriction_basis') as string) || null,
+    custodian_name:         (formData.get('custodian_name') as string) || null,
+    custodian_email:        (formData.get('custodian_email') as string) || null,
+    provenance:             (formData.get('provenance') as string) || null,
+    authority_status:       (formData.get('authority_status') as string) || 'unknown',
+    assessment_notes:       (formData.get('assessment_notes') as string) || null,
   });
 
   if (error) return { error: error.message };
@@ -266,17 +446,28 @@ export async function createDatasetAction(formData: FormData) {
   return { success: true };
 }
 
-/**
- * Ingest a GeoJSON FeatureCollection into the staging pipeline.
- * Validates geometry presence, records a pipeline run, and stages all features
- * for operator review. Does not publish — staging review is always required.
- */
-export async function ingestGeoJSONAction(
-  datasetId: string,
-  geojsonText: string,
-) {
-  await requireOperator();
+// ---------------------------------------------------------------------------
+// GeoJSON ingestion — enforces permission at source and dataset level
+// ---------------------------------------------------------------------------
+
+export async function ingestGeoJSONAction(datasetId: string, geojsonText: string) {
+  const session = await requireOperator();
   const supabase = createServiceClient();
+
+  // Permission check — blocks ingestion before any processing
+  const permissionError = await checkIngestionPermission(supabase, datasetId);
+  if (permissionError) {
+    // Audit the blocked attempt
+    await supabase.from('spatial_permission_changes').insert({
+      table_name: 'spatial_datasets',
+      record_id: datasetId,
+      actor: session.id,
+      previous_classification: null,
+      new_classification: 'blocked_attempt',
+      reason: `Ingestion blocked: ${permissionError}`,
+    });
+    return { error: permissionError };
+  }
 
   let collection: { type: string; features: unknown[] };
   try {
@@ -288,18 +479,15 @@ export async function ingestGeoJSONAction(
   if (collection.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
     return { error: 'Expected a GeoJSON FeatureCollection.' };
   }
-
   if (collection.features.length === 0) {
     return { error: 'FeatureCollection contains no features.' };
   }
-
   if (collection.features.length > 10_000) {
     return { error: 'FeatureCollection exceeds 10,000 features. Split into smaller files.' };
   }
 
   const started = new Date().toISOString();
 
-  // Create pipeline run record
   const { data: run, error: runErr } = await supabase
     .from('spatial_pipeline_runs')
     .insert({
@@ -315,7 +503,6 @@ export async function ingestGeoJSONAction(
 
   if (runErr || !run) return { error: 'Failed to create pipeline run.' };
 
-  // Stage each feature
   type RawFeature = { type: string; geometry: unknown; properties: Record<string, unknown> | null };
   const staged = (collection.features as RawFeature[]).map((f) => {
     const geom = f.geometry as { type?: string; coordinates?: unknown } | null;
@@ -336,7 +523,6 @@ export async function ingestGeoJSONAction(
     };
   });
 
-  // Insert in batches of 500
   let inserted = 0;
   for (let i = 0; i < staged.length; i += 500) {
     const { error: insErr } = await supabase
@@ -367,7 +553,6 @@ export async function ingestGeoJSONAction(
     ],
   }).eq('id', run.id);
 
-  // Move dataset to staged status
   await supabase.from('spatial_datasets')
     .update({ status: 'staged', updated_at: completed })
     .eq('id', datasetId);
@@ -378,15 +563,36 @@ export async function ingestGeoJSONAction(
   return { success: true, staged: inserted, invalid };
 }
 
+// ---------------------------------------------------------------------------
+// Staging review — rechecks permission before publication
+// ---------------------------------------------------------------------------
+
 export async function reviewStagedFeaturesAction(
   datasetId: string,
   featureIds: string[],
   action: 'approve' | 'reject',
   notes?: string,
 ) {
-  await requireOperator();
+  const session = await requireOperator();
   const supabase = await createClient();
+  const sb = createServiceClient();
   const now = new Date().toISOString();
+
+  // Recheck permission before approving — permission may have changed since staging
+  if (action === 'approve') {
+    const permissionError = await checkPublicationPermission(sb, datasetId);
+    if (permissionError) {
+      await sb.from('spatial_permission_changes').insert({
+        table_name: 'spatial_datasets',
+        record_id: datasetId,
+        actor: session.id,
+        previous_classification: null,
+        new_classification: 'blocked_attempt',
+        reason: `Publication blocked at staging review: ${permissionError}`,
+      });
+      return { error: permissionError };
+    }
+  }
 
   const { error } = await supabase.from('spatial_staged_features').update({
     operator_status: action === 'approve' ? 'approved' : 'rejected',

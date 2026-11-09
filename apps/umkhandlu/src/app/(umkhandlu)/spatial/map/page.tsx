@@ -1,23 +1,10 @@
-import nextDynamic from 'next/dynamic';
 import { PageHeader } from '@unami/ui';
 import { createServiceClient } from '@/lib/supabase/server';
 import { fetchNodeGeoRefs } from '@/lib/nodes/fetcher';
+import { SpatialMapClient } from './_components/SpatialMapClient';
 import type { PublishedDataset, NoticeMarker, NodeGeoRef } from './_components/SpatialMap';
 
 export const dynamic = 'force-dynamic';
-
-// Leaflet requires window — load client-side only
-const SpatialMap = nextDynamic(
-  () => import('./_components/SpatialMap').then((m) => m.SpatialMap),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[500px] flex items-center justify-center text-sm text-muted-foreground">
-        Loading map…
-      </div>
-    ),
-  },
-);
 
 export default async function SpatialMapPage() {
   const supabase = createServiceClient();
@@ -116,7 +103,7 @@ export default async function SpatialMapPage() {
         title="Geographic View"
         description="Published spatial datasets, active notices and governance node activity for Amajuba District."
       />
-      <SpatialMap datasets={publishedDatasets} notices={noticeMarkers} nodeGeoRefs={nodeGeoRefs} />
+      <SpatialMapClient datasets={publishedDatasets} notices={noticeMarkers} nodeGeoRefs={nodeGeoRefs} />
     </div>
   );
 }

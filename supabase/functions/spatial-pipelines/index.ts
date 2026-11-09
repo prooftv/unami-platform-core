@@ -34,35 +34,148 @@ async function requireOperator(req: Request) {
 }
 
 // ---------------------------------------------------------------------------
-// POST /spatial-pipelines/sources — create source
-// PUT  /spatial-pipelines/sources/:id — update source
-// DELETE /spatial-pipelines/sources/:id — deactivate (soft)
+// Permission enforcement
+// ---------------------------------------------------------------------------
+
+type PermissionClassification =
+  | 'reference' | 'display' | 'internal' | 'download'
+  | 'redistribute' | 'restricted' | 'prohibited' | 'pending';
+
+const PERMITTED_OPS: Record<PermissionClassification, string[]> = {
+  reference:    [],
+  display:      ['display'],
+  internal:     ['display', 'ingest', 'process'],
+  download:     ['display', 'ingest', 'process', 'download'],
+  redistribute: ['display', 'ingest', 'process', 'download', 'publish', 'redistribute'],
+  restricted:   [],
+  prohibited:   [],
+  pending:      [],
+};
+
+function canPerform(cls: PermissionClassification, op: string): boolean {
+  return PERMITTED_OPS[cls]?.includes(op) ?? false;
+}
+
+async function checkIngestionPermission(
+  sb: ReturnType<typeof serviceClient>,
+  datasetId: string,
+): Promise<string | null> {
+  const { data: dataset } = await sb
+    .from('spatial_datasets')
+    .select('id, name, permission_classification, source_id')
+    .eq('id', datasetId)
+    .single();
+
+  if (!dataset) return 'Dataset not found.';
+
+  const datasetClass = (dataset.permission_classification ?? 'pending') as PermissionClassification;
+
+  const { data: source } = await sb
+    .from('spatial_sources')
+    .select('id, name, permission_classification, restriction_authority, restriction_basis')
+    .eq('id', dataset.source_id)
+    .single();
+
+  if (!source) return 'Source not found for dataset.';
+
+  const sourceClass = (source.permission_classification ?? 'pending') as PermissionClassification;
+
+  if (sourceClass === 'restricted') {
+    return `Ingestion blocked: source "${source.name}" is restricted. Authority: ${source.restriction_authority ?? 'not recorded'}.`;
+  }
+  if (sourceClass === 'prohibited') {
+    return `Ingestion blocked: source "${source.name}" is prohibited.`;
+  }
+  if (!canPerform(datasetClass, 'ingest')) {
+    return `Ingestion blocked: dataset permission classification is "${datasetClass}".`;
+  }
+  if (!canPerform(sourceClass, 'ingest')) {
+    return `Ingestion blocked: source permission classification is "${sourceClass}".`;
+  }
+
+  return null;
+}
+
+async function checkPublicationPermission(
+  sb: ReturnType<typeof serviceClient>,
+  datasetId: string,
+): Promise<string | null> {
+  const { data: dataset } = await sb
+    .from('spatial_datasets')
+    .select('id, name, permission_classification, source_id')
+    .eq('id', datasetId)
+    .single();
+
+  if (!dataset) return 'Dataset not found.';
+
+  const datasetClass = (dataset.permission_classification ?? 'pending') as PermissionClassification;
+
+  const { data: source } = await sb
+    .from('spatial_sources')
+    .select('id, name, permission_classification, restriction_authority')
+    .eq('id', dataset.source_id)
+    .single();
+
+  if (!source) return 'Source not found for dataset.';
+
+  const sourceClass = (source.permission_classification ?? 'pending') as PermissionClassification;
+
+  if (sourceClass === 'restricted') {
+    return `Publication blocked: source "${source.name}" is restricted. Authority: ${source.restriction_authority ?? 'not recorded'}.`;
+  }
+  if (sourceClass === 'prohibited') {
+    return `Publication blocked: source "${source.name}" is prohibited.`;
+  }
+  if (!canPerform(sourceClass, 'publish')) {
+    return `Publication blocked: source permission classification is "${sourceClass}".`;
+  }
+  if (!canPerform(datasetClass, 'publish')) {
+    return `Publication blocked: dataset permission classification is "${datasetClass}".`;
+  }
+
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Source CRUD
 // ---------------------------------------------------------------------------
 
 async function handleSourceCreate(req: Request) {
   const auth = await requireOperator(req);
   if (!auth) return err('Unauthorized', 401);
   const body = await req.json();
-  const { name, institution, source_type, base_url, layer_id, description,
-          geographic_coverage, coordinate_system, requires_auth,
-          permission_status, permission_notes, custodian_name, custodian_email,
-          dataset_date, notes } = body;
+  const { name, institution, source_type } = body;
   if (!name || !institution || !source_type) return err('name, institution, source_type required', 400);
+
+  const permClass = body.permission_classification ?? 'pending';
+
   const { data, error } = await auth.sb.from('spatial_sources').insert({
     name, institution, source_type,
-    base_url: base_url ?? null,
-    layer_id: layer_id ?? null,
-    description: description ?? null,
-    geographic_coverage: geographic_coverage ?? 'amajuba',
-    coordinate_system: coordinate_system ?? 'EPSG:4326',
-    requires_auth: requires_auth ?? false,
-    permission_status: permission_status ?? 'pending',
-    permission_notes: permission_notes ?? null,
-    custodian_name: custodian_name ?? null,
-    custodian_email: custodian_email ?? null,
-    dataset_date: dataset_date ?? null,
-    notes: notes ?? null,
+    base_url:                  body.base_url ?? null,
+    source_url:                body.source_url ?? null,
+    dataset_identifier:        body.dataset_identifier ?? null,
+    layer_id:                  body.layer_id ?? null,
+    description:               body.description ?? null,
+    geographic_coverage:       body.geographic_coverage ?? 'amajuba',
+    coordinate_system:         body.coordinate_system ?? 'EPSG:4326',
+    requires_auth:             body.requires_auth ?? false,
+    permission_status:         permClass,
+    permission_classification: permClass,
+    permission_notes:          body.permission_notes ?? null,
+    attribution:               body.attribution ?? null,
+    licence_terms:             body.licence_terms ?? null,
+    restriction_authority:     body.restriction_authority ?? null,
+    restriction_basis:         body.restriction_basis ?? null,
+    custodian_name:            body.custodian_name ?? null,
+    custodian_email:           body.custodian_email ?? null,
+    dataset_date:              body.dataset_date ?? null,
+    availability_status:       body.availability_status ?? 'unknown',
+    technical_usability:       body.technical_usability ?? 'unknown',
+    authority_status:          body.authority_status ?? 'unknown',
+    assessment_notes:          body.assessment_notes ?? null,
+    notes:                     body.notes ?? null,
   }).select().single();
+
   if (error) return err(error.message, 500);
   await writeAudit(auth.sb, 'spatial_sources', data.id, auth.user.id, 'create', null, data);
   return json(data, 201);
@@ -72,12 +185,33 @@ async function handleSourceUpdate(req: Request, id: string) {
   const auth = await requireOperator(req);
   if (!auth) return err('Unauthorized', 401);
   const body = await req.json();
+
   const { data: prev } = await auth.sb.from('spatial_sources').select('*').eq('id', id).single();
+
+  const newClass = body.permission_classification ?? prev?.permission_classification ?? 'pending';
+  const updatePayload = { ...body, permission_status: newClass, permission_classification: newClass, updated_at: new Date().toISOString() };
+
   const { data, error } = await auth.sb.from('spatial_sources')
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update(updatePayload)
     .eq('id', id).select().single();
   if (error) return err(error.message, 500);
+
   await writeAudit(auth.sb, 'spatial_sources', id, auth.user.id, 'update', prev, data);
+
+  // Audit permission classification changes separately
+  if (prev && prev.permission_classification !== newClass) {
+    await auth.sb.from('spatial_permission_changes').insert({
+      table_name: 'spatial_sources',
+      record_id: id,
+      actor: auth.user.id,
+      previous_classification: prev.permission_classification,
+      new_classification: newClass,
+      previous_restriction_authority: prev.restriction_authority ?? null,
+      new_restriction_authority: body.restriction_authority ?? null,
+      reason: body.permission_change_reason ?? 'operator update via API',
+    });
+  }
+
   return json(data);
 }
 
@@ -94,8 +228,7 @@ async function handleSourceDeactivate(req: Request, id: string) {
 }
 
 // ---------------------------------------------------------------------------
-// POST /spatial-pipelines/health-check — run health check on all active sources
-// POST /spatial-pipelines/health-check/:sourceId — single source
+// Health check
 // ---------------------------------------------------------------------------
 
 async function handleHealthCheck(sourceId?: string) {
@@ -142,8 +275,7 @@ async function handleHealthCheck(sourceId?: string) {
       id: runId, pipeline_type: 'health-check', source_id: source.id,
       status: reachable ? 'success' : 'failed',
       started_at: started, completed_at: completed,
-      error_message: errorMsg,
-      triggered_by: 'system',
+      error_message: errorMsg, triggered_by: 'system',
       log: [{ ts: completed, msg: reachable ? `Reachable — ${responseMs}ms` : `Unreachable — ${errorMsg}` }],
     });
 
@@ -158,8 +290,7 @@ async function handleHealthCheck(sourceId?: string) {
 }
 
 // ---------------------------------------------------------------------------
-// POST /spatial-pipelines/datasets — create dataset record
-// PUT  /spatial-pipelines/datasets/:id — update dataset
+// Dataset CRUD
 // ---------------------------------------------------------------------------
 
 async function handleDatasetCreate(req: Request) {
@@ -167,20 +298,31 @@ async function handleDatasetCreate(req: Request) {
   if (!auth) return err('Unauthorized', 401);
   const body = await req.json();
   if (!body.source_id || !body.name) return err('source_id and name required', 400);
+
+  const permClass = body.permission_classification ?? 'pending';
+
   const { data, error } = await auth.sb.from('spatial_datasets').insert({
-    source_id: body.source_id,
-    name: body.name,
-    layer_id: body.layer_id ?? null,
-    description: body.description ?? null,
-    geographic_coverage: body.geographic_coverage ?? 'amajuba',
-    crs: body.crs ?? 'EPSG:4326',
-    dataset_date: body.dataset_date ?? null,
-    permission_status: body.permission_status ?? 'pending',
-    permission_notes: body.permission_notes ?? null,
-    custodian_name: body.custodian_name ?? null,
-    custodian_email: body.custodian_email ?? null,
-    provenance: body.provenance ?? null,
+    source_id:              body.source_id,
+    name:                   body.name,
+    layer_id:               body.layer_id ?? null,
+    description:            body.description ?? null,
+    geographic_coverage:    body.geographic_coverage ?? 'amajuba',
+    crs:                    body.crs ?? 'EPSG:4326',
+    dataset_date:           body.dataset_date ?? null,
+    permission_status:      permClass,
+    permission_classification: permClass,
+    permission_notes:       body.permission_notes ?? null,
+    attribution:            body.attribution ?? null,
+    licence_terms:          body.licence_terms ?? null,
+    restriction_authority:  body.restriction_authority ?? null,
+    restriction_basis:      body.restriction_basis ?? null,
+    custodian_name:         body.custodian_name ?? null,
+    custodian_email:        body.custodian_email ?? null,
+    provenance:             body.provenance ?? null,
+    authority_status:       body.authority_status ?? 'unknown',
+    assessment_notes:       body.assessment_notes ?? null,
   }).select().single();
+
   if (error) return err(error.message, 500);
   await writeAudit(auth.sb, 'spatial_datasets', data.id, auth.user.id, 'create', null, data);
   return json(data, 201);
@@ -191,17 +333,35 @@ async function handleDatasetUpdate(req: Request, id: string) {
   if (!auth) return err('Unauthorized', 401);
   const body = await req.json();
   const { data: prev } = await auth.sb.from('spatial_datasets').select('*').eq('id', id).single();
+
+  const newClass = body.permission_classification ?? prev?.permission_classification ?? 'pending';
+  const updatePayload = { ...body, permission_status: newClass, permission_classification: newClass, updated_at: new Date().toISOString() };
+
   const { data, error } = await auth.sb.from('spatial_datasets')
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update(updatePayload)
     .eq('id', id).select().single();
   if (error) return err(error.message, 500);
+
   await writeAudit(auth.sb, 'spatial_datasets', id, auth.user.id, 'update', prev, data);
+
+  if (prev && prev.permission_classification !== newClass) {
+    await auth.sb.from('spatial_permission_changes').insert({
+      table_name: 'spatial_datasets',
+      record_id: id,
+      actor: auth.user.id,
+      previous_classification: prev.permission_classification,
+      new_classification: newClass,
+      previous_restriction_authority: prev.restriction_authority ?? null,
+      new_restriction_authority: body.restriction_authority ?? null,
+      reason: body.permission_change_reason ?? 'operator update via API',
+    });
+  }
+
   return json(data);
 }
 
 // ---------------------------------------------------------------------------
-// POST /spatial-pipelines/stage/:datasetId/review — approve or reject staged features
-// Body: { feature_ids: string[], action: 'approve' | 'reject', notes?: string }
+// Staging review — rechecks permission before publication
 // ---------------------------------------------------------------------------
 
 async function handleStagingReview(req: Request, datasetId: string) {
@@ -211,6 +371,23 @@ async function handleStagingReview(req: Request, datasetId: string) {
   if (!feature_ids?.length || !['approve', 'reject'].includes(action)) {
     return err('feature_ids and action (approve|reject) required', 400);
   }
+
+  // Recheck permission before approving — permission may have changed since staging
+  if (action === 'approve') {
+    const permissionError = await checkPublicationPermission(auth.sb, datasetId);
+    if (permissionError) {
+      await auth.sb.from('spatial_permission_changes').insert({
+        table_name: 'spatial_datasets',
+        record_id: datasetId,
+        actor: auth.user.id,
+        previous_classification: null,
+        new_classification: 'blocked_attempt',
+        reason: `Publication blocked at staging review: ${permissionError}`,
+      });
+      return err(permissionError, 403);
+    }
+  }
+
   const now = new Date().toISOString();
   const { error } = await auth.sb.from('spatial_staged_features')
     .update({
@@ -223,7 +400,6 @@ async function handleStagingReview(req: Request, datasetId: string) {
     .eq('dataset_id', datasetId);
   if (error) return err(error.message, 500);
 
-  // If approving — update dataset status to published
   if (action === 'approve') {
     const { data: remaining } = await auth.sb.from('spatial_staged_features')
       .select('id').eq('dataset_id', datasetId).eq('operator_status', 'pending');
@@ -241,8 +417,7 @@ async function handleStagingReview(req: Request, datasetId: string) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /spatial-pipelines/runs — list pipeline runs (with optional source_id filter)
-// POST /spatial-pipelines/runs/:id/replay — replay a failed run
+// Pipeline runs
 // ---------------------------------------------------------------------------
 
 async function handleListRuns(req: Request) {
@@ -268,7 +443,6 @@ async function handleReplay(req: Request, runId: string) {
   if (!run) return err('Run not found', 404);
   if (run.status !== 'failed') return err('Only failed runs can be replayed', 400);
 
-  // Re-trigger health check as the replay mechanism for now
   if (run.pipeline_type === 'health-check') {
     return handleHealthCheck(run.source_id ?? undefined);
   }
@@ -276,7 +450,7 @@ async function handleReplay(req: Request, runId: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Audit helper
+// Audit helpers
 // ---------------------------------------------------------------------------
 
 async function writeAudit(
@@ -310,32 +484,27 @@ Deno.serve(async (req: Request) => {
   const [seg0, seg1, seg2] = segments;
   const method = req.method;
 
-  // Sources
   if (seg0 === 'sources') {
-    if (method === 'POST' && !seg1) return handleSourceCreate(req);
-    if (method === 'PUT'  && seg1)  return handleSourceUpdate(req, seg1);
+    if (method === 'POST' && !seg1)  return handleSourceCreate(req);
+    if (method === 'PUT'  && seg1)   return handleSourceUpdate(req, seg1);
     if (method === 'DELETE' && seg1) return handleSourceDeactivate(req, seg1);
   }
 
-  // Health check
   if (seg0 === 'health-check' && method === 'POST') {
     return handleHealthCheck(seg1 ?? undefined);
   }
 
-  // Datasets
   if (seg0 === 'datasets') {
     if (method === 'POST' && !seg1) return handleDatasetCreate(req);
     if (method === 'PUT'  && seg1)  return handleDatasetUpdate(req, seg1);
   }
 
-  // Staging review
   if (seg0 === 'stage' && seg1 && seg2 === 'review' && method === 'POST') {
     return handleStagingReview(req, seg1);
   }
 
-  // Pipeline runs
   if (seg0 === 'runs') {
-    if (method === 'GET' && !seg1) return handleListRuns(req);
+    if (method === 'GET'  && !seg1)                    return handleListRuns(req);
     if (method === 'POST' && seg1 && seg2 === 'replay') return handleReplay(req, seg1);
   }
 
