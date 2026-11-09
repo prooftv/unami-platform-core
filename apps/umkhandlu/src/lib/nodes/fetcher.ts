@@ -427,3 +427,42 @@ export async function fetchNodeIdentity(nodeId: string): Promise<{ node: Governa
   if (!identity) return null;
   return { node, identity, operators };
 }
+
+/**
+ * Aggregate geographic references from all registered nodes.
+ * Used by the map to render node-derived activity as a distinct layer.
+ * Falls back gracefully — nodes without `spatial` capability return empty arrays.
+ */
+export async function fetchNodeGeoRefs(): Promise<import('@unami/api').GeoRef[]> {
+  const nodes = await getRegisteredNodes();
+  if (nodes.length === 0) return [];
+
+  const results = await Promise.all(
+    nodes.map(async (n) => {
+      // Try spatial summary first (v1.2)
+      const spatial = await safe(() => getNodeClient(n.url, n.api_key).spatialSummary());
+      if (spatial?.geoRefs?.length) {
+        return spatial.geoRefs.map((ref) => ({ ...ref, nodeId: n.node_id ?? n.id }));
+      }
+
+      // Fall back: extract geoRefs from records and notices summaries
+      const [records, notices] = await Promise.all([
+        safe(() => getNodeClient(n.url, n.api_key).recordsSummary()),
+        safe(() => getNodeClient(n.url, n.api_key).noticesSummary()),
+      ]);
+
+      const refs: import('@unami/api').GeoRef[] = [];
+
+      for (const item of records?.recent ?? []) {
+        if (item.geoRef) refs.push({ ...item.geoRef, nodeId: n.node_id ?? n.id, recordId: item.id, recordType: 'record', label: item.title, timestamp: item.createdAt });
+      }
+      for (const item of notices?.recentActivity ?? []) {
+        if (item.geoRef) refs.push({ ...item.geoRef, nodeId: n.node_id ?? n.id, recordId: item.id, recordType: 'notice', label: item.title, timestamp: item.createdAt });
+      }
+
+      return refs;
+    }),
+  );
+
+  return results.flat();
+}

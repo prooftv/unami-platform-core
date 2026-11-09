@@ -1,7 +1,8 @@
 import nextDynamic from 'next/dynamic';
 import { PageHeader } from '@unami/ui';
 import { createServiceClient } from '@/lib/supabase/server';
-import type { PublishedDataset, NoticeMarker } from './_components/SpatialMap';
+import { fetchNodeGeoRefs } from '@/lib/nodes/fetcher';
+import type { PublishedDataset, NoticeMarker, NodeGeoRef } from './_components/SpatialMap';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,13 +93,30 @@ export default async function SpatialMapPage() {
     longitude: n.longitude as number,
   }));
 
+  // Node geographic references — governance activity from registered nodes
+  const rawGeoRefs = await fetchNodeGeoRefs();
+  const nodeGeoRefs: NodeGeoRef[] = rawGeoRefs
+    .filter((r) => r.latitude != null && r.longitude != null)
+    .map((r) => ({
+      nodeId:     r.nodeId ?? '',
+      recordId:   r.recordId ?? '',
+      recordType: (r.recordType ?? 'record') as NodeGeoRef['recordType'],
+      label:      r.label ?? '',
+      latitude:   r.latitude!,
+      longitude:  r.longitude!,
+      district:   r.district,
+      municipality: r.municipality,
+      ward:       r.ward,
+      timestamp:  r.timestamp,
+    }));
+
   return (
     <div className="space-y-4">
       <PageHeader
         title="Geographic View"
-        description="Published spatial datasets and active notices for Amajuba District."
+        description="Published spatial datasets, active notices and governance node activity for Amajuba District."
       />
-      <SpatialMap datasets={publishedDatasets} notices={noticeMarkers} />
+      <SpatialMap datasets={publishedDatasets} notices={noticeMarkers} nodeGeoRefs={nodeGeoRefs} />
     </div>
   );
 }

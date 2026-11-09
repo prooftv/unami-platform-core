@@ -25,6 +25,19 @@ export interface NoticeMarker {
   longitude: number;
 }
 
+export interface NodeGeoRef {
+  nodeId: string;
+  recordId: string;
+  recordType: 'record' | 'notice' | 'project';
+  label: string;
+  latitude: number;
+  longitude: number;
+  district?: string;
+  municipality?: string;
+  ward?: string;
+  timestamp?: string;
+}
+
 interface GeoJSONFeatureCollection {
   type: 'FeatureCollection';
   features: GeoJSONFeature[];
@@ -39,6 +52,7 @@ interface GeoJSONFeature {
 interface Props {
   datasets: PublishedDataset[];
   notices: NoticeMarker[];
+  nodeGeoRefs: NodeGeoRef[];
 }
 
 const AMAJUBA_CENTRE: [number, number] = [-28.05, 29.0];
@@ -51,21 +65,30 @@ const LAYER_COLOURS = [
 
 const noticeColour = (isStatutory: boolean) => isStatutory ? '#dc2626' : '#2563eb';
 
-export function SpatialMap({ datasets, notices }: Props) {
+const NODE_TYPE_COLOUR: Record<string, string> = {
+  record:  '#7c3aed',
+  notice:  '#0891b2',
+  project: '#16a34a',
+};
+
+export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRefs = useRef<Map<string, LeafletGeoJSON>>(new Map());
   const noticeMarkerRefs = useRef<Marker[]>([]);
+  const nodeMarkerRefs = useRef<Marker[]>([]);
 
   const [visibleLayers, setVisibleLayers] = useState<Set<string>>(
     new Set(datasets.map((d) => d.id)),
   );
   const [showNotices, setShowNotices] = useState(true);
+  const [showNodeActivity, setShowNodeActivity] = useState(true);
   const [selectedFeature, setSelectedFeature] = useState<{
     datasetName: string;
     properties: Record<string, unknown>;
   } | null>(null);
   const [selectedNotice, setSelectedNotice] = useState<NoticeMarker | null>(null);
+  const [selectedNodeRef, setSelectedNodeRef] = useState<NodeGeoRef | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   // Initialise map
@@ -101,7 +124,7 @@ export function SpatialMap({ datasets, notices }: Props) {
     return () => { cancelled = true; };
   }, []);
 
-  // Sync dataset layers
+  // Sync spatial dataset layers
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
 
@@ -129,6 +152,7 @@ export function SpatialMap({ datasets, notices }: Props) {
             fl.on('click', () => {
               setSelectedFeature({ datasetName: dataset.name, properties: feature.properties ?? {} });
               setSelectedNotice(null);
+              setSelectedNodeRef(null);
             });
           },
         });
@@ -166,6 +190,7 @@ export function SpatialMap({ datasets, notices }: Props) {
         marker.on('click', () => {
           setSelectedNotice(notice);
           setSelectedFeature(null);
+          setSelectedNodeRef(null);
         });
         marker.addTo(map);
         noticeMarkerRefs.current.push(marker);
@@ -174,6 +199,41 @@ export function SpatialMap({ datasets, notices }: Props) {
 
     syncNotices();
   }, [mapReady, notices, showNotices]);
+
+  // Sync node activity markers
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return;
+
+    async function syncNodeMarkers() {
+      const L = (await import('leaflet')).default;
+      const map = mapRef.current!;
+
+      nodeMarkerRefs.current.forEach((m) => map.removeLayer(m));
+      nodeMarkerRefs.current = [];
+
+      if (!showNodeActivity) return;
+
+      nodeGeoRefs.forEach((ref) => {
+        const colour = NODE_TYPE_COLOUR[ref.recordType] ?? '#6366f1';
+        const icon = L.divIcon({
+          className: '',
+          html: `<div style="width:10px;height:10px;border-radius:2px;background:${colour};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);transform:rotate(45deg)"></div>`,
+          iconSize: [10, 10],
+          iconAnchor: [5, 5],
+        });
+        const marker = L.marker([ref.latitude, ref.longitude], { icon });
+        marker.on('click', () => {
+          setSelectedNodeRef(ref);
+          setSelectedFeature(null);
+          setSelectedNotice(null);
+        });
+        marker.addTo(map);
+        nodeMarkerRefs.current.push(marker);
+      });
+    }
+
+    syncNodeMarkers();
+  }, [mapReady, nodeGeoRefs, showNodeActivity]);
 
   function toggleLayer(id: string) {
     setVisibleLayers((prev) => {
@@ -219,7 +279,7 @@ export function SpatialMap({ datasets, notices }: Props) {
             </button>
           </div>
 
-          {datasets.length === 0 && notices.length === 0 && (
+          {datasets.length === 0 && notices.length === 0 && nodeGeoRefs.length === 0 && (
             <p className="text-xs text-muted-foreground">
               No published datasets. Upload and approve a dataset to display it here.
             </p>
@@ -265,7 +325,30 @@ export function SpatialMap({ datasets, notices }: Props) {
             </div>
           )}
 
-          {/* Notices overlay toggle */}
+          {/* Node activity overlay */}
+          <div className="pt-2 border-t">
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="layer-node-activity"
+                checked={showNodeActivity}
+                onChange={() => setShowNodeActivity((v) => !v)}
+                className="mt-0.5 rounded shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <label htmlFor="layer-node-activity" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
+                  <span className="inline-flex gap-0.5">
+                    <span className="inline-block size-2.5 rounded-sm shrink-0 bg-violet-600" style={{ transform: 'rotate(45deg)' }} />
+                    <span className="inline-block size-2.5 rounded-sm shrink-0 bg-cyan-600" style={{ transform: 'rotate(45deg)' }} />
+                  </span>
+                  <span>Node activity {nodeGeoRefs.length > 0 ? `(${nodeGeoRefs.length})` : '(none)'}</span>
+                </label>
+                <p className="text-xs text-muted-foreground pl-6">Purple=record · Cyan=notice · Green=project</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Notices overlay */}
           <div className="pt-2 border-t">
             <div className="flex items-start gap-2">
               <input
@@ -330,12 +413,33 @@ export function SpatialMap({ datasets, notices }: Props) {
                 <p>Deadline: {new Date(selectedNotice.comment_deadline).toLocaleDateString()}</p>
               )}
             </div>
-            <Link
-              href={`/notices/${selectedNotice.id}`}
-              className="text-xs text-blue-600 hover:underline"
-            >
+            <Link href={`/notices/${selectedNotice.id}`} className="text-xs text-blue-600 hover:underline">
               View notice →
             </Link>
+          </div>
+        )}
+
+        {/* Selected node activity inspector */}
+        {selectedNodeRef && (
+          <div className="rounded-lg border bg-card p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span
+                  className="inline-block size-2.5 rounded-sm shrink-0"
+                  style={{ backgroundColor: NODE_TYPE_COLOUR[selectedNodeRef.recordType] ?? '#6366f1', transform: 'rotate(45deg)' }}
+                />
+                <p className="text-sm font-medium truncate">{selectedNodeRef.label}</p>
+              </div>
+              <button onClick={() => setSelectedNodeRef(null)} className="text-xs text-muted-foreground hover:text-foreground shrink-0">✕</button>
+            </div>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p className="capitalize">{selectedNodeRef.recordType} · Node activity</p>
+              {selectedNodeRef.municipality && <p>Municipality: {selectedNodeRef.municipality}</p>}
+              {selectedNodeRef.ward && <p>Ward: {selectedNodeRef.ward}</p>}
+              {selectedNodeRef.timestamp && (
+                <p>{new Date(selectedNodeRef.timestamp).toLocaleDateString()}</p>
+              )}
+            </div>
           </div>
         )}
 

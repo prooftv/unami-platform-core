@@ -10,7 +10,8 @@ export type NodeCapability =
   | 'tcrs'
   | 'institutional-memory'
   | 'health'
-  | 'operators';
+  | 'operators'
+  | 'spatial';
 
 // ─── Node identity ────────────────────────────────────────────────────────────
 
@@ -46,12 +47,30 @@ export interface NodeHealth {
 
 // ─── Governance ───────────────────────────────────────────────────────────────
 
+// Geographic reference — attached to records, notices, projects from governance nodes.
+// Precision degrades gracefully: coordinates > ward > municipality > district.
+// No field is required — use the most specific reference available.
+export interface GeoRef {
+  district?: string;       // e.g. 'Amajuba'
+  municipality?: string;   // e.g. 'Newcastle'
+  ward?: string;           // e.g. 'Ward 3'
+  locality?: string;       // e.g. 'Madadeni'
+  latitude?: number;       // WGS84
+  longitude?: number;      // WGS84
+  nodeId?: string;         // originating node identifier
+  recordId?: string;       // originating record/notice/project id
+  recordType?: string;     // 'record' | 'notice' | 'project'
+  label?: string;          // display label for map tooltip
+  timestamp?: string;      // ISO datetime of the originating record
+}
+
 export interface RecordActivityItem {
   id: string;
   title: string;
   type: string;
   status: string | null;
   createdAt: string;
+  geoRef?: GeoRef;
   // nodeUrl not used for linking — node frontend uses slugs, not UUIDs
   nodeUrl?: string;
 }
@@ -78,6 +97,7 @@ export interface NoticeActivityItem {
   isStatutory: boolean;
   commentDeadline: string | null;
   createdAt: string;
+  geoRef?: GeoRef;
   // nodeUrl not used for linking — node frontend uses slugs, not UUIDs
   nodeUrl?: string;
 }
@@ -151,6 +171,7 @@ export interface CommercialActivityItem {
   status: string;
   health: string | null;
   updatedAt: string;
+  geoRef?: GeoRef;
   nodeUrl?: string;
 }
 
@@ -269,7 +290,34 @@ export interface RecordDetail {
   childRecords: { _id: string; title: string; slug: string; recordType: string; date: string | null; status: string | null }[];
 }
 
-// ─── Client factory ───────────────────────────────────────────────────────────
+// ─── Spatial summary (API v1.2) ──────────────────────────────────────────────
+
+export interface NodeMunicipalitySummary {
+  name: string;
+  slug: string;
+  recordCount: number;
+  noticeCount: number;
+  activeProjects: number;
+  activeDevNotices: number;
+  boundaryAvailable: boolean;
+}
+
+export interface NodeWardSummary {
+  wardNumber: number;
+  municipality: string;
+  recordCount: number;
+  activeProjects: number;
+  boundaryAvailable: boolean;
+}
+
+export interface NodeSpatialSummary {
+  municipalities: NodeMunicipalitySummary[];
+  wards: NodeWardSummary[];
+  geoRefs: GeoRef[];  // all georeferenced activity items from this node
+  generatedAt: string;
+}
+
+
 
 /**
  * Read-only typed client for the Governance Node API contract (v1.0 / v1.1).
@@ -335,6 +383,11 @@ export function createGovernanceNodeClient(config: ApiConfig) {
     /** GET /api/intelligence/records/detail?id=<sanityId> — API v1.1 authoritative record detail */
     recordDetail(sanityId: string): Promise<{ record: RecordDetail; timestamp: string }> {
       return apiFetch(config, `${base}/records/detail?id=${encodeURIComponent(sanityId)}`);
+    },
+
+    /** GET /api/intelligence/spatial/summary — API v1.2 — requires `spatial` capability */
+    spatialSummary(): Promise<NodeSpatialSummary> {
+      return apiFetch(config, `${base}/spatial/summary`);
     },
   };
 }

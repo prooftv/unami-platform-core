@@ -25,6 +25,8 @@ export type {
   RecordsSummary, NoticesSummary, ParticipationSummary,
   EvidenceSummary, CommercialSummary, TcrsSummary, LineageSummary,
   OperatorsSummary, NodeOperator,
+  RecordActivityItem, NoticeActivityItem, CommercialActivityItem,
+  GeoRef, NodeSpatialSummary, NodeMunicipalitySummary, NodeWardSummary,
   GovernanceNodeClient,
 } from './clients/governance-node';
 
