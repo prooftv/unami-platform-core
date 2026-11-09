@@ -57,6 +57,7 @@ export default async function SpatialMapPage() {
       feature_count: d.feature_count,
       dataset_date: d.dataset_date,
       geojson,
+      attribution: null,
     };
   });
 

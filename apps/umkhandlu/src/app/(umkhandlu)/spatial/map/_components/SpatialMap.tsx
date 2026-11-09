@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Map as LeafletMap, GeoJSON as LeafletGeoJSON, Marker } from 'leaflet';
+import { AreaInfoPanel } from './AreaInfoPanel';
 
 export interface PublishedDataset {
   id: string;
@@ -11,6 +12,7 @@ export interface PublishedDataset {
   feature_count: number | null;
   dataset_date: string | null;
   geojson: GeoJSONFeatureCollection | null;
+  attribution: string | null;
 }
 
 export interface NoticeMarker {
@@ -85,6 +87,8 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   const [showNodeActivity, setShowNodeActivity] = useState(true);
   const [selectedFeature, setSelectedFeature] = useState<{
     datasetName: string;
+    datasetSource: string;
+    datasetDate: string | null;
     properties: Record<string, unknown>;
   } | null>(null);
   const [selectedNotice, setSelectedNotice] = useState<NoticeMarker | null>(null);
@@ -150,7 +154,12 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
             L.circleMarker(latlng, { radius: 6, fillColor: colour, color: colour, weight: 1, opacity: 1, fillOpacity: 0.8 }),
           onEachFeature: (feature, fl) => {
             fl.on('click', () => {
-              setSelectedFeature({ datasetName: dataset.name, properties: feature.properties ?? {} });
+              setSelectedFeature({
+                datasetName: dataset.name,
+                datasetSource: dataset.source_institution,
+                datasetDate: dataset.dataset_date,
+                properties: feature.properties ?? {},
+              });
               setSelectedNotice(null);
               setSelectedNodeRef(null);
             });
@@ -372,25 +381,12 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
           </div>
         </div>
 
-        {/* Selected dataset feature inspector */}
+        {/* Area information panel — replaces raw property inspector */}
         {selectedFeature && (
-          <div className="rounded-lg border bg-card p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium truncate">{selectedFeature.datasetName}</p>
-              <button onClick={() => setSelectedFeature(null)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
-            </div>
-            <div className="space-y-1 max-h-48 overflow-y-auto">
-              {Object.entries(selectedFeature.properties)
-                .filter(([, v]) => v != null && v !== '')
-                .slice(0, 20)
-                .map(([k, v]) => (
-                  <div key={k} className="flex gap-2 text-xs">
-                    <span className="text-muted-foreground shrink-0 w-24 truncate">{k}</span>
-                    <span className="truncate">{String(v)}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
+          <AreaInfoPanel
+            feature={selectedFeature}
+            onClose={() => setSelectedFeature(null)}
+          />
         )}
 
         {/* Selected notice inspector */}

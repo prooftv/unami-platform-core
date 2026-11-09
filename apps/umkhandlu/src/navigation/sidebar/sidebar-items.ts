@@ -58,6 +58,7 @@ export const sidebarItems: NavGroup[] = [
       { id: 'spatial-monitoring', title: 'Monitoring',      url: '/spatial/monitoring', icon: BarChart3 },
       { id: 'spatial-cogta',      title: 'COGTA Catalogue', url: '/spatial/cogta',      icon: Globe },
       { id: 'spatial-map',        title: 'Geographic View', url: '/spatial/map',        icon: Map },
+      { id: 'spatial-report',      title: 'Spatial Report',  url: '/spatial/report',     icon: BarChart3 },
     ],
   },
   {
