@@ -2,7 +2,7 @@
 
 Constitutional reference — Unami Platform Core + Umkhandlu Governance Node
 Status: Active implementation workstream
-Last updated: 2026-11-07
+Last updated: 2026-11-09
 Mandate: Full lifecycle management, end-to-end automation, risk and compliance capability
 
 ---
@@ -16,6 +16,31 @@ not a manually operated GIS workflow.
 
 The required outcome is a functioning, automated, auditable and maintainable system
 that serves the 2027 launch.
+
+---
+
+## Three Responsibilities, One Connected Intelligence System
+
+**1. Unami Control Centre — Infrastructure owner**
+Spatial source registry, datasets, ingestion pipelines, staging and publication, geographic
+boundaries, GIS map, platform-level monitoring, risk and compliance infrastructure.
+
+**2. Umkhandlu Governance Node — Governance information owner**
+Governance records, notices, development matters, projects, activities, participation,
+evidence, institutional workflows and governance histories. Sanity Studio workflows are
+used to capture and maintain this information.
+
+**3. Unified Geographic Intelligence — Integrated experience**
+Connects published geographic datasets with geographically referenced governance
+information, infrastructure, development, statutory processes, risks, compliance and evidence.
+
+Integration mechanism: Governance Node APIs → Control Centre read-only aggregation
+via GeoRef, NodeSpatialSummary and shared geographic identifiers.
+
+The Control Centre does not become the Governance Node's database or administrative
+interface. The node supplies its own governance information through its APIs; the Control
+Centre supplies the geographic and intelligence infrastructure that makes that information
+useful in a wider spatial context.
 
 ---
 
@@ -512,19 +537,47 @@ Returns:
 
 ## Implementation Plan
 
-### Phase GIS-1 — Foundation (partially complete)
+### Phase GIS-1 — Foundation ✅ Complete
 
 | Step | What | Status |
 |---|---|---|
-| Constitutional docs | GIS_INTEGRATION.md (both repos) | ✅ Written |
-| `spatial_sources` + `spatial_imports` migration | Platform Core Supabase | ✅ Applied |
-| ArcGIS REST connector | `apps/umkhandlu/src/lib/gis/arcgis-connector.ts` | ✅ Built |
-| Source registry UI | `apps/umkhandlu/src/app/(umkhandlu)/spatial/sources/` | ✅ Built |
-| Geographic view placeholder | `apps/umkhandlu/src/app/(umkhandlu)/spatial/map/` | ✅ Built |
-| Sidebar spatial section | `apps/umkhandlu/src/navigation/sidebar/sidebar-items.ts` | ✅ Built |
-| `listing` boundary fields | Governance node Sanity schema | ✅ Built |
-| `campaign` site fields | Governance node Sanity schema | ✅ Built |
-| Push GIS commit to origin/trunk | Governance node | ⏳ Pending |
+| Constitutional docs | GIS_INTEGRATION.md (both repos) | ✅ |
+| `spatial_sources` + `spatial_imports` migration | Platform Core Supabase | ✅ |
+| ArcGIS REST connector | `apps/umkhandlu/src/lib/gis/arcgis-connector.ts` | ✅ |
+| Source registry UI | `apps/umkhandlu/src/app/(umkhandlu)/spatial/sources/` | ✅ |
+| Geographic view placeholder | `apps/umkhandlu/src/app/(umkhandlu)/spatial/map/` | ✅ |
+| Sidebar spatial section | `apps/umkhandlu/src/navigation/sidebar/sidebar-items.ts` | ✅ |
+| `listing` boundary fields | Governance node Sanity schema | ✅ |
+| `campaign` site fields | Governance node Sanity schema | ✅ |
+| Push GIS commits to origin/trunk | Governance node | ✅ |
+
+### Node Spatial Integration ✅ Complete (2026-11-09)
+
+The Governance Node's existing schemas and workflows were extended — not rebuilt.
+The Control Centre's existing aggregation logic was retained.
+
+| Previously | Now |
+|---|---|
+| `/spatial` returned municipalities and wards only | `/spatial` also returns `geoRefs[]` |
+| Records had `relatedArea` but coordinates were not exposed | Record summaries expose geographic references |
+| Development notices had geographic fields but were not connected | Notices expose their own or related-area coordinates |
+| Campaigns had geographic associations | Commercial summaries expose campaign locations |
+| Node did not declare spatial capability | `spatial` is now declared in node capabilities |
+| Control Centre node activity layer returned no markers | Node activity produces geographic markers when source records have resolvable locations |
+
+### Implementation Status by Layer
+
+| Layer | Status |
+|---|---|
+| GIS foundation — source registry, ingestion infrastructure, schema | ✅ Implemented |
+| Node spatial integration — GeoRef contract, spatial summary, activity summaries, Control Centre aggregation | ✅ Implemented |
+| Operational governance data — actual notices, development matters, projects, activities, evidence, institutional records | ⏳ Populate and verify |
+| Full geographic coverage — ward and locality coverage, infrastructure, environmental datasets | ⏳ Progressive (awaiting data) |
+
+**Important distinction:** Implemented capability is not the same as populated intelligence.
+The map's ability to display a development notice is implemented. Whether a given notice
+appears depends on whether its record has a valid `geopoint` or resolvable related area.
+Completeness of geographic coverage depends on the actual records maintained in the node.
 
 ### Phase GIS-2 — Full CRUD and Source Management
 
@@ -561,11 +614,49 @@ Returns:
 | Step | What | Status |
 |---|---|---|
 | Leaflet boundary polygon rendering | Governance node | ⏳ |
-| `/api/intelligence/spatial/summary` | Governance node | ⏳ |
+| `/api/intelligence/spatial/summary` with `geoRefs[]` | Governance node | ✅ |
 | `developmentNotice` geographic fields | Governance node Sanity | ⏳ |
 | Geographic view in Control Centre | `apps/umkhandlu` | ⏳ |
 | Ward boundary import (COGTA data) | Governance node | ⏳ (awaiting data) |
 | Amajuba DM boundary import | Governance node | ⏳ (awaiting form response) |
+
+### Next Milestone — Amajuba Governance Data Population and Geographic Coverage
+
+The next milestone is not another architecture rebuild. It measures actual record coverage,
+geographic resolution, source verification and the ability to navigate from a map feature
+back to its authoritative governance record.
+
+| Measure | Target |
+|---|---|
+| Governance records with verified geographic associations | All active records |
+| Development notices with resolvable location | All active notices |
+| Projects with site coordinates or area association | All active projects |
+| Ward and locality identifiers consistent across records | Consistent |
+| Map feature → authoritative governance record navigation | Working |
+| Source attribution visible on every map feature | Implemented |
+
+**Four technical refinements required before this milestone is complete:**
+
+A. GeoRef provenance — source record should carry originating system, source institution,
+source document reference, verification and publication status, geographic reference type
+and precision, evidence references and access permissions. Confidential information must
+not be exposed through public spatial summaries.
+
+B. Multiple geographic associations — a campaign associated with several wards, settlements
+or project sites must not be represented as though it only concerns the first location.
+Inspect whether the API needs to expose multiple GeoRefs per record while preserving one
+stable record identity.
+
+C. Pagination beyond 20 records — the `/spatial` endpoint's 20-record limit is acceptable
+for a compact summary or initial map preview. It must not silently become the limit on
+geographic intelligence. The system must distinguish summary counts, paginated geographic
+records and full record details. The map must be able to retrieve more than 20 records
+when the dataset grows.
+
+D. Geographic matching by area association — a record may belong to a ward without having
+a precise point. It must still be spatially discoverable through its verified area
+association. Where a location cannot be resolved, the system must report that limitation
+rather than assign an approximate point without qualification.
 
 ### Phase GIS-5 — Automation and Monitoring
 
