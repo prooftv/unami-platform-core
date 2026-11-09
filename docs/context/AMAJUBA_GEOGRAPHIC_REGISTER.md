@@ -2,7 +2,7 @@
 
 Living reference — Unami Platform Core / Umkhandlu Governance Node
 Status: Active
-Last updated: 2026-11-12
+Last updated: 2026-11-12 (MDB ingestion complete)
 Maintained by: platform investigation + monthly source monitoring
 
 ---
@@ -38,9 +38,9 @@ authorised for redistribution. These are separate questions and must be answered
 
 ## Key Investigation Findings (2026-11-12)
 
-### MDB Wards 2026 — confirmed queryable
+### MDB Wards 2026 — INGESTED AND PUBLISHED ✅
 
-**This is the most significant finding.**
+**This is the most significant finding — now complete.**
 
 The Municipal Demarcation Board publishes a live ArcGIS FeatureServer with 2026 ward
 boundaries for all South African municipalities.
@@ -49,20 +49,22 @@ boundaries for all South African municipalities.
 https://services7.arcgis.com/oeoyTUJC8HEeYsRB/arcgis/rest/services/MDB_Wards_2026/FeatureServer/0
 ```
 
-Confirmed:
-- Amajuba DC25 returns **55 wards** — Newcastle 36, Emadlangeni 6, Dannhauser 13
-- Geometry is real KZN coordinates (WGS84, EPSG:4326 via `outSR=4326`)
-- Newcastle Ward 1 sample: 4,926 coordinate points — high-resolution polygon
-- Fields: `WardID`, `WardNo`, `MUNICNAME`, `DISTRICT`, `DISTRICTCO`, `Province`, `DATE`
-- `DATE` field value: 1793750400000 (epoch ms) — 2026 delimitation
-- Licence: MDB states data is released in the public domain with attribution required
-- No licence key required, no authentication, GeoJSON output supported
+Confirmed and ingested:
+- Amajuba DC25: **55 wards** — Newcastle 36, Emadlangeni 6, Dannhauser 13
+- Geometry: WGS84 (EPSG:4326), Polygon/MultiPolygon
+- All 55 features validated: 0 geometry errors, 0 duplicate WardIDs
+- All features within Amajuba spatial extent
+- CAT_B codes verified: KZN252 (Newcastle), KZN253 (Emadlangeni), KZN254 (Dannhauser)
+- DATE field: 2026 delimitation epoch confirmed
+- Licence: Public domain, attribution required
+- Attribution: Municipal Demarcation Board of South Africa (MDB)
 
-**Permission classification: `download` — public domain, attribution required**
+**Control Centre dataset ID: `017eeb0a-89ec-416f-b2b5-d6a58edbf1d4`**
+**Source ID: `bc86c5c0-f2d9-42bf-b563-6074dfe6d8ec`**
+**Pipeline run ID: `62cf0baf-a9be-4af6-9604-202b52d1553b`**
+**Status: published — 55/55 features approved, visible on `/spatial/map`**
 
-Attribution: Municipal Demarcation Board of South Africa (MDB)
-
-**Action: Register as new spatial source and ingest all 55 Amajuba wards.**
+22 validation tests pass (see `src/lib/gis/__tests__/mdb-ingestion.test.ts`).
 
 ### COGTA ILIS — newly identified layers
 
@@ -104,7 +106,7 @@ Identified as a useful independent comparison source for traditional council pol
 | Municipality boundary | Emadlangeni KZN253 | MDB 2026 FeatureServer | Public domain, attribution | `available` |
 | Municipality boundary | Dannhauser KZN254 | MDB 2026 FeatureServer | Public domain, attribution | `available` |
 | Municipality boundaries | All 3 LMs | ArcGIS Online SouthAfricanBoundaries (existing) | Reference | `reference` |
-| Electoral wards — 2026 | 55 wards (DC25) | MDB 2026 FeatureServer | Public domain, attribution | `available` |
+| Electoral wards — 2026 | 55 wards (DC25) | MDB 2026 FeatureServer | Public domain, attribution | `available` — **INGESTED** |
 | Electoral wards — 2021 | Historical | COGTA ILIS layer 50 | Pending COGTA form | `historical` |
 
 **Notes:**
@@ -268,7 +270,7 @@ locality points and area associations without implying an exact boundary exists.
 |---|---|---|
 | District boundary | `available` | None — MDB 2026 queryable |
 | Municipality boundaries (3 LMs) | `available` | None — MDB 2026 queryable |
-| 2026 ward boundaries (55 wards) | `available` | None — MDB 2026 queryable |
+| 2026 ward boundaries (55 wards) | `available` — **INGESTED** | None — published in Control Centre |
 | 2021 ward boundaries | `historical` | COGTA 502 block |
 | Traditional council polygons | `validate` | COGTA 502 block + permission pending |
 | Traditional council institutions | `validate` | Gazetted status verification |
@@ -286,18 +288,18 @@ locality points and area associations without implying an exact boundary exists.
 
 ## F. Implementation Sequence
 
-| Priority | Work | Expected outcome |
+| Priority | Work | Status |
 |---|---|---|
-| 1 | Register MDB 2026 as new spatial source in Control Centre | Source record with correct permission classification |
-| 2 | Ingest all 55 Amajuba wards from MDB 2026 FeatureServer | Ward boundaries available on `/map` |
-| 3 | Submit COGTA data request form | Unblocks 9 COGTA sources including traditional council layers |
-| 4 | Populate Sanity area geopoints — Khathide, Mndozo, KwaGudlucingo | Governance records become geographically discoverable |
-| 5 | Remove generic centroid coordinates from 2 Sanity notices | Eliminates false precision |
-| 6 | Validate COGTA ILIS layer 31 and SIFT layer 3 (once unblocked) | Traditional council polygons |
-| 7 | Reconcile traditional polygons with Amajuba SDF and Newcastle IDP | Verified traditional geography |
-| 8 | Validate KZN Transport GIS and NGI sources | Roads and physical geography |
-| 9 | Validate DFFE EGIS environmental layers | Environmental context |
-| 10 | Expand Sanity area records to full locality register | Progressive district coverage |
+| 1 | Register MDB 2026 as new spatial source in Control Centre | ✅ Complete — source ID `bc86c5c0` |
+| 2 | Ingest all 55 Amajuba wards from MDB 2026 FeatureServer | ✅ Complete — dataset ID `017eeb0a`, 55/55 published |
+| 3 | Submit COGTA data request form | ✅ Submitted — awaiting approval |
+| 4 | Populate Sanity area geopoints — Khathide, Mndozo, KwaGudlucingo | ⏳ Pending — requires Sanity Studio access |
+| 5 | Remove generic centroid coordinates from 2 Sanity notices | ⏳ Pending — requires Sanity Studio access |
+| 6 | Validate COGTA ILIS layer 31 and SIFT layer 3 (once unblocked) | ⏳ Blocked — COGTA form approval pending |
+| 7 | Reconcile traditional polygons with Amajuba SDF and Newcastle IDP | ⏳ Blocked — depends on step 6 |
+| 8 | Validate KZN Transport GIS and NGI sources | ⏳ Pending |
+| 9 | Validate DFFE EGIS environmental layers | ⏳ Pending |
+| 10 | Expand Sanity area records to full locality register | ⏳ Ongoing |
 
 ---
 

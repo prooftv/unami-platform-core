@@ -1,7 +1,7 @@
 import { PageHeader } from '@unami/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { createServiceClient } from '@/lib/supabase/server';
+import { Pagination, parsePage, PAGE_SIZE } from '@/components/ui/pagination';
 import { RunHealthCheckButton } from './_components/RunHealthCheckButton';
 import { ReplayButton } from './_components/ReplayButton';
 
@@ -15,18 +15,31 @@ const statusColour: Record<string, string> = {
   cancelled: 'bg-gray-100 text-gray-700',
 };
 
-export default async function PipelinesPage() {
+interface Props { searchParams: Promise<Record<string, string | string[] | undefined>> }
+
+export default async function PipelinesPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const page = parsePage(sp);
   const supabase = createServiceClient();
-  const { data: runs } = await supabase
-    .from('spatial_pipeline_runs')
-    .select('*, spatial_sources(name, institution)')
-    .order('started_at', { ascending: false })
-    .limit(100);
+
+  const [{ count }, { data: runs }, { data: summary }] = await Promise.all([
+    supabase.from('spatial_pipeline_runs').select('*', { count: 'exact', head: true }),
+    supabase
+      .from('spatial_pipeline_runs')
+      .select('*, spatial_sources(name, institution)')
+      .order('started_at', { ascending: false })
+      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
+    supabase
+      .from('spatial_pipeline_runs')
+      .select('status'),
+  ]);
 
   const rows = runs ?? [];
-  const failed  = rows.filter((r) => r.status === 'failed').length;
-  const success = rows.filter((r) => r.status === 'success').length;
-  const running = rows.filter((r) => r.status === 'running').length;
+  const total = count ?? 0;
+  const allRows = summary ?? [];
+  const failed  = allRows.filter((r) => r.status === 'failed').length;
+  const success = allRows.filter((r) => r.status === 'success').length;
+  const running = allRows.filter((r) => r.status === 'running').length;
 
   return (
     <div className="space-y-6">
@@ -88,6 +101,9 @@ export default async function PipelinesPage() {
               })}
             </div>
           )}
+          <div className="px-6 border-t">
+            <Pagination page={page} pageSize={PAGE_SIZE} total={total} baseUrl="/spatial/pipelines" />
+          </div>
         </CardContent>
       </Card>
     </div>

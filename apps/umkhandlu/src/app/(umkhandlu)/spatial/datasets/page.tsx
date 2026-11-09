@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
+import { Pagination, parsePage, PAGE_SIZE } from '@/components/ui/pagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,24 +17,39 @@ const statusColour: Record<string, string> = {
 };
 
 const permColour: Record<string, string> = {
-  pending:    'text-amber-600',
-  confirmed:  'text-green-600',
-  restricted: 'text-destructive',
-  denied:     'text-destructive',
-  reference:  'text-blue-600',
+  pending:      'text-amber-600',
+  download:     'text-green-600',
+  redistribute: 'text-green-600',
+  internal:     'text-green-600',
+  display:      'text-blue-600',
+  reference:    'text-blue-600',
+  restricted:   'text-destructive',
+  prohibited:   'text-destructive',
 };
 
-export default async function DatasetsPage() {
+interface Props { searchParams: Promise<Record<string, string | string[] | undefined>> }
+
+export default async function DatasetsPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const page = parsePage(sp);
   const supabase = createServiceClient();
-  const { data: datasets } = await supabase
-    .from('spatial_datasets')
-    .select('*, spatial_sources(name, institution)')
-    .order('created_at', { ascending: false });
+
+  const [{ count }, { data: datasets }, { data: summary }] = await Promise.all([
+    supabase.from('spatial_datasets').select('*', { count: 'exact', head: true }),
+    supabase
+      .from('spatial_datasets')
+      .select('*, spatial_sources(name, institution)')
+      .order('created_at', { ascending: false })
+      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
+    supabase.from('spatial_datasets').select('status'),
+  ]);
 
   const rows = datasets ?? [];
-  const published = rows.filter((d) => d.status === 'published').length;
-  const staged    = rows.filter((d) => d.status === 'staged').length;
-  const pending   = rows.filter((d) => d.status === 'pending').length;
+  const total = count ?? 0;
+  const allRows = summary ?? [];
+  const published = allRows.filter((d) => d.status === 'published').length;
+  const staged    = allRows.filter((d) => d.status === 'staged').length;
+  const pending   = allRows.filter((d) => d.status === 'pending').length;
 
   return (
     <div className="space-y-6">
@@ -49,7 +65,7 @@ export default async function DatasetsPage() {
 
       <div className="grid grid-cols-3 gap-4">
         <Card><CardContent className="pt-6">
-          <p className="text-2xl font-semibold">{rows.length}</p>
+          <p className="text-2xl font-semibold">{total}</p>
           <p className="text-sm text-muted-foreground">Total datasets</p>
         </CardContent></Card>
         <Card><CardContent className="pt-6">
@@ -85,8 +101,8 @@ export default async function DatasetsPage() {
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColour[d.status] ?? ''}`}>
                           {d.status}
                         </span>
-                        <span className={`text-xs font-medium ${permColour[d.permission_status] ?? ''}`}>
-                          {d.permission_status}
+                        <span className={`text-xs font-medium ${permColour[d.permission_classification ?? d.permission_status] ?? ''}`}>
+                          {d.permission_classification ?? d.permission_status}
                         </span>
                       </div>
                     </div>
@@ -101,6 +117,9 @@ export default async function DatasetsPage() {
               })}
             </div>
           )}
+          <div className="px-6 border-t">
+            <Pagination page={page} pageSize={PAGE_SIZE} total={total} baseUrl="/spatial/datasets" />
+          </div>
         </CardContent>
       </Card>
     </div>

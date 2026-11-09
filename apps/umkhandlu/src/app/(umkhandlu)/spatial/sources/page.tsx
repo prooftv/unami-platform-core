@@ -1,18 +1,24 @@
 import { PageHeader } from '@unami/ui';
-import { fetchSpatialSources, fetchRecentImports } from '@/lib/gis/spatial-sources-fetcher';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Pagination, parsePage, PAGE_SIZE } from '@/components/ui/pagination';
 import Link from 'next/link';
+import { createServiceClient } from '@/lib/supabase/server';
+import { fetchRecentImports } from '@/lib/gis/spatial-sources-fetcher';
+import type { SpatialSource } from '@/lib/gis/spatial-sources-fetcher';
 
 export const dynamic = 'force-dynamic';
 
 const permissionColour: Record<string, string> = {
-  pending:    'bg-amber-100 text-amber-800',
-  confirmed:  'bg-green-100 text-green-800',
-  restricted: 'bg-red-100 text-red-800',
-  denied:     'bg-red-200 text-red-900',
-  reference:  'bg-blue-100 text-blue-800',
+  pending:      'bg-amber-100 text-amber-800',
+  download:     'bg-green-100 text-green-800',
+  redistribute: 'bg-green-100 text-green-800',
+  internal:     'bg-green-100 text-green-800',
+  display:      'bg-blue-100 text-blue-800',
+  reference:    'bg-blue-100 text-blue-800',
+  restricted:   'bg-red-100 text-red-800',
+  prohibited:   'bg-red-200 text-red-900',
 };
 
 const sourceTypeLabel: Record<string, string> = {
@@ -29,15 +35,34 @@ const importStatusColour: Record<string, string> = {
   partial: 'bg-amber-100 text-amber-800',
 };
 
-export default async function SpatialSourcesPage() {
-  const [sources, imports] = await Promise.all([
-    fetchSpatialSources(),
+interface Props { searchParams: Promise<Record<string, string | string[] | undefined>> }
+
+export default async function SpatialSourcesPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const page = parsePage(sp);
+  const supabase = createServiceClient();
+
+  const [{ count }, { data: sourceRows }, imports] = await Promise.all([
+    supabase.from('spatial_sources').select('*', { count: 'exact', head: true }),
+    supabase
+      .from('spatial_sources')
+      .select('*')
+      .order('institution', { ascending: true })
+      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
     fetchRecentImports(10),
   ]);
 
-  const pending    = sources.filter((s) => s.permission_status === 'pending').length;
-  const confirmed  = sources.filter((s) => s.permission_status === 'confirmed').length;
-  const restricted = sources.filter((s) => s.permission_status === 'restricted' || s.permission_status === 'denied').length;
+  const sources = (sourceRows ?? []) as SpatialSource[];
+  const total = count ?? 0;
+
+  // Counts across all sources (not just current page) — fetch separately
+  const { data: allSources } = await supabase
+    .from('spatial_sources')
+    .select('permission_classification');
+  const allRows = allSources ?? [];
+  const pending    = allRows.filter((s) => s.permission_classification === 'pending').length;
+  const confirmed  = allRows.filter((s) => ['download','redistribute','internal','display'].includes(s.permission_classification)).length;
+  const restricted = allRows.filter((s) => ['restricted','prohibited'].includes(s.permission_classification)).length;
 
   return (
     <div className="space-y-6">
@@ -78,6 +103,9 @@ export default async function SpatialSourcesPage() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">
+            {sources.length === 0 && (
+              <div className="px-6 py-12 text-center text-sm text-muted-foreground">No sources registered.</div>
+            )}
             {sources.map((source) => (
               <div key={source.id} className="relative px-6 py-4 space-y-1 hover:bg-muted/30">
                 <Link href={`/spatial/sources/${source.id}`} className="absolute inset-0" aria-label={source.name} />
@@ -87,8 +115,8 @@ export default async function SpatialSourcesPage() {
                     <p className="text-xs text-muted-foreground">{source.institution}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${permissionColour[source.permission_status] ?? 'bg-gray-100 text-gray-700'}`}>
-                      {source.permission_status}
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${permissionColour[source.permission_classification] ?? 'bg-gray-100 text-gray-700'}`}>
+                      {source.permission_classification}
                     </span>
                     <Badge variant="outline" className="text-xs">
                       {sourceTypeLabel[source.source_type] ?? source.source_type}
@@ -117,6 +145,9 @@ export default async function SpatialSourcesPage() {
                 </div>
               </div>
             ))}
+          </div>
+          <div className="px-6 border-t">
+            <Pagination page={page} pageSize={PAGE_SIZE} total={total} baseUrl="/spatial/sources" />
           </div>
         </CardContent>
       </Card>

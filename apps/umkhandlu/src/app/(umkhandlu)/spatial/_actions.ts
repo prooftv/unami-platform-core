@@ -486,6 +486,16 @@ export async function ingestGeoJSONAction(datasetId: string, geojsonText: string
     return { error: 'FeatureCollection exceeds 10,000 features. Split into smaller files.' };
   }
 
+  // Idempotency guard — prevent duplicate staging for the same dataset
+  const { count: existingCount } = await supabase
+    .from('spatial_staged_features')
+    .select('*', { count: 'exact', head: true })
+    .eq('dataset_id', datasetId)
+    .eq('operator_status', 'pending');
+  if ((existingCount ?? 0) > 0) {
+    return { error: `Dataset already has ${existingCount} features pending review. Approve or reject them before re-ingesting.` };
+  }
+
   const started = new Date().toISOString();
 
   const { data: run, error: runErr } = await supabase
