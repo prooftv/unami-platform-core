@@ -3,6 +3,7 @@
 Constitutional reference — Unami Platform Core + Umkhandlu Governance Node
 Status: Active implementation workstream
 Last updated: 2026-11-12
+Geographic register: `docs/context/AMAJUBA_GEOGRAPHIC_REGISTER.md`
 Mandate: Full lifecycle management, end-to-end automation, risk and compliance capability
 
 ---
@@ -656,6 +657,14 @@ Completeness of geographic coverage depends on the actual records maintained in 
 | Ward boundaries | None — COGTA form not yet submitted |
 | COGTA FeatureServers | 9 sources registered, service roots reachable, query endpoints return 502 |
 | spatial_imports | Empty — no features ingested yet |
+
+### MDB Wards 2026 — confirmed queryable (2026-11-12)
+
+- FeatureServer: `https://services7.arcgis.com/oeoyTUJC8HEeYsRB/arcgis/rest/services/MDB_Wards_2026/FeatureServer/0`
+- 55 Amajuba wards confirmed: Newcastle 36, Emadlangeni 6, Dannhauser 13
+- Real KZN geometry, WGS84, GeoJSON output, no authentication required
+- Licence: public domain, attribution required
+- **This is the authoritative ward source. Register and ingest immediately.**
 
 ### COGTA investigation findings (2026-11-12)
 
