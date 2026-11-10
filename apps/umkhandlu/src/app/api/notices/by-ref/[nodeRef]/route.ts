@@ -10,11 +10,15 @@ const CORS = {
 
 /**
  * Public endpoint — no auth required.
- * Looks up a CC notice by its Governance Node Sanity document _id (node_notice_ref),
- * then returns the same intelligence payload as /api/notices/[id].
+ * Looks up a CC notice by its Governance Node Sanity _id (node_notice_ref).
+ * Returns the same safe public intelligence payload as /api/notices/[id].
  *
- * Called by the Governance Node notice page when it has a ccNoticeRef (Sanity _id)
- * but not the CC UUID.
+ * The nodeRef is the Sanity document _id — not a UUID, not a slug.
+ * Basic length validation only (Sanity IDs are not predictable UUIDs).
+ *
+ * Node identity is not validated here because this is a public read endpoint.
+ * The node_notice_ref is not secret — it is the Sanity document _id which
+ * appears in the Node's public URLs. The response contains no sensitive data.
  */
 export async function GET(
 	_req: Request,
@@ -22,9 +26,9 @@ export async function GET(
 ) {
 	const { nodeRef } = await params;
 
-	if (!nodeRef) {
+	if (!nodeRef || nodeRef.length < 10 || nodeRef.length > 100) {
 		return NextResponse.json(
-			{ error: "Missing nodeRef" },
+			{ error: "Invalid nodeRef" },
 			{ status: 400, headers: CORS },
 		);
 	}
@@ -45,22 +49,19 @@ export async function GET(
 		);
 	}
 
-	// Delegate to the same data fetch as /api/notices/[id]
 	const [{ data: risks }, { data: obligations }, { data: findings }] =
 		await Promise.all([
 			supabase
 				.from("risks")
 				.select(
-					"id, identifier, title, category, likelihood, impact, exposure, status, treatment, treatment_plan, methodology, assessed_at",
+					"id, identifier, title, category, likelihood, impact, exposure, status, treatment",
 				)
 				.eq("notice_id", notice.id)
 				.neq("status", "closed")
 				.order("exposure", { ascending: false }),
 			supabase
 				.from("compliance_obligations")
-				.select(
-					"id, identifier, title, source, responsible_party, due_date, status, recurrence, assessed_at",
-				)
+				.select("id, identifier, title, source, due_date, status")
 				.eq("notice_id", notice.id)
 				.order("due_date", { ascending: true, nullsFirst: false }),
 			supabase

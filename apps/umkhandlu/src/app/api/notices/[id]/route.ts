@@ -10,11 +10,19 @@ const CORS = {
 
 /**
  * Public endpoint — no auth required.
- * Returns the risk/compliance intelligence summary for a notice.
- * Consumed by Governance Nodes to render the risk and planning considerations
- * panel on development notice pages.
+ * Returns the risk/compliance intelligence summary for a CC notice.
+ * Consumed by Governance Nodes to render the risk and planning panel.
  *
- * Only returns published/open notices. Internal draft notices are not exposed.
+ * Public response shape deliberately excludes:
+ * - treatment_plan (internal operational detail)
+ * - methodology (internal)
+ * - assessed_at / assessed_by (internal)
+ * - responsible_party (may contain personal information)
+ * - recurrence (internal scheduling detail)
+ * - node_notice_ref (internal cross-reference)
+ *
+ * Only published/open/closed/approved/rejected notices are accessible.
+ * Draft notices are never exposed.
  */
 export async function GET(
 	_req: Request,
@@ -31,10 +39,9 @@ export async function GET(
 
 	const supabase = createServiceClient();
 
-	// Verify notice exists and is published/open
 	const { data: notice } = await supabase
 		.from("notices")
-		.select("id, title, type, status, is_statutory, node_notice_ref")
+		.select("id, type, status, is_statutory")
 		.eq("id", id)
 		.in("status", ["published", "open", "closed", "approved", "rejected"])
 		.maybeSingle();
@@ -51,16 +58,14 @@ export async function GET(
 			supabase
 				.from("risks")
 				.select(
-					"id, identifier, title, category, likelihood, impact, exposure, status, treatment, treatment_plan, methodology, assessed_at",
+					"id, identifier, title, category, likelihood, impact, exposure, status, treatment",
 				)
 				.eq("notice_id", id)
 				.neq("status", "closed")
 				.order("exposure", { ascending: false }),
 			supabase
 				.from("compliance_obligations")
-				.select(
-					"id, identifier, title, source, responsible_party, due_date, status, recurrence, assessed_at",
-				)
+				.select("id, identifier, title, source, due_date, status")
 				.eq("notice_id", id)
 				.order("due_date", { ascending: true, nullsFirst: false }),
 			supabase
