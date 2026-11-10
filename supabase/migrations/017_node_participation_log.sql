@@ -25,3 +25,8 @@ ALTER TABLE node_participation_log ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "service_role_all" ON node_participation_log
   FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Explicit table grant — required because RLS alone does not grant table-level access
+-- to service_role when the table is created outside of a migration that includes GRANT.
+GRANT ALL ON TABLE node_participation_log TO service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO service_role;
