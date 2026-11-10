@@ -60,6 +60,7 @@ export default async function NoticeDetailPage({
 		{ data: risks },
 		{ data: obligations },
 		{ data: findings },
+		{ data: controls },
 	] = await Promise.all([
 		supabase.from("notices").select("*").eq("id", id).single(),
 		supabase
@@ -79,6 +80,13 @@ export default async function NoticeDetailPage({
 			.select("id, title, finding_type, severity, status, identified_at")
 			.eq("notice_id", id)
 			.order("identified_at", { ascending: false }),
+		supabase
+			.from("controls")
+			.select(
+				"id, identifier, title, control_type, status, last_test_result, last_tested_at",
+			)
+			.eq("notice_id", id)
+			.order("identifier"),
 	]);
 
 	if (!notice) notFound();
@@ -89,6 +97,7 @@ export default async function NoticeDetailPage({
 	const riskRows = risks ?? [];
 	const obligationRows = obligations ?? [];
 	const findingRows = findings ?? [];
+	const controlRows = controls ?? [];
 
 	const openFindings = findingRows.filter(
 		(f) => f.status === "open" || f.status === "in-progress",
@@ -111,6 +120,7 @@ export default async function NoticeDetailPage({
 		due_date: notice.comment_deadline ?? "",
 	}).toString();
 	const findingParams = new URLSearchParams({ notice_id: id }).toString();
+	const controlParams = new URLSearchParams({ notice_id: id }).toString();
 
 	return (
 		<div className="space-y-6">
@@ -396,6 +406,63 @@ export default async function NoticeDetailPage({
 												<span className="text-xs text-muted-foreground">
 													{f.status}
 												</span>
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+					</CardContent>
+				</Card>
+
+				{/* Controls */}
+				<Card>
+					<CardHeader>
+						<div className="flex items-center justify-between">
+							<CardTitle>Controls</CardTitle>
+							<Button asChild size="sm" variant="outline">
+								<Link href={`/controls/new?${controlParams}`}>Add control</Link>
+							</Button>
+						</div>
+					</CardHeader>
+					<CardContent className="p-0">
+						{controlRows.length === 0 ? (
+							<p className="px-6 py-4 text-sm text-muted-foreground">
+								No controls linked to this notice.
+							</p>
+						) : (
+							<div className="divide-y">
+								{controlRows.map((c) => (
+									<div
+										key={c.id}
+										className="relative px-6 py-3 hover:bg-muted/30"
+									>
+										<Link
+											href={`/controls/${c.id}`}
+											className="absolute inset-0"
+											aria-label={c.title}
+										/>
+										<div className="flex items-center justify-between gap-4">
+											<p className="text-sm font-medium">
+												{c.identifier} — {c.title}
+											</p>
+											<div className="flex items-center gap-2 shrink-0">
+												<span className="text-xs text-muted-foreground capitalize">
+													{c.control_type}
+												</span>
+												{c.last_test_result && (
+													<span
+														className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+															c.last_test_result === "pass"
+																? "bg-green-100 text-green-800"
+																: c.last_test_result === "fail"
+																	? "bg-red-100 text-red-800"
+																	: "bg-amber-100 text-amber-800"
+														}`}
+													>
+														{c.last_test_result}
+													</span>
+												)}
 											</div>
 										</div>
 									</div>
