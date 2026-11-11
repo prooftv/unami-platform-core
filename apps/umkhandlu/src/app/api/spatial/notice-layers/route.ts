@@ -296,10 +296,9 @@ const LAYER_PROFILES: Record<string, LayerProfile[]> = {
 			role: "infrastructure",
 			geometryType: "LineString",
 			sourceOrg: "Humanitarian OpenStreetMap Team (HOT)",
-			sourceDataset: null,
-			availability: "pending-permission",
-			permissionNote:
-				"HOT OSM Roads source registered (ODbL). Dataset not yet ingested for Amajuba DC25.",
+			sourceDataset: "HOT OSM Roads — Amajuba DC25",
+			availability: "available",
+			permissionNote: null,
 			attribution: "OpenStreetMap contributors — ODbL.",
 			statutoryRelevance:
 				"SPLUMA — road access and servitude analysis for rezoning.",
@@ -339,10 +338,9 @@ const LAYER_PROFILES: Record<string, LayerProfile[]> = {
 			role: "infrastructure",
 			geometryType: "LineString",
 			sourceOrg: "Humanitarian OpenStreetMap Team (HOT)",
-			sourceDataset: null,
-			availability: "pending-permission",
-			permissionNote:
-				"HOT OSM Roads source registered (ODbL). Dataset not yet ingested for Amajuba DC25.",
+			sourceDataset: "HOT OSM Roads — Amajuba DC25",
+			availability: "available",
+			permissionNote: null,
 			attribution: "OpenStreetMap contributors — ODbL.",
 			statutoryRelevance: "Road access and servitude analysis.",
 		},
