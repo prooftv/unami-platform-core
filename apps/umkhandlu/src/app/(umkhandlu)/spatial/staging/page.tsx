@@ -20,7 +20,7 @@ export default async function StagingPage() {
   const { data: features } = datasetIds.length
     ? await supabase
         .from('spatial_staged_features')
-        .select('id, dataset_id, geometry_valid, geometry_issues, feature_properties, operator_status')
+        .select('id, dataset_id, geometry_valid, geometry_issues, feature_properties, feature_geojson, operator_status')
         .in('dataset_id', datasetIds)
         .eq('operator_status', 'pending')
         .order('created_at', { ascending: true })

@@ -40,15 +40,18 @@ interface Props { searchParams: Promise<Record<string, string | string[] | undef
 export default async function SpatialSourcesPage({ searchParams }: Props) {
   const sp = await searchParams;
   const page = parsePage(sp);
+  const q = typeof sp.q === 'string' ? sp.q.trim() : '';
+  const filterType = typeof sp.type === 'string' ? sp.type : '';
+  const filterPerm = typeof sp.perm === 'string' ? sp.perm : '';
   const supabase = createServiceClient();
 
-  const [{ count }, { data: sourceRows }, imports] = await Promise.all([
-    supabase.from('spatial_sources').select('*', { count: 'exact', head: true }),
-    supabase
-      .from('spatial_sources')
-      .select('*')
-      .order('institution', { ascending: true })
-      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
+  let query = supabase.from('spatial_sources').select('*', { count: 'exact' });
+  if (q) query = query.ilike('name', `%${q}%`);
+  if (filterType) query = query.eq('source_type', filterType);
+  if (filterPerm) query = query.eq('permission_classification', filterPerm);
+
+  const [{ count, data: sourceRows }, imports] = await Promise.all([
+    query.order('institution', { ascending: true }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
     fetchRecentImports(10),
   ]);
 
@@ -63,6 +66,17 @@ export default async function SpatialSourcesPage({ searchParams }: Props) {
   const pending    = allRows.filter((s) => s.permission_classification === 'pending').length;
   const confirmed  = allRows.filter((s) => ['download','redistribute','internal','display'].includes(s.permission_classification)).length;
   const restricted = allRows.filter((s) => ['restricted','prohibited'].includes(s.permission_classification)).length;
+
+  const searchUrl = (params: Record<string, string>) => {
+    const p = new URLSearchParams();
+    if (q) p.set('q', q);
+    if (filterType) p.set('type', filterType);
+    if (filterPerm) p.set('perm', filterPerm);
+    Object.entries(params).forEach(([k, v]) => v ? p.set(k, v) : p.delete(k));
+    p.delete('page');
+    return `/spatial/sources?${p.toString()}`;
+  };
+  void searchUrl;
 
   return (
     <div className="space-y-6">
@@ -79,7 +93,7 @@ export default async function SpatialSourcesPage({ searchParams }: Props) {
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-2xl font-semibold">{sources.length}</p>
+            <p className="text-2xl font-semibold">{total}</p>
             <p className="text-sm text-muted-foreground">Registered sources</p>
           </CardContent>
         </Card>
@@ -99,7 +113,46 @@ export default async function SpatialSourcesPage({ searchParams }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Registered Sources</CardTitle>
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle>Registered Sources</CardTitle>
+            <form method="GET" action="/spatial/sources" className="flex items-center gap-2">
+              <input
+                name="q"
+                defaultValue={q}
+                placeholder="Search sources…"
+                className="h-8 rounded-md border border-input bg-background px-3 text-sm w-48 focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <select
+                name="type"
+                defaultValue={filterType}
+                className="h-8 rounded-md border border-input bg-background px-2 text-sm focus:outline-none"
+              >
+                <option value="">All types</option>
+                <option value="arcgis-featureserver">ArcGIS FeatureServer</option>
+                <option value="arcgis-mapserver">ArcGIS MapServer</option>
+                <option value="wfs">WFS</option>
+                <option value="download">Download</option>
+                <option value="static-map">Static Map</option>
+              </select>
+              <select
+                name="perm"
+                defaultValue={filterPerm}
+                className="h-8 rounded-md border border-input bg-background px-2 text-sm focus:outline-none"
+              >
+                <option value="">All permissions</option>
+                <option value="pending">Pending</option>
+                <option value="redistribute">Redistribute</option>
+                <option value="download">Download</option>
+                <option value="display">Display</option>
+                <option value="reference">Reference</option>
+                <option value="restricted">Restricted</option>
+              </select>
+              <button type="submit" className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90">Filter</button>
+              {(q || filterType || filterPerm) && (
+                <a href="/spatial/sources" className="h-8 px-3 rounded-md border text-sm flex items-center hover:bg-muted">Clear</a>
+              )}
+            </form>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">
@@ -147,7 +200,7 @@ export default async function SpatialSourcesPage({ searchParams }: Props) {
             ))}
           </div>
           <div className="px-6 border-t">
-            <Pagination page={page} pageSize={PAGE_SIZE} total={total} baseUrl="/spatial/sources" />
+            <Pagination page={page} pageSize={PAGE_SIZE} total={total} baseUrl={`/spatial/sources${q || filterType || filterPerm ? `?${new URLSearchParams({ ...(q ? { q } : {}), ...(filterType ? { type: filterType } : {}), ...(filterPerm ? { perm: filterPerm } : {}) }).toString()}` : ''}`} />
           </div>
         </CardContent>
       </Card>

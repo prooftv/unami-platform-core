@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
 import { GeoJSONUpload } from '../_components/GeoJSONUpload';
 import { LiveFetchTrigger } from '../_components/LiveFetchTrigger';
+import { DatasetActions } from '../_components/DatasetActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,7 @@ export default async function DatasetDetailPage({ params }: Props) {
   const { id } = await params;
   const supabase = createServiceClient();
 
-  const [{ data: dataset }, { data: runs }] = await Promise.all([
+  const [{ data: dataset }, { data: runs }, { count: pendingCount }, { count: approvedCount }] = await Promise.all([
     supabase
       .from('spatial_datasets')
       .select('*, spatial_sources(name, institution, coordinate_system, source_type, permission_classification)')
@@ -44,6 +45,16 @@ export default async function DatasetDetailPage({ params }: Props) {
       .eq('dataset_id', id)
       .order('started_at', { ascending: false })
       .limit(20),
+    supabase
+      .from('spatial_staged_features')
+      .select('*', { count: 'exact', head: true })
+      .eq('dataset_id', id)
+      .eq('operator_status', 'pending'),
+    supabase
+      .from('spatial_staged_features')
+      .select('*', { count: 'exact', head: true })
+      .eq('dataset_id', id)
+      .eq('operator_status', 'approved'),
   ]);
 
   if (!dataset) notFound();
@@ -79,18 +90,33 @@ export default async function DatasetDetailPage({ params }: Props) {
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6 flex flex-col items-center justify-center gap-2">
-              <span className={`text-sm px-3 py-1 rounded-full font-medium ${statusColour[dataset.status] ?? ''}`}>
-                {dataset.status}
-              </span>
-              <span className={`text-xs font-medium ${dataset.permission_status === 'confirmed' ? 'text-green-600' : 'text-amber-600'}`}>
-                Permission: {dataset.permission_status}
-              </span>
-              {dataset.published_at && (
-                <p className="text-xs text-muted-foreground">
-                  Published {new Date(dataset.published_at).toLocaleDateString()}
-                </p>
-              )}
+            <CardContent className="pt-6 space-y-3">
+              <div className="flex flex-col items-center gap-2">
+                <span className={`text-sm px-3 py-1 rounded-full font-medium ${statusColour[dataset.status] ?? ''}`}>
+                  {dataset.status}
+                </span>
+                {dataset.published_at && (
+                  <p className="text-xs text-muted-foreground">
+                    Published {new Date(dataset.published_at).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                <div>
+                  <p className="text-lg font-semibold text-green-600">{approvedCount ?? 0}</p>
+                  <p className="text-muted-foreground">Approved</p>
+                </div>
+                <div>
+                  <p className={`text-lg font-semibold ${(pendingCount ?? 0) > 0 ? 'text-amber-600' : 'text-muted-foreground'}`}>{pendingCount ?? 0}</p>
+                  <p className="text-muted-foreground">Pending</p>
+                </div>
+              </div>
+              <DatasetActions
+                datasetId={dataset.id}
+                status={dataset.status}
+                pendingCount={pendingCount ?? 0}
+                approvedCount={approvedCount ?? 0}
+              />
             </CardContent>
           </Card>
         </div>

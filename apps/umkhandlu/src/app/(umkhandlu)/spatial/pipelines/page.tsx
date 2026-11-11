@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { Pagination, parsePage, PAGE_SIZE } from '@/components/ui/pagination';
 import { RunHealthCheckButton } from './_components/RunHealthCheckButton';
 import { ReplayButton } from './_components/ReplayButton';
+import { PipelineTrigger } from './_components/PipelineTrigger';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,16 +23,24 @@ export default async function PipelinesPage({ searchParams }: Props) {
   const page = parsePage(sp);
   const supabase = createServiceClient();
 
-  const [{ count }, { data: runs }, { data: summary }] = await Promise.all([
+  const [{ count }, { data: runs }, { data: summary }, { data: sources }, { data: datasets }] = await Promise.all([
     supabase.from('spatial_pipeline_runs').select('*', { count: 'exact', head: true }),
     supabase
       .from('spatial_pipeline_runs')
       .select('*, spatial_sources(name, institution)')
       .order('started_at', { ascending: false })
       .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
+    supabase.from('spatial_pipeline_runs').select('status'),
     supabase
-      .from('spatial_pipeline_runs')
-      .select('status'),
+      .from('spatial_sources')
+      .select('id, name, institution, source_type, permission_classification')
+      .eq('active', true)
+      .order('name'),
+    supabase
+      .from('spatial_datasets')
+      .select('id, name, status, source_id, layer_id')
+      .not('status', 'eq', 'archived')
+      .order('name'),
   ]);
 
   const rows = runs ?? [];
@@ -45,7 +54,7 @@ export default async function PipelinesPage({ searchParams }: Props) {
     <div className="space-y-6">
       <PageHeader
         title="Pipeline Runs"
-        description="Execution history for all spatial data pipelines."
+        description="Trigger, monitor and inspect spatial data pipeline executions."
         actions={<RunHealthCheckButton />}
       />
 
@@ -63,6 +72,11 @@ export default async function PipelinesPage({ searchParams }: Props) {
           <p className="text-sm text-muted-foreground">Running</p>
         </CardContent></Card>
       </div>
+
+      <PipelineTrigger
+        sources={(sources ?? []) as Array<{ id: string; name: string; institution: string; source_type: string; permission_classification: string }>}
+        datasets={(datasets ?? []) as Array<{ id: string; name: string; status: string; source_id: string; layer_id: string | null }>}
+      />
 
       <Card>
         <CardHeader><CardTitle>Execution History</CardTitle></CardHeader>

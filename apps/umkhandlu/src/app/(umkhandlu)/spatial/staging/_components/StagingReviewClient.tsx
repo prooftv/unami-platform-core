@@ -14,12 +14,26 @@ interface Feature {
   geometry_valid: boolean;
   geometry_issues: string[] | null;
   feature_properties: Record<string, unknown>;
+  feature_geojson: { type?: string } | null;
   operator_status: string;
 }
 
 interface Props {
   datasetId: string;
   features: Feature[];
+}
+
+function geomLabel(geojson: { type?: string } | null): string {
+  if (!geojson?.type) return 'No geometry';
+  return geojson.type;
+}
+
+function featureSummary(props: Record<string, unknown>): string {
+  const nameKeys = ['name', 'NAME', 'Name', 'title', 'TITLE', 'label', 'LABEL'];
+  for (const k of nameKeys) {
+    if (props[k]) return String(props[k]);
+  }
+  return Object.entries(props).slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(' · ');
 }
 
 export function StagingReviewClient({ datasetId, features }: Props) {
@@ -30,6 +44,7 @@ export function StagingReviewClient({ datasetId, features }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const invalid = features.filter((f) => !f.geometry_valid);
+  const geomTypes = [...new Set(features.map((f) => geomLabel(f.feature_geojson)))];
 
   async function submit(action: 'approve' | 'reject') {
     if (!selected.size) return;
@@ -52,6 +67,14 @@ export function StagingReviewClient({ datasetId, features }: Props) {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <span>{features.length} features</span>
+        <span>Geometry: {geomTypes.join(', ')}</span>
+        {invalid.length > 0 && (
+          <span className="text-amber-700 font-medium">{invalid.length} with geometry issues</span>
+        )}
+      </div>
+
       {invalid.length > 0 && (
         <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
           <AlertTriangle className="size-4 mt-0.5 shrink-0" />
@@ -60,7 +83,7 @@ export function StagingReviewClient({ datasetId, features }: Props) {
       )}
 
       <div className="border rounded-md divide-y max-h-80 overflow-y-auto">
-        <div className="px-4 py-2 flex items-center gap-3 bg-muted/30 text-xs font-medium text-muted-foreground">
+        <div className="px-4 py-2 flex items-center gap-3 bg-muted/30 text-xs font-medium text-muted-foreground sticky top-0">
           <input
             type="checkbox"
             checked={selected.size === features.length}
@@ -76,7 +99,8 @@ export function StagingReviewClient({ datasetId, features }: Props) {
               checked={selected.has(f.id)}
               onChange={(e) => {
                 const next = new Set(selected);
-                if (e.target.checked) next.add(f.id); else next.delete(f.id);
+                if (e.target.checked) next.add(f.id);
+                else next.delete(f.id);
                 setSelected(next);
               }}
               className="mt-0.5 rounded"
@@ -87,12 +111,15 @@ export function StagingReviewClient({ datasetId, features }: Props) {
                   ? <CheckCircle className="size-3.5 text-green-600 shrink-0" />
                   : <XCircle className="size-3.5 text-destructive shrink-0" />
                 }
+                <span className="text-xs font-mono text-muted-foreground shrink-0">
+                  {geomLabel(f.feature_geojson)}
+                </span>
                 <span className="text-xs text-muted-foreground truncate">
-                  {Object.entries(f.feature_properties).slice(0, 3).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+                  {featureSummary(f.feature_properties)}
                 </span>
               </div>
               {f.geometry_issues?.length ? (
-                <p className="text-xs text-destructive mt-0.5">{f.geometry_issues.join(', ')}</p>
+                <p className="text-xs text-destructive mt-0.5 pl-5">{f.geometry_issues.join(', ')}</p>
               ) : null}
             </div>
           </div>

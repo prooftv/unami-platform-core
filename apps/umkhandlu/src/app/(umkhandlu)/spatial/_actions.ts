@@ -530,6 +530,117 @@ export async function inspectLayerFieldsAction(sourceId: string, layerId: number
 }
 
 // ---------------------------------------------------------------------------
+// Dataset publication and archival
+// ---------------------------------------------------------------------------
+
+export async function publishDatasetAction(datasetId: string) {
+  const session = await requireOperator();
+  const supabase = createServiceClient();
+
+  const permissionError = await checkPublicationPermission(supabase, datasetId);
+  if (permissionError) return { error: permissionError };
+
+  const { data: dataset } = await supabase
+    .from('spatial_datasets')
+    .select('id, name, status, feature_count')
+    .eq('id', datasetId)
+    .single();
+
+  if (!dataset) return { error: 'Dataset not found.' };
+  if (dataset.status === 'published') return { error: 'Dataset is already published.' };
+
+  // Count approved features
+  const { count: approvedCount } = await supabase
+    .from('spatial_staged_features')
+    .select('*', { count: 'exact', head: true })
+    .eq('dataset_id', datasetId)
+    .eq('operator_status', 'approved');
+
+  const { count: pendingCount } = await supabase
+    .from('spatial_staged_features')
+    .select('*', { count: 'exact', head: true })
+    .eq('dataset_id', datasetId)
+    .eq('operator_status', 'pending');
+
+  if ((pendingCount ?? 0) > 0) {
+    return { error: `${pendingCount} features are still pending review. Approve or reject all features before publishing.` };
+  }
+
+  const now = new Date().toISOString();
+  const { error } = await supabase.from('spatial_datasets').update({
+    status: 'published',
+    active: true,
+    published_at: now,
+    feature_count: approvedCount ?? dataset.feature_count,
+    updated_at: now,
+  }).eq('id', datasetId);
+
+  if (error) return { error: error.message };
+
+  await supabase.from('spatial_permission_changes').insert({
+    table_name: 'spatial_datasets',
+    record_id: datasetId,
+    actor: session.id,
+    previous_classification: dataset.status,
+    new_classification: 'published',
+    reason: `Dataset published by operator. ${approvedCount ?? 0} approved features.`,
+  });
+
+  revalidatePath('/spatial/datasets');
+  revalidatePath(`/spatial/datasets/${datasetId}`);
+  revalidatePath('/spatial/staging');
+  return { success: true, featureCount: approvedCount ?? 0 };
+}
+
+export async function archiveDatasetAction(datasetId: string) {
+  const session = await requireOperator();
+  const supabase = createServiceClient();
+
+  const { data: dataset } = await supabase
+    .from('spatial_datasets')
+    .select('id, name, status')
+    .eq('id', datasetId)
+    .single();
+
+  if (!dataset) return { error: 'Dataset not found.' };
+
+  const now = new Date().toISOString();
+  const { error } = await supabase.from('spatial_datasets').update({
+    status: 'archived',
+    active: false,
+    updated_at: now,
+  }).eq('id', datasetId);
+
+  if (error) return { error: error.message };
+
+  await supabase.from('spatial_permission_changes').insert({
+    table_name: 'spatial_datasets',
+    record_id: datasetId,
+    actor: session.id,
+    previous_classification: dataset.status,
+    new_classification: 'archived',
+    reason: 'Dataset archived by operator.',
+  });
+
+  revalidatePath('/spatial/datasets');
+  revalidatePath(`/spatial/datasets/${datasetId}`);
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Pipeline trigger — select source, layer, run fetch-and-stage
+// ---------------------------------------------------------------------------
+
+export async function triggerPipelineAction(
+  sourceId: string,
+  datasetId: string,
+  layerId: number,
+  options?: { where?: string; maxFeatures?: number },
+) {
+  return fetchAndStageFromArcGISAction(datasetId, layerId, options);
+}
+
+// ---------------------------------------------------------------------------
 // Dataset actions
 // ---------------------------------------------------------------------------
 
