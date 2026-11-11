@@ -28,6 +28,43 @@ type DatasetResult = {
 	note: string | null;
 };
 
+export type WardDemographics = {
+	WardID: string;
+	WardNo: number;
+	Ward_Label: string;
+	CAT_B: string;
+	Municipality: string;
+	Total_Pop: number;
+	Pop_Density: number;
+	Employed: number;
+	Unemployed: number;
+	Discouraged_Work_Seeker: number;
+	Not_Economically_Active: number;
+	Not_Applicable_Emp: number;
+	Grade_12_Std10: number;
+	Higher: number;
+	No_schooling: number;
+	Some_Primary: number;
+	Completed_Primary: number;
+	Some_Secondary: number;
+	Flush_Toilet_SewerSystem: number;
+	Flush_Toilet_SepticTank: number;
+	Chemical_Toilet: number;
+	Pit_Toilet_VIP: number;
+	Pit_Toilet_NoVentilation: number;
+	Bucket_Toilet: number;
+	None_Toilet: number;
+	Tap_In_Dwelling: number;
+	tap_in_Yard: number;
+	No_access_to_piped_water: number;
+	Removed_Weekly: number;
+	Removed_Seldom: number;
+	Own_dump: number;
+	No_Disposal: number;
+	Reg_Voters: number;
+	Area_SqKm: number;
+};
+
 export type NoticeContextResponse = {
 	noticeType: string;
 	wardNumber: number | null;
@@ -40,6 +77,7 @@ export type NoticeContextResponse = {
 		municipality: DatasetResult;
 		district: DatasetResult;
 	};
+	wardDemographics: WardDemographics | null;
 	proximity: {
 		traditionalAreas: DatasetResult;
 		licensedPremises: DatasetResult;
@@ -164,8 +202,8 @@ async function resolveMunicipality(
 	supabase: ReturnType<typeof createServiceClient>,
 	catB: string | null,
 ): Promise<DatasetResult> {
-	const dataset = await fetchPublishedDataset(supabase, "Amajuba Local Municipalities");
-	if (!dataset) return unavailable("Amajuba Local Municipalities dataset not published.");
+	const dataset = await fetchPublishedDataset(supabase, "MDB Local Municipalities 2026");
+	if (!dataset) return unavailable("MDB Local Municipalities 2026 dataset not published.");
 	const all = await fetchApprovedFeatures(supabase, dataset.id);
 	if (!all.length) return unavailable("No approved municipality features.");
 	if (!catB) {
@@ -179,7 +217,7 @@ async function resolveMunicipality(
 			note: "Municipality code not specified — returning all Amajuba local municipalities.",
 		};
 	}
-	const filtered = all.filter((f) => extractCatB(f.properties) === catB);
+	const filtered = all.filter((f) => f.properties.CAT_B === catB);
 	if (!filtered.length) {
 		return {
 			status: "not-found",
@@ -187,8 +225,8 @@ async function resolveMunicipality(
 			attribution: dataset.attribution,
 			datasetDate: dataset.dataset_date,
 			featureCount: 0,
-			features: all, // return all as context fallback
-			note: `Municipality ${catB} not matched by CAT_B — returning all Amajuba municipalities as context.`,
+			features: all,
+			note: `Municipality ${catB} not matched — returning all Amajuba municipalities as context.`,
 		};
 	}
 	return {
@@ -205,8 +243,8 @@ async function resolveMunicipality(
 async function resolveDistrict(
 	supabase: ReturnType<typeof createServiceClient>,
 ): Promise<DatasetResult> {
-	const dataset = await fetchPublishedDataset(supabase, "Amajuba District Municipality Boundary");
-	if (!dataset) return unavailable("Amajuba District Municipality Boundary dataset not published.");
+	const dataset = await fetchPublishedDataset(supabase, "MDB District Municipality 2026");
+	if (!dataset) return unavailable("MDB District Municipality 2026 dataset not published.");
 	const features = await fetchApprovedFeatures(supabase, dataset.id);
 	if (!features.length) return unavailable("No approved district boundary features.");
 	return {
@@ -218,6 +256,35 @@ async function resolveDistrict(
 		features,
 		note: null,
 	};
+}
+
+async function resolveWardDemographics(
+	supabase: ReturnType<typeof createServiceClient>,
+	wardNumber: number | null,
+	catB: string | null,
+): Promise<WardDemographics | null> {
+	if (wardNumber == null || !catB) return null;
+	const { data: dataset } = await supabase
+		.from("spatial_datasets")
+		.select("id")
+		.eq("status", "published")
+		.eq("active", true)
+		.ilike("name", "MDB WardProfile 2021%")
+		.order("published_at", { ascending: false })
+		.limit(1)
+		.maybeSingle();
+	if (!dataset) return null;
+	const { data: rows } = await supabase
+		.from("spatial_staged_features")
+		.select("feature_properties")
+		.eq("dataset_id", dataset.id)
+		.eq("operator_status", "approved")
+		.eq("feature_properties->>CAT_B", catB)
+		.eq("feature_properties->>WardNo", String(wardNumber))
+		.limit(1)
+		.maybeSingle();
+	if (!rows) return null;
+	return rows.feature_properties as WardDemographics;
 }
 
 // ─── Proximity layers (all pending/unavailable — honest status) ───────────────
@@ -275,10 +342,11 @@ export async function GET(req: Request) {
 
 	const supabase = createServiceClient();
 
-	const [ward, municipality, district] = await Promise.all([
+	const [ward, municipality, district, wardDemographics] = await Promise.all([
 		resolveWard(supabase, wardNumber, catB),
 		resolveMunicipality(supabase, catB),
 		resolveDistrict(supabase),
+		resolveWardDemographics(supabase, wardNumber, catB),
 	]);
 
 	const response: NoticeContextResponse = {
@@ -289,6 +357,7 @@ export async function GET(req: Request) {
 		lng,
 		locationPrecision,
 		administrative: { ward, municipality, district },
+		wardDemographics,
 		proximity: resolveProximityLayers(noticeType),
 		siteContext: resolveSiteContext(),
 		// 500m is a common reference distance for KZN Liquor Act s.43 proximity considerations.
