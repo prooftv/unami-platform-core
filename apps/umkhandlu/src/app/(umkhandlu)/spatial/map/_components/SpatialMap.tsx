@@ -1,14 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import type { Map as LeafletMap, GeoJSON as LeafletGeoJSON, Marker } from 'leaflet';
 import { AreaInfoPanel } from './AreaInfoPanel';
-import {
-  createMap,
-  fitToLayer,
-  loadLeafletCss,
-} from '@/lib/map/leaflet-utils';
+import { createMap, fitToLayer, loadLeafletCss } from '@/lib/map/leaflet-utils';
 
 export interface PublishedDataset {
   id: string;
@@ -18,6 +14,7 @@ export interface PublishedDataset {
   dataset_date: string | null;
   geojson: GeoJSONFeatureCollection | null;
   attribution: string | null;
+  loadOnDemand?: boolean;
 }
 
 export interface NoticeMarker {
@@ -78,6 +75,9 @@ const NODE_TYPE_COLOUR: Record<string, string> = {
   project: '#16a34a',
 };
 
+// Datasets with many features default to off to avoid loading everything at once
+const LARGE_THRESHOLD = 2000;
+
 export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -85,9 +85,12 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   const noticeMarkerRefs = useRef<Marker[]>([]);
   const nodeMarkerRefs = useRef<Marker[]>([]);
 
+  // Large datasets default off; small datasets default on
   const [visibleLayers, setVisibleLayers] = useState<Set<string>>(
-    new Set(datasets.map((d) => d.id)),
+    new Set(datasets.filter((d) => (d.feature_count ?? 0) <= LARGE_THRESHOLD).map((d) => d.id)),
   );
+  const [loadingLayers, setLoadingLayers] = useState<Set<string>>(new Set());
+  const [loadedGeojson, setLoadedGeojson] = useState<Map<string, GeoJSONFeatureCollection>>(new Map());
   const [showNotices, setShowNotices] = useState(true);
   const [showNodeActivity, setShowNodeActivity] = useState(true);
   const [selectedFeature, setSelectedFeature] = useState<{
@@ -99,6 +102,25 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   const [selectedNotice, setSelectedNotice] = useState<NoticeMarker | null>(null);
   const [selectedNodeRef, setSelectedNodeRef] = useState<NodeGeoRef | null>(null);
   const [mapReady, setMapReady] = useState(false);
+
+  // Fetch features for a large dataset on demand
+  const fetchDatasetFeatures = useCallback(async (datasetId: string) => {
+    setLoadingLayers((prev) => new Set(prev).add(datasetId));
+    try {
+      const res = await fetch(`/api/spatial/features?id=${datasetId}&limit=5000`, { cache: 'no-store' });
+      if (res.ok) {
+        const fc = await res.json() as GeoJSONFeatureCollection;
+        setLoadedGeojson((prev) => new Map(prev).set(datasetId, fc));
+      }
+    } catch {
+      // Failed to load — layer stays empty
+    }
+    setLoadingLayers((prev) => {
+      const next = new Set(prev);
+      next.delete(datasetId);
+      return next;
+    });
+  }, []);
 
   // Initialise map
   useEffect(() => {
@@ -117,12 +139,15 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
       mapRef.current = map;
       setMapReady(true);
 
-      // Fit to all dataset layers on load — don't leave user at static AMAJUBA_CENTRE
-      const allFeatures = datasets.flatMap((d) => d.geojson?.features ?? []);
-      if (allFeatures.length > 0) {
+      // Fit to inline datasets that have geometry
+      const inlineFeatures = datasets
+        .filter((d) => !d.loadOnDemand && d.geojson?.features?.length)
+        .flatMap((d) => d.geojson!.features);
+
+      if (inlineFeatures.length > 0) {
         try {
           const coords: [number, number][] = [];
-          for (const f of allFeatures) {
+          for (const f of inlineFeatures) {
             if (!f.geometry) continue;
             const g = f.geometry as { type: string; coordinates: unknown };
             if (g.type === 'Point') {
@@ -135,13 +160,16 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
                 const c = b.getCenter();
                 coords.push([c.lat, c.lng]);
               }
+            } else if (g.type === 'LineString') {
+              const c = (g.coordinates as [number, number][])[0];
+              if (c) coords.push([c[1], c[0]]);
             }
           }
           if (coords.length > 0) {
             const bounds = L.latLngBounds(coords);
             if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
           }
-        } catch { /* fallback to AMAJUBA_CENTRE */ }
+        } catch { /* fallback */ }
       }
     }
 
@@ -167,12 +195,22 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
         }
 
         if (existing) return;
-        if (!dataset.geojson?.features?.length) return;
 
-        const layer = L.geoJSON(dataset.geojson as Parameters<typeof L.geoJSON>[0], {
-          style: () => ({ color: colour, weight: 2, opacity: 0.8, fillOpacity: 0.15, fillColor: colour }),
+        // Resolve geojson: inline or previously loaded on-demand
+        const geojson = dataset.geojson ?? loadedGeojson.get(dataset.id) ?? null;
+
+        // If on-demand and not yet loaded, trigger fetch
+        if (dataset.loadOnDemand && !geojson && !loadingLayers.has(dataset.id)) {
+          fetchDatasetFeatures(dataset.id);
+          return;
+        }
+
+        if (!geojson?.features?.length) return;
+
+        const layer = L.geoJSON(geojson as Parameters<typeof L.geoJSON>[0], {
+          style: () => ({ color: colour, weight: 1.5, opacity: 0.7, fillOpacity: 0.12, fillColor: colour }),
           pointToLayer: (_f, latlng) =>
-            L.circleMarker(latlng, { radius: 6, fillColor: colour, color: colour, weight: 1, opacity: 1, fillOpacity: 0.8 }),
+            L.circleMarker(latlng, { radius: 5, fillColor: colour, color: colour, weight: 1, opacity: 1, fillOpacity: 0.8 }),
           onEachFeature: (feature, fl) => {
             fl.on('click', () => {
               setSelectedFeature({
@@ -193,7 +231,7 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
     }
 
     syncLayers();
-  }, [mapReady, datasets, visibleLayers]);
+  }, [mapReady, datasets, visibleLayers, loadedGeojson, loadingLayers, fetchDatasetFeatures]);
 
   // Sync notice markers
   useEffect(() => {
@@ -268,7 +306,8 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   function toggleLayer(id: string) {
     setVisibleLayers((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -284,8 +323,56 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
     } catch { map.setView(AMAJUBA_CENTRE, AMAJUBA_ZOOM); }
   }
 
-  const withData = datasets.filter((d) => d.geojson?.features?.length);
-  const noData   = datasets.filter((d) => !d.geojson?.features?.length);
+  // Group datasets for sidebar display
+  const smallDatasets = datasets.filter((d) => (d.feature_count ?? 0) <= LARGE_THRESHOLD);
+  const largeDatasets = datasets.filter((d) => (d.feature_count ?? 0) > LARGE_THRESHOLD);
+
+  function LayerRow({ d, idx }: { d: PublishedDataset; idx: number }) {
+    const colour = LAYER_COLOURS[idx % LAYER_COLOURS.length];
+    const visible = visibleLayers.has(d.id);
+    const loading = loadingLayers.has(d.id);
+    const hasData = d.geojson?.features?.length || loadedGeojson.has(d.id);
+
+    return (
+      <div className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          id={`layer-${d.id}`}
+          checked={visible}
+          onChange={() => toggleLayer(d.id)}
+          className="mt-0.5 rounded shrink-0"
+        />
+        <div className="min-w-0 flex-1">
+          <label htmlFor={`layer-${d.id}`} className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
+            <span className="inline-block size-2.5 rounded-sm shrink-0" style={{ backgroundColor: colour }} />
+            <span className="truncate">{d.name}</span>
+          </label>
+          <p className="text-xs text-muted-foreground truncate pl-4">{d.source_institution}</p>
+          <div className="flex items-center gap-2 pl-4 mt-0.5">
+            {d.feature_count != null && (
+              <span className="text-xs text-muted-foreground">{d.feature_count.toLocaleString()} features</span>
+            )}
+            {loading && <span className="text-xs text-blue-600 animate-pulse">Loading…</span>}
+            {d.loadOnDemand && !hasData && !loading && visible && (
+              <span className="text-xs text-amber-600">Fetching…</span>
+            )}
+            {hasData && (
+              <button
+                type="button"
+                onClick={() => {
+                  const layer = layerRefs.current.get(d.id);
+                  if (layer && mapRef.current) fitToLayer(mapRef.current, layer, [20, 20]);
+                }}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                Zoom
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-12rem)] min-h-[500px]">
@@ -293,57 +380,29 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
       <div className="lg:w-72 shrink-0 flex flex-col gap-3 overflow-y-auto">
         <div className="rounded-lg border bg-card p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Layers</p>
-            <button onClick={fitAll} className="text-xs text-muted-foreground hover:text-foreground underline">
+            <p className="text-sm font-medium">Layers ({datasets.length})</p>
+            <button type="button" onClick={fitAll} className="text-xs text-muted-foreground hover:text-foreground underline">
               Fit all
             </button>
           </div>
 
-          {datasets.length === 0 && notices.length === 0 && nodeGeoRefs.length === 0 && (
+          {datasets.length === 0 && (
             <p className="text-xs text-muted-foreground">
               No published datasets. Upload and approve a dataset to display it here.
             </p>
           )}
 
-          {withData.map((d, idx) => {
-            const colour = LAYER_COLOURS[idx % LAYER_COLOURS.length];
-            const visible = visibleLayers.has(d.id);
-            return (
-              <div key={d.id} className="flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  id={`layer-${d.id}`}
-                  checked={visible}
-                  onChange={() => toggleLayer(d.id)}
-                  className="mt-0.5 rounded shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <label htmlFor={`layer-${d.id}`} className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
-                    <span className="inline-block size-2.5 rounded-sm shrink-0" style={{ backgroundColor: colour }} />
-                    <span className="truncate">{d.name}</span>
-                  </label>
-                  <p className="text-xs text-muted-foreground truncate pl-4">{d.source_institution}</p>
-                  <div className="flex items-center gap-2 pl-4 mt-0.5">
-                    {d.feature_count != null && (
-                      <span className="text-xs text-muted-foreground">{d.feature_count} features</span>
-                    )}
-                    <button onClick={() => {
-                      const layer = layerRefs.current.get(d.id);
-                      if (layer && mapRef.current) fitToLayer(mapRef.current, layer, [20, 20]);
-                    }} className="text-xs text-blue-600 hover:underline">
-                      Zoom
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {smallDatasets.length > 0 && (
+            <div className="space-y-2">
+              {smallDatasets.map((d, idx) => <LayerRow key={d.id} d={d} idx={idx} />)}
+            </div>
+          )}
 
-          {noData.length > 0 && (
-            <div className="pt-1 border-t space-y-1">
-              <p className="text-xs text-muted-foreground font-medium">No geometry loaded</p>
-              {noData.map((d) => (
-                <p key={d.id} className="text-xs text-muted-foreground truncate pl-2">— {d.name}</p>
+          {largeDatasets.length > 0 && (
+            <div className="pt-2 border-t space-y-2">
+              <p className="text-xs text-muted-foreground font-medium">Large datasets (load on demand)</p>
+              {largeDatasets.map((d, idx) => (
+                <LayerRow key={d.id} d={d} idx={smallDatasets.length + idx} />
               ))}
             </div>
           )}
@@ -395,7 +454,7 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
           </div>
         </div>
 
-        {/* Area information panel — replaces raw property inspector */}
+        {/* Area information panel */}
         {selectedFeature && (
           <AreaInfoPanel
             feature={selectedFeature}
@@ -414,7 +473,7 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
                 />
                 <p className="text-sm font-medium truncate">{selectedNotice.title}</p>
               </div>
-              <button onClick={() => setSelectedNotice(null)} className="text-xs text-muted-foreground hover:text-foreground shrink-0">✕</button>
+              <button type="button" onClick={() => setSelectedNotice(null)} className="text-xs text-muted-foreground hover:text-foreground shrink-0">✕</button>
             </div>
             <div className="space-y-1 text-xs text-muted-foreground">
               <p className="capitalize">{selectedNotice.type.replace(/-/g, ' ')} · {selectedNotice.status}</p>
@@ -440,7 +499,7 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
                 />
                 <p className="text-sm font-medium truncate">{selectedNodeRef.label}</p>
               </div>
-              <button onClick={() => setSelectedNodeRef(null)} className="text-xs text-muted-foreground hover:text-foreground shrink-0">✕</button>
+              <button type="button" onClick={() => setSelectedNodeRef(null)} className="text-xs text-muted-foreground hover:text-foreground shrink-0">✕</button>
             </div>
             <div className="space-y-1 text-xs text-muted-foreground">
               <p className="capitalize">{selectedNodeRef.recordType} · Node activity</p>
@@ -459,7 +518,7 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
             ? <p className="text-xs text-muted-foreground">No datasets published.</p>
             : datasets.map((d) => (
                 <p key={d.id} className="text-xs text-muted-foreground">
-                  {d.name}: {d.source_institution}{d.dataset_date ? ` (${d.dataset_date})` : ''}
+                  {d.name}: {d.attribution ?? d.source_institution}{d.dataset_date ? ` (${d.dataset_date})` : ''}
                 </p>
               ))
           }

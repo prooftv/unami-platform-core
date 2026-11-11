@@ -6,62 +6,79 @@ import type { PublishedDataset, NoticeMarker, NodeGeoRef } from './_components/S
 
 export const dynamic = 'force-dynamic';
 
+// Datasets with more features than this are loaded on-demand via the API route
+// rather than inlined into the page payload.
+const INLINE_LIMIT = 1000;
+
 export default async function SpatialMapPage() {
   const supabase = createServiceClient();
 
   const { data: datasets } = await supabase
     .from('spatial_datasets')
-    .select('id, name, feature_count, dataset_date, crs, spatial_sources(name, institution)')
+    .select('id, name, feature_count, dataset_date, crs, attribution, spatial_sources(name, institution)')
     .eq('status', 'published')
     .eq('active', true)
     .order('published_at', { ascending: false });
 
   const rows = datasets ?? [];
-  const datasetIds = rows.map((d) => d.id);
 
-  const { data: features } = datasetIds.length
-    ? await supabase
+  // Load features per-dataset — avoids the 1,000-row PostgREST default limit
+  // that silently truncates a single cross-dataset query.
+  const publishedDatasets: PublishedDataset[] = await Promise.all(
+    rows.map(async (d) => {
+      const src = Array.isArray(d.spatial_sources)
+        ? (d.spatial_sources[0] as { name: string; institution: string } | undefined)
+        : (d.spatial_sources as { name: string; institution: string } | null);
+
+      const featureCount = d.feature_count ?? 0;
+
+      // Large datasets: defer to client-side on-demand loading via /api/spatial/features
+      if (featureCount > INLINE_LIMIT) {
+        return {
+          id: d.id,
+          name: d.name,
+          source_institution: src?.institution ?? 'Unknown',
+          feature_count: featureCount,
+          dataset_date: d.dataset_date,
+          geojson: null,
+          attribution: d.attribution ?? null,
+          loadOnDemand: true,
+        };
+      }
+
+      // Small/medium datasets: inline features into page payload
+      const { data: featureRows } = await supabase
         .from('spatial_staged_features')
-        .select('dataset_id, feature_geojson, feature_properties')
-        .in('dataset_id', datasetIds)
+        .select('feature_geojson, feature_properties')
+        .eq('dataset_id', d.id)
         .eq('operator_status', 'approved')
-    : { data: [] };
+        .limit(INLINE_LIMIT);
 
-  const featuresByDataset = new Map<string, Array<{ dataset_id: string; feature_geojson: unknown; feature_properties: unknown }>>();
-  for (const f of features ?? []) {
-    if (!featuresByDataset.has(f.dataset_id)) featuresByDataset.set(f.dataset_id, []);
-    featuresByDataset.get(f.dataset_id)!.push(f);
-  }
+      const geojson = featureRows?.length
+        ? {
+            type: 'FeatureCollection' as const,
+            features: featureRows.map((f) => ({
+              type: 'Feature' as const,
+              geometry: f.feature_geojson as { type: string; coordinates: unknown },
+              properties: (f.feature_properties ?? {}) as Record<string, unknown>,
+            })),
+          }
+        : null;
 
-  const publishedDatasets: PublishedDataset[] = rows.map((d) => {
-    const src = Array.isArray(d.spatial_sources)
-      ? (d.spatial_sources[0] as { name: string; institution: string } | undefined)
-      : (d.spatial_sources as { name: string; institution: string } | null);
+      return {
+        id: d.id,
+        name: d.name,
+        source_institution: src?.institution ?? 'Unknown',
+        feature_count: featureCount,
+        dataset_date: d.dataset_date,
+        geojson,
+        attribution: d.attribution ?? null,
+        loadOnDemand: false,
+      };
+    }),
+  );
 
-    const datasetFeatures = featuresByDataset.get(d.id) ?? [];
-    const geojson = datasetFeatures.length
-      ? {
-          type: 'FeatureCollection' as const,
-          features: datasetFeatures.map((f) => ({
-            type: 'Feature' as const,
-            geometry: f.feature_geojson as { type: string; coordinates: unknown },
-            properties: (f.feature_properties ?? {}) as Record<string, unknown>,
-          })),
-        }
-      : null;
-
-    return {
-      id: d.id,
-      name: d.name,
-      source_institution: src?.institution ?? 'Unknown',
-      feature_count: d.feature_count,
-      dataset_date: d.dataset_date,
-      geojson,
-      attribution: null,
-    };
-  });
-
-  // Notices with coordinates — shown as map overlay markers
+  // Notices with coordinates
   const { data: noticeRows } = await supabase
     .from('notices')
     .select('id, type, title, status, is_statutory, comment_deadline, ward_ref, latitude, longitude')
@@ -81,21 +98,21 @@ export default async function SpatialMapPage() {
     longitude: n.longitude as number,
   }));
 
-  // Node geographic references — governance activity from registered nodes
+  // Node geographic references
   const rawGeoRefs = await fetchNodeGeoRefs();
   const nodeGeoRefs: NodeGeoRef[] = rawGeoRefs
     .filter((r) => r.latitude != null && r.longitude != null)
     .map((r) => ({
-      nodeId:     r.nodeId ?? '',
-      recordId:   r.recordId ?? '',
-      recordType: (r.recordType ?? 'record') as NodeGeoRef['recordType'],
-      label:      r.label ?? '',
-      latitude:   r.latitude!,
-      longitude:  r.longitude!,
-      district:   r.district,
+      nodeId:       r.nodeId ?? '',
+      recordId:     r.recordId ?? '',
+      recordType:   (r.recordType ?? 'record') as NodeGeoRef['recordType'],
+      label:        r.label ?? '',
+      latitude:     r.latitude!,
+      longitude:    r.longitude!,
+      district:     r.district,
       municipality: r.municipality,
-      ward:       r.ward,
-      timestamp:  r.timestamp,
+      ward:         r.ward,
+      timestamp:    r.timestamp,
     }));
 
   return (
