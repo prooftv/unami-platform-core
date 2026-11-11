@@ -25,8 +25,8 @@ const BLOCKS_INGESTION: PermissionClassification[] = [
 const PERMITTED_OPS: Record<PermissionClassification, string[]> = {
   reference:    [],
   display:      ['display'],
-  internal:     ['display', 'ingest', 'process'],
-  download:     ['display', 'ingest', 'process', 'download'],
+  internal:     ['display', 'ingest', 'process', 'publish'],
+  download:     ['display', 'ingest', 'process', 'download', 'publish'],
   redistribute: ['display', 'ingest', 'process', 'download', 'publish', 'redistribute'],
   restricted:   [],
   prohibited:   [],
@@ -114,11 +114,14 @@ async function checkPublicationPermission(
   if (sourceClass === 'prohibited') {
     return `Publication blocked: source "${source.name}" is prohibited.`;
   }
+  // 'redistribute' permits full public publication.
+  // 'download' and 'internal' permit publication within the platform (internal use).
+  // 'display', 'reference', 'pending' do not permit publication.
   if (!canPerform(sourceClass, 'publish')) {
-    return `Publication blocked: source permission classification is "${sourceClass}". Only redistribute permits publication.`;
+    return `Publication blocked: source permission classification is "${sourceClass}". Redistribution, download or internal classification required.`;
   }
   if (!canPerform(datasetClass, 'publish')) {
-    return `Publication blocked: dataset permission classification is "${datasetClass}". Only redistribute permits publication.`;
+    return `Publication blocked: dataset permission classification is "${datasetClass}". Redistribution, download or internal classification required.`;
   }
 
   return null;
@@ -850,10 +853,14 @@ export async function reviewStagedFeaturesAction(
   if (action === 'approve') {
     const { data: remaining } = await supabase.from('spatial_staged_features')
       .select('id').eq('dataset_id', datasetId).eq('operator_status', 'pending');
+    // When all features are reviewed, advance status to 'staged' so the operator
+    // can explicitly publish via publishDatasetAction — which enforces permission checks.
+    // Do NOT auto-publish here; that would bypass the permission gate.
     if (!remaining?.length) {
       await supabase.from('spatial_datasets')
-        .update({ status: 'published', published_at: now, updated_at: now })
-        .eq('id', datasetId);
+        .update({ status: 'staged', updated_at: now })
+        .eq('id', datasetId)
+        .neq('status', 'published');
     }
   }
 

@@ -101,8 +101,8 @@ export default async function DatasetsPage({ searchParams }: Props) {
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColour[d.status] ?? ''}`}>
                           {d.status}
                         </span>
-                        <span className={`text-xs font-medium ${permColour[d.permission_classification ?? d.permission_status] ?? ''}`}>
-                          {d.permission_classification ?? d.permission_status}
+                        <span className={`text-xs font-medium ${permColour[d.permission_classification] ?? ''}`}>
+                          {d.permission_classification ?? '—'}
                         </span>
                       </div>
                     </div>

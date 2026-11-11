@@ -35,13 +35,25 @@ export async function GET() {
     );
   }
 
-  const { data: rows } = await supabase
-    .from('spatial_staged_features')
-    .select('feature_geojson, feature_properties')
-    .eq('dataset_id', dataset.id)
-    .eq('operator_status', 'approved');
+  // Paginate through Supabase's 1,000-row limit — ward count is currently 55
+  // but pagination guards against silent truncation if the dataset grows.
+  const PAGE_SIZE = 1000;
+  const allRows: Array<{ feature_geojson: unknown; feature_properties: unknown }> = [];
+  let page = 0;
+  while (true) {
+    const { data: rows } = await supabase
+      .from('spatial_staged_features')
+      .select('feature_geojson, feature_properties')
+      .eq('dataset_id', dataset.id)
+      .eq('operator_status', 'approved')
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+    if (!rows?.length) break;
+    allRows.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+    page++;
+  }
 
-  const features = (rows ?? []).map((r) => ({
+  const features = allRows.map((r) => ({
     type: 'Feature' as const,
     geometry: r.feature_geojson as { type: string; coordinates: unknown },
     properties: (r.feature_properties ?? {}) as Record<string, unknown>,
