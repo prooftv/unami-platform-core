@@ -229,6 +229,21 @@ async function fetchDatasetFeatures(
 }
 
 /**
+ * Extract CAT_B from a feature's properties.
+ * Handles both direct CAT_B field and NAMECODE format "Newcastle (KZN252)".
+ */
+function extractCatB(props: Record<string, unknown>): string | null {
+	if (typeof props.CAT_B === "string" && props.CAT_B) return props.CAT_B;
+	if (typeof props.MDB_CAT_B === "string" && props.MDB_CAT_B) return props.MDB_CAT_B;
+	// NAMECODE format: "Newcastle (KZN252)" or "Newcastle Local Municipality (KZN252)"
+	if (typeof props.NAMECODE === "string") {
+		const match = props.NAMECODE.match(/\(([A-Z]{2,3}\d{3})\)/);
+		if (match) return match[1];
+	}
+	return null;
+}
+
+/**
  * Filter a FeatureCollection to only features relevant to the notice location.
  * wardNumber + catB narrow wards to the specific ward; municipality to its LM;
  * district is always the single Amajuba DC25 feature.
@@ -246,12 +261,12 @@ function filterFeaturesForNotice(
 				f.properties.WardNo === wardNumber &&
 				f.properties.CAT_B === catB,
 		);
-		if (!filtered.length) return features; // fallback: return all if no match
+		if (!filtered.length) return features;
 		return { ...features, features: filtered, meta: { ...features.meta, count: filtered.length } };
 	}
 	if (layerId === "municipalities" && catB) {
 		const filtered = features.features.filter(
-			(f) => f.properties.CAT_B === catB || f.properties.MDB_CAT_B === catB,
+			(f) => extractCatB(f.properties) === catB,
 		);
 		if (!filtered.length) return features;
 		return { ...features, features: filtered, meta: { ...features.meta, count: filtered.length } };
