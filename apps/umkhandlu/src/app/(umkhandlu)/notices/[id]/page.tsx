@@ -265,7 +265,7 @@ export default async function NoticeDetailPage({
 					</Card>
 				)}
 
-				{/* Spatial dataset requirements for this notice type */}
+				{/* Spatial dataset requirements — bottom of page, collapsed by default */}
 				{notice.is_statutory && (
 					<NoticeSpatialContext noticeType={notice.type} noticeId={id} />
 				)}

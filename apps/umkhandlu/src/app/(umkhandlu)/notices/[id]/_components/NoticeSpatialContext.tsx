@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Clock, XCircle, AlertTriangle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckCircle, Clock, XCircle, AlertTriangle, ChevronDown } from 'lucide-react';
 import {
   type LayerRequirement,
   type Availability,
@@ -92,7 +92,7 @@ const BADGE_LABEL: Record<Availability, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// Component — CC provides spatial context, governance node owns the notice
+// Component — compact collapsible summary, intended for bottom of notice page
 // ---------------------------------------------------------------------------
 interface Props {
   noticeType: string;
@@ -115,60 +115,63 @@ export async function NoticeSpatialContext({ noticeType }: Props) {
     return { req, effective };
   });
 
+  const gaps = pending + unavailable;
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm">Spatial Dataset Requirements</CardTitle>
-          <div className="flex items-center gap-3 text-xs">
-            <span className="text-green-600 font-medium">{available} available</span>
-            <span className="text-amber-600 font-medium">{pending} pending</span>
-            {unavailable > 0 && (
-              <span className="text-muted-foreground">{unavailable} unavailable</span>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y">
-          {resolved.map(({ req, effective }) => {
-            const Icon = ICON[effective];
-            return (
-              <div key={req.role} className="px-6 py-3 flex items-start gap-3">
-                <Icon className={`size-4 mt-0.5 shrink-0 ${COLOUR[effective]}`} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">{req.role}</p>
-                      <p className="text-xs text-muted-foreground truncate">{req.label}</p>
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${BADGE[effective]}`}
-                    >
-                      {BADGE_LABEL[effective]}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{req.statutoryBasis}</p>
-                  {req.permissionNote && effective !== 'available' && (
-                    <div className="flex items-start gap-1.5 mt-1">
-                      <AlertTriangle className="size-3 mt-0.5 shrink-0 text-amber-500" />
-                      <p className="text-xs text-amber-700">{req.permissionNote}</p>
-                    </div>
-                  )}
-                </div>
+    <details className="group">
+      <summary className="list-none cursor-pointer">
+        <Card className="hover:bg-muted/30 transition-colors">
+          <CardContent className="py-3 px-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <ChevronDown className="size-4 text-muted-foreground shrink-0 group-open:rotate-180 transition-transform" />
+                <span className="text-sm font-medium">Spatial layers</span>
+                <span className="text-xs text-muted-foreground">{requirements.length} required for {noticeType}</span>
               </div>
-            );
-          })}
-        </div>
-        <div className="px-6 py-3 border-t flex items-center justify-between">
-          <Link href="/spatial/sources" className="text-xs text-blue-600 hover:underline">
-            Manage spatial sources →
-          </Link>
-          <Link href="/spatial/map" className="text-xs text-blue-600 hover:underline">
-            View on map →
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-green-600 font-medium">{available} ready</span>
+                {gaps > 0 && (
+                  <span className="text-xs text-amber-600 font-medium">{gaps} pending</span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </summary>
+
+      <Card className="mt-1 border-t-0 rounded-t-none">
+        <CardContent className="p-0">
+          <div className="divide-y">
+            {resolved.map(({ req, effective }) => {
+              const Icon = ICON[effective];
+              return (
+                <div key={req.role} className="px-4 py-2.5 flex items-start gap-3">
+                  <Icon className={`size-3.5 mt-0.5 shrink-0 ${COLOUR[effective]}`} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-medium">{req.role}</p>
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${BADGE[effective]}`}>
+                        {BADGE_LABEL[effective]}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{req.statutoryBasis}</p>
+                    {req.permissionNote && effective !== 'available' && (
+                      <div className="flex items-start gap-1 mt-0.5">
+                        <AlertTriangle className="size-3 mt-0.5 shrink-0 text-amber-500" />
+                        <p className="text-xs text-amber-700">{req.permissionNote}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="px-4 py-2.5 border-t flex items-center gap-4">
+            <Link href="/spatial/sources" className="text-xs text-blue-600 hover:underline">Manage sources →</Link>
+            <Link href="/spatial/map" className="text-xs text-blue-600 hover:underline">View on map →</Link>
+          </div>
+        </CardContent>
+      </Card>
+    </details>
   );
 }

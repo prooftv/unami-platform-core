@@ -23,8 +23,8 @@ const BLOCKS_INGESTION: PermissionClassification[] = [
 
 // Permitted operations per classification
 const PERMITTED_OPS: Record<PermissionClassification, string[]> = {
-  reference:    [],
-  display:      ['display'],
+  reference:    ['display', 'publish'],
+  display:      ['display', 'publish'],
   internal:     ['display', 'ingest', 'process', 'publish'],
   download:     ['display', 'ingest', 'process', 'download', 'publish'],
   redistribute: ['display', 'ingest', 'process', 'download', 'publish', 'redistribute'],
