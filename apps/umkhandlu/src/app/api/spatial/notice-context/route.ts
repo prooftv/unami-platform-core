@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { PROXIMITY_RADIUS } from "@/app/(umkhandlu)/notices/[id]/_components/notice-layer-config";
 
 export const dynamic = "force-dynamic";
 
@@ -381,12 +382,9 @@ export async function GET(req: Request) {
 		wardDemographics,
 		proximity: resolveProximityLayers(noticeType),
 		siteContext: resolveSiteContext(),
-		// 500m is a common reference distance for KZN Liquor Act s.43 proximity considerations.
-		// This is an exploratory context radius — not a verified statutory threshold.
-		// Verify applicable statutory provision before treating as a legal rule.
-		proximityRadiusMetres: noticeType === "liquor" ? 500 : null,
-		proximityRadiusNote: noticeType === "liquor"
-			? "500m exploratory context radius. Not a verified statutory threshold. KZN Liquor Licensing Act s.43 proximity requirements must be verified against current legislation before use as a legal determination."
+		proximityRadiusMetres: PROXIMITY_RADIUS[noticeType]?.metres ?? null,
+		proximityRadiusNote: PROXIMITY_RADIUS[noticeType]
+			? `${PROXIMITY_RADIUS[noticeType]!.statutoryBasis}. ${PROXIMITY_RADIUS[noticeType]!.caveat ?? ''}`
 			: null,
 		generatedAt: new Date().toISOString(),
 		disclaimer:

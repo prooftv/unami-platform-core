@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { PROXIMITY_RADIUS } from "@/app/(umkhandlu)/notices/[id]/_components/notice-layer-config";
 
 export const dynamic = "force-dynamic";
 
@@ -564,6 +565,7 @@ export async function GET(req: Request) {
 			noticeType,
 			wardNumber,
 			catB,
+			proximityRadius: PROXIMITY_RADIUS[noticeType] ?? null,
 			layers,
 			summary: { total: layers.length, available: availableCount, pending: pendingCount, unavailable: unavailableCount, withFeatures },
 			generatedAt: new Date().toISOString(),

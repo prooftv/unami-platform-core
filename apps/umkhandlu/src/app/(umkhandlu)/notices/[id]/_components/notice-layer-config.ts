@@ -1,5 +1,53 @@
 export type Availability = 'available' | 'pending-permission' | 'not-available';
 
+// ─── Proximity radius per notice type ────────────────────────────────────────
+// These are the legally relevant proximity distances for each statutory notice
+// type under South African law. Where no statutory radius exists the value is
+// null — absence of a radius does not mean proximity is irrelevant.
+
+export interface ProximityRadiusConfig {
+  metres: number;
+  statutoryBasis: string;
+  caveat: string | null;
+}
+
+export const PROXIMITY_RADIUS: Record<string, ProximityRadiusConfig | null> = {
+  // KZN Liquor Licensing Act 6 of 2010, s.43(2)(b) — the Board must consider
+  // proximity to schools, places of worship, health facilities and recreation
+  // facilities. 500m is the accepted reference distance used by KZNERA in
+  // practice. It is not a hard statutory cutoff — the Board retains discretion.
+  liquor: {
+    metres: 500,
+    statutoryBasis: 'KZN Liquor Licensing Act s.43(2)(b)',
+    caveat: '500m is the accepted KZNERA reference distance. The Board retains discretion — this is not a hard statutory exclusion zone.',
+  },
+  // MPRDA s.5(4)(c) — the applicant must consult affected communities within
+  // the area of the proposed mining right. 500m is the standard practice radius
+  // used by DMRE and environmental practitioners for community notification.
+  // Not codified in the Act itself.
+  mining: {
+    metres: 500,
+    statutoryBasis: 'MPRDA s.5(4)(c) — community consultation area',
+    caveat: '500m is a DMRE practice standard for community notification. The actual consultation area is determined by the environmental assessment practitioner.',
+  },
+  // NEMA EIA Regulations GN R982 — no fixed proximity radius. The 32m
+  // watercourse setback is a specific rule, not a general proximity radius.
+  // Receptor sensitivity is assessed case-by-case.
+  eia: null,
+  // SPLUMA s.42 — no statutory proximity radius for rezoning applications.
+  rezoning: null,
+  // No statutory proximity radius for infrastructure notices.
+  infrastructure: null,
+  // No statutory proximity radius for these notice types.
+  'land-use': null,
+  township: null,
+  building: null,
+  telecom: null,
+  estate: null,
+  liquidation: null,
+  pto: null,
+};
+
 export interface LayerRequirement {
   role: string;
   label: string;

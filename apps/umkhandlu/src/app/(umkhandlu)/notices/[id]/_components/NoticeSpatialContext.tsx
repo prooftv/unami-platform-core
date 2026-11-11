@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Clock, XCircle, AlertTriangle, ChevronDown } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertTriangle, ChevronDown, MapPin } from 'lucide-react';
 import {
   type LayerRequirement,
   type Availability,
   NOTICE_LAYER_CONFIG,
   DEFAULT_LAYERS,
+  PROXIMITY_RADIUS,
 } from './notice-layer-config';
 
 export interface SpatialGapSummary {
@@ -116,6 +117,7 @@ export async function NoticeSpatialContext({ noticeType }: Props) {
   });
 
   const gaps = pending + unavailable;
+  const radius = PROXIMITY_RADIUS[noticeType] ?? null;
 
   return (
     <details className="group">
@@ -129,6 +131,12 @@ export async function NoticeSpatialContext({ noticeType }: Props) {
                 <span className="text-xs text-muted-foreground">{requirements.length} required for {noticeType}</span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                {radius && (
+                  <span className="text-xs font-medium text-violet-700 bg-violet-100 px-1.5 py-0.5 rounded flex items-center gap-1">
+                    <MapPin className="size-3" />
+                    {radius.metres}m radius
+                  </span>
+                )}
                 <span className="text-xs text-green-600 font-medium">{available} ready</span>
                 {gaps > 0 && (
                   <span className="text-xs text-amber-600 font-medium">{gaps} pending</span>
@@ -141,6 +149,16 @@ export async function NoticeSpatialContext({ noticeType }: Props) {
 
       <Card className="mt-1 border-t-0 rounded-t-none">
         <CardContent className="p-0">
+          {radius && (
+            <div className="px-4 py-3 bg-violet-50 border-b flex items-start gap-2">
+              <MapPin className="size-3.5 mt-0.5 shrink-0 text-violet-600" />
+              <div>
+                <p className="text-xs font-medium text-violet-900">{radius.metres}m statutory proximity radius</p>
+                <p className="text-xs text-violet-700">{radius.statutoryBasis}</p>
+                {radius.caveat && <p className="text-xs text-violet-600 mt-0.5">{radius.caveat}</p>}
+              </div>
+            </div>
+          )}
           <div className="divide-y">
             {resolved.map(({ req, effective }) => {
               const Icon = ICON[effective];

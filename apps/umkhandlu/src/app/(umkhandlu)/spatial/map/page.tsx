@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { fetchNodeGeoRefs } from '@/lib/nodes/fetcher';
 import { SpatialMapClient } from './_components/SpatialMapClient';
 import type { PublishedDataset, NoticeMarker, NodeGeoRef } from './_components/SpatialMap';
+import { PROXIMITY_RADIUS } from '@/app/(umkhandlu)/notices/[id]/_components/notice-layer-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,6 +97,7 @@ export default async function SpatialMapPage() {
     ward_ref: n.ward_ref,
     latitude: n.latitude as number,
     longitude: n.longitude as number,
+    proximity_radius_metres: PROXIMITY_RADIUS[n.type as string]?.metres ?? null,
   }));
 
   // Node geographic references

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createServiceClient } from "@/lib/supabase/server";
 import { NoticeStatusActions } from "./_components/NoticeStatusActions";
 import { NoticeSpatialContext, getNoticeSpatialGapSummary } from "./_components/NoticeSpatialContext";
+import { PROXIMITY_RADIUS } from "./_components/notice-layer-config";
 
 export const dynamic = "force-dynamic";
 
@@ -96,6 +97,7 @@ export default async function NoticeDetailPage({
 	const spatialGaps = notice.is_statutory
 		? await getNoticeSpatialGapSummary(notice.type)
 		: null;
+	const proximityRadius = PROXIMITY_RADIUS[notice.type] ?? null;
 
 	const canPublish = notice.status === "draft";
 	const canClose = notice.status === "open" || notice.status === "published";
@@ -247,6 +249,11 @@ export default async function NoticeDetailPage({
 									{spatialGapCount > 0 && (
 										<span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
 											{spatialGapCount} spatial layer{spatialGapCount > 1 ? "s" : ""} pending
+										</span>
+									)}
+									{proximityRadius && (
+										<span className="text-xs px-2 py-0.5 rounded-full bg-violet-100 text-violet-800 font-medium">
+											{proximityRadius.metres}m proximity zone
 										</span>
 									)}
 								</div>

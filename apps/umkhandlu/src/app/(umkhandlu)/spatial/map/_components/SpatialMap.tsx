@@ -27,6 +27,7 @@ export interface NoticeMarker {
   ward_ref: string | null;
   latitude: number;
   longitude: number;
+  proximity_radius_metres: number | null;
 }
 
 export interface NodeGeoRef {
@@ -67,6 +68,23 @@ const LAYER_COLOURS = [
   '#0891b2', '#be185d', '#65a30d', '#ea580c', '#6366f1',
 ];
 
+const LAYER_STYLE = (colour: string) => ({
+  color: colour,
+  weight: 2.5,
+  opacity: 0.95,
+  fillOpacity: 0.22,
+  fillColor: colour,
+});
+
+const PROXIMITY_CIRCLE_STYLE = {
+  color: '#7c3aed',
+  weight: 3,
+  opacity: 1,
+  fillOpacity: 0.08,
+  fillColor: '#7c3aed',
+  dashArray: '8 4',
+};
+
 const noticeColour = (isStatutory: boolean) => isStatutory ? '#dc2626' : '#2563eb';
 
 const NODE_TYPE_COLOUR: Record<string, string> = {
@@ -93,6 +111,7 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   const [loadedGeojson, setLoadedGeojson] = useState<Map<string, GeoJSONFeatureCollection>>(new Map());
   const [showNotices, setShowNotices] = useState(true);
   const [showNodeActivity, setShowNodeActivity] = useState(true);
+  const proximityCircleRef = useRef<import('leaflet').Circle | null>(null);
   const [selectedFeature, setSelectedFeature] = useState<{
     datasetName: string;
     datasetSource: string;
@@ -208,9 +227,9 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
         if (!geojson?.features?.length) return;
 
         const layer = L.geoJSON(geojson as Parameters<typeof L.geoJSON>[0], {
-          style: () => ({ color: colour, weight: 1.5, opacity: 0.7, fillOpacity: 0.12, fillColor: colour }),
+          style: () => LAYER_STYLE(colour),
           pointToLayer: (_f, latlng) =>
-            L.circleMarker(latlng, { radius: 5, fillColor: colour, color: colour, weight: 1, opacity: 1, fillOpacity: 0.8 }),
+            L.circleMarker(latlng, { radius: 6, fillColor: colour, color: '#fff', weight: 1.5, opacity: 1, fillOpacity: 0.9 }),
           onEachFeature: (feature, fl) => {
             fl.on('click', () => {
               setSelectedFeature({
@@ -248,11 +267,12 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
 
       notices.forEach((notice) => {
         const colour = noticeColour(notice.is_statutory);
+        const size = notice.is_statutory ? 16 : 12;
         const icon = L.divIcon({
           className: '',
-          html: `<div style="width:12px;height:12px;border-radius:50%;background:${colour};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4)"></div>`,
-          iconSize: [12, 12],
-          iconAnchor: [6, 6],
+          html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${colour};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.5)"></div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
         });
         const marker = L.marker([notice.latitude, notice.longitude], { icon });
         marker.on('click', () => {
@@ -302,6 +322,38 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
 
     syncNodeMarkers();
   }, [mapReady, nodeGeoRefs, showNodeActivity]);
+
+  // Draw proximity circle when a statutory notice with a radius is selected
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return;
+    const map = mapRef.current;
+
+    // Remove previous circle
+    if (proximityCircleRef.current) {
+      map.removeLayer(proximityCircleRef.current);
+      proximityCircleRef.current = null;
+    }
+
+    if (
+      selectedNotice &&
+      selectedNotice.proximity_radius_metres &&
+      selectedNotice.latitude &&
+      selectedNotice.longitude
+    ) {
+      import('leaflet').then(({ default: L }) => {
+        const circle = L.circle(
+          [selectedNotice.latitude, selectedNotice.longitude],
+          {
+            radius: selectedNotice.proximity_radius_metres!,
+            ...PROXIMITY_CIRCLE_STYLE,
+          },
+        );
+        circle.addTo(map);
+        proximityCircleRef.current = circle;
+        map.fitBounds(circle.getBounds(), { padding: [40, 40], maxZoom: 15 });
+      });
+    }
+  }, [mapReady, selectedNotice]);
 
   function toggleLayer(id: string) {
     setVisibleLayers((prev) => {
@@ -480,6 +532,9 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
               {selectedNotice.ward_ref && <p>Ward: {selectedNotice.ward_ref}</p>}
               {selectedNotice.comment_deadline && (
                 <p>Deadline: {new Date(selectedNotice.comment_deadline).toLocaleDateString()}</p>
+              )}
+              {selectedNotice.proximity_radius_metres && (
+                <p className="text-violet-700 font-medium">{selectedNotice.proximity_radius_metres}m proximity zone</p>
               )}
             </div>
             <Link href={`/notices/${selectedNotice.id}`} className="text-xs text-blue-600 hover:underline">
