@@ -59,11 +59,11 @@ const NOTICE_SPATIAL_REQUIREMENTS: Record<string, Array<{
     },
     {
       role: 'Religious institutions',
-      label: 'HOT OSM Cultural Places — Amajuba DC25 (not yet ingested)',
+      label: 'HOT OSM Cultural Places — Amajuba DC25',
       datasetPattern: 'HOT OSM Cultural Places',
       statutoryBasis: 'KZN Liquor Licensing Act s.43 — proximity to places of worship',
-      availability: 'pending-permission',
-      permissionNote: 'HOT OSM Cultural Places source registered (ODbL). Dataset not yet ingested for Amajuba DC25.',
+      availability: 'available',
+      permissionNote: null,
     },
     {
       role: 'Licensed premises',
@@ -72,6 +72,14 @@ const NOTICE_SPATIAL_REQUIREMENTS: Record<string, Array<{
       statutoryBasis: 'KZN Liquor Licensing Act s.43 — proximity to existing licensed premises',
       availability: 'not-available',
       permissionNote: 'KZNERA does not publish a machine-readable register. Manual verification required.',
+    },
+    {
+      role: 'Health facilities',
+      label: 'HOT OSM Health Facilities — Amajuba DC25',
+      datasetPattern: 'HOT OSM Health Facilities',
+      statutoryBasis: 'KZN Liquor Licensing Act s.43 — proximity to health facilities',
+      availability: 'available',
+      permissionNote: null,
     },
     {
       role: 'Zoning / land use',
@@ -116,12 +124,12 @@ const NOTICE_SPATIAL_REQUIREMENTS: Record<string, Array<{
       permissionNote: 'COGTA FeatureServer accessible but redistribution permission pending.',
     },
     {
-      role: 'Floodlines',
-      label: 'COGTA ILIS Flood Risk layers',
-      datasetPattern: null,
+      role: 'Floodlines / waterways',
+      label: 'HOT OSM Waterways — Amajuba DC25 (pending ingest)',
+      datasetPattern: 'HOT OSM Waterways',
       statutoryBasis: 'NEMA EIA — environmental sensitivity',
       availability: 'pending-permission',
-      permissionNote: 'COGTA ILIS accessible but feature queries blocked from external IPs.',
+      permissionNote: 'HOT OSM Waterways source registered (ODbL). Dataset not yet ingested for Amajuba DC25.',
     },
     {
       role: 'Traditional authority areas',

@@ -116,24 +116,23 @@ const LAYER_PROFILES: Record<
 			geometryType: "Point",
 			sourceOrg: "Humanitarian OpenStreetMap Team (HOT)",
 			sourceDataset: "HOT OSM Cultural Places — Amajuba DC25",
-			availability: "pending-permission",
-			permissionNote:
-				"HOT OSM Cultural Places source registered (ODbL). Dataset not yet ingested for Amajuba DC25.",
+			availability: "available",
+			permissionNote: null,
 			attribution: "OpenStreetMap contributors — ODbL.",
 			statutoryRelevance:
 				"KZN Liquor Licensing Act s.43 — proximity to places of worship is a statutory consideration.",
 		},
 		{
 			id: "recreation-facilities",
-			label: "Public recreation facilities",
+			label: "Public recreation facilities (OSM POI)",
 			role: "proximity",
 			geometryType: "Point",
-			sourceOrg: "Newcastle LM / Amajuba DM",
-			sourceDataset: null,
+			sourceOrg: "Humanitarian OpenStreetMap Team (HOT)",
+			sourceDataset: "HOT OSM Points of Interest — Amajuba DC25",
 			availability: "pending-permission",
 			permissionNote:
-				"Newcastle PMU dataset is registered in the source catalogue but access is pending. No published GIS layer confirmed.",
-			attribution: null,
+				"HOT OSM Points of Interest source registered (ODbL). Dataset not yet ingested for Amajuba DC25.",
+			attribution: "OpenStreetMap contributors — ODbL.",
 			statutoryRelevance:
 				"KZN Liquor Licensing Act s.43 — proximity to recreation facilities is a statutory consideration.",
 		},
