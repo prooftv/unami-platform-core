@@ -126,6 +126,7 @@ export default async function DatasetDetailPage({ params }: Props) {
                     layerId={dataset.layer_id}
                     sourceType={src.source_type}
                     permissionClassification={src.permission_classification ?? dataset.permission_classification ?? 'pending'}
+                    sourceName={src.name}
                   />
                 </TabsContent>
               )}

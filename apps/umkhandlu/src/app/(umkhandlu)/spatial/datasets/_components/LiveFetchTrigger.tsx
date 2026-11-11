@@ -14,11 +14,12 @@ interface Props {
   layerId: string | null;
   sourceType: string;
   permissionClassification: string;
+  sourceName?: string;
 }
 
 const BLOCKS_LIVE_FETCH = new Set(['restricted', 'prohibited', 'pending', 'reference', 'display']);
 
-export function LiveFetchTrigger({ datasetId, datasetStatus, layerId, sourceType, permissionClassification }: Props) {
+export function LiveFetchTrigger({ datasetId, datasetStatus, layerId, sourceType, permissionClassification, sourceName }: Props) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [layerInput, setLayerInput] = useState(layerId ?? '0');
@@ -32,12 +33,15 @@ export function LiveFetchTrigger({ datasetId, datasetStatus, layerId, sourceType
   if (!isArcGIS) return null;
 
   if (isBlocked) {
+    const isFormalRequired = permissionClassification === 'formal_permission_required';
     return (
       <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
         <AlertTriangle className="size-4 mt-0.5 shrink-0" />
         <p>
-          Live fetch is blocked: permission classification is <strong>{permissionClassification}</strong>.
-          Update the source permission to internal, download or redistribute to enable ingestion.
+          {isFormalRequired
+            ? <>Live fetch is blocked: <strong>{sourceName ?? 'this source'}</strong> requires formal written permission before ingestion. Obtain a data access agreement from the custodian, then update the source permission classification.</>
+            : <>Live fetch is blocked: permission classification is <strong>{permissionClassification}</strong>. Update the source permission to internal, download or redistribute to enable ingestion.</>
+          }
         </p>
       </div>
     );
