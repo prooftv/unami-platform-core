@@ -71,14 +71,14 @@ function extractCatB(props: Record<string, unknown>): string | null {
 
 async function fetchPublishedDataset(
 	supabase: ReturnType<typeof createServiceClient>,
-	nameFragment: string,
+	namePrefix: string,
 ): Promise<{ id: string; name: string; attribution: string | null; dataset_date: string | null } | null> {
 	const { data } = await supabase
 		.from("spatial_datasets")
 		.select("id, name, attribution, dataset_date")
 		.eq("status", "published")
 		.eq("active", true)
-		.ilike("name", `%${nameFragment}%`)
+		.ilike("name", `${namePrefix}%`)
 		.order("published_at", { ascending: false })
 		.limit(1)
 		.maybeSingle();

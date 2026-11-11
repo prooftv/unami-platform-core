@@ -12,13 +12,13 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const supabase = createServiceClient();
 
-  // Resolve the published MDB wards dataset
+  // Resolve the published MDB wards dataset by exact name prefix
   const { data: dataset } = await supabase
     .from('spatial_datasets')
-    .select('id, name, dataset_date')
+    .select('id, name, dataset_date, attribution')
     .eq('status', 'published')
     .eq('active', true)
-    .ilike('name', '%ward%')
+    .ilike('name', 'MDB Wards 2026%')
     .order('published_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -55,8 +55,8 @@ export async function GET() {
         source: 'unami-platform-core',
         dataset: dataset.name,
         datasetDate: dataset.dataset_date,
+        attribution: dataset.attribution ?? 'Municipal Demarcation Board (MDB) — public domain, CC-BY',
         count: features.length,
-        attribution: 'Municipal Demarcation Board (MDB) — public domain, CC-BY',
       },
     },
     {

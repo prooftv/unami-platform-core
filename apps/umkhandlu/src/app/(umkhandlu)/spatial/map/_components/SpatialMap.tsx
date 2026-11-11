@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Map as LeafletMap, GeoJSON as LeafletGeoJSON, Marker } from 'leaflet';
 import { AreaInfoPanel } from './AreaInfoPanel';
+import {
+  createMap,
+  fitToLayer,
+  loadLeafletCss,
+} from '@/lib/map/leaflet-utils';
 
 export interface PublishedDataset {
   id: string;
@@ -101,24 +106,13 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
     let cancelled = false;
 
     async function init() {
-      const L = (await import('leaflet')).default;
-      await import('leaflet/dist/leaflet.css');
+      const L = (await import('leaflet')).default as typeof import('leaflet');
       if (cancelled || !containerRef.current) return;
+      loadLeafletCss();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      const map = createMap(L, containerRef.current, AMAJUBA_CENTRE, AMAJUBA_ZOOM, {
+        scrollWheelZoom: true,
       });
-
-      const map = L.map(containerRef.current!, { center: AMAJUBA_CENTRE, zoom: AMAJUBA_ZOOM });
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-      }).addTo(map);
 
       mapRef.current = map;
       setMapReady(true);
@@ -252,16 +246,6 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
     });
   }
 
-  function fitToLayer(id: string) {
-    const layer = layerRefs.current.get(id);
-    const map = mapRef.current;
-    if (!layer || !map) return;
-    try {
-      const bounds = layer.getBounds();
-      if (bounds.isValid()) map.fitBounds(bounds, { padding: [20, 20] });
-    } catch { /* empty */ }
-  }
-
   function fitAll() {
     const map = mapRef.current;
     if (!map) return;
@@ -316,7 +300,10 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
                     {d.feature_count != null && (
                       <span className="text-xs text-muted-foreground">{d.feature_count} features</span>
                     )}
-                    <button onClick={() => fitToLayer(d.id)} className="text-xs text-blue-600 hover:underline">
+                    <button onClick={() => {
+                      const layer = layerRefs.current.get(d.id);
+                      if (layer && mapRef.current) fitToLayer(mapRef.current, layer, [20, 20]);
+                    }} className="text-xs text-blue-600 hover:underline">
                       Zoom
                     </button>
                   </div>
