@@ -48,11 +48,11 @@ const LAYER_PROFILES: Record<
 			label: "Local municipality boundaries",
 			role: "administrative",
 			geometryType: "Polygon",
-			sourceOrg: "Municipal Demarcation Board of South Africa",
-			sourceDataset: "Amajuba Local Municipalities (DC25)",
+			sourceOrg: "KZN Department of Agriculture and Rural Development (MDB data)",
+			sourceDataset: "KZN DARD Local Municipalities",
 			availability: "available",
 			permissionNote: null,
-			attribution: "Municipal Demarcation Board (MDB) — public domain, CC-BY",
+			attribution: "Municipal Demarcation Board (MDB) — public domain, CC-BY. Hosted by KZN DARD.",
 			statutoryRelevance:
 				"Determines which KZNERA local committee has jurisdiction.",
 		},
@@ -61,11 +61,11 @@ const LAYER_PROFILES: Record<
 			label: "District municipality boundary",
 			role: "administrative",
 			geometryType: "Polygon",
-			sourceOrg: "Municipal Demarcation Board of South Africa",
-			sourceDataset: "Amajuba District Municipality Boundary (DC25)",
+			sourceOrg: "KZN Department of Agriculture and Rural Development (MDB data)",
+			sourceDataset: "KZN DARD District Municipality",
 			availability: "available",
 			permissionNote: null,
-			attribution: "Municipal Demarcation Board (MDB) — public domain, CC-BY",
+			attribution: "Municipal Demarcation Board (MDB) — public domain, CC-BY. Hosted by KZN DARD.",
 			statutoryRelevance: "Amajuba DC25 district context.",
 		},
 		{
@@ -229,21 +229,6 @@ async function fetchDatasetFeatures(
 }
 
 /**
- * Extract CAT_B from a feature's properties.
- * Handles both direct CAT_B field and NAMECODE format "Newcastle (KZN252)".
- */
-function extractCatB(props: Record<string, unknown>): string | null {
-	if (typeof props.CAT_B === "string" && props.CAT_B) return props.CAT_B;
-	if (typeof props.MDB_CAT_B === "string" && props.MDB_CAT_B) return props.MDB_CAT_B;
-	// NAMECODE format: "Newcastle (KZN252)" or "Newcastle Local Municipality (KZN252)"
-	if (typeof props.NAMECODE === "string") {
-		const match = props.NAMECODE.match(/\(([A-Z]{2,3}\d{3})\)/);
-		if (match) return match[1];
-	}
-	return null;
-}
-
-/**
  * Filter a FeatureCollection to only features relevant to the notice location.
  * wardNumber + catB narrow wards to the specific ward; municipality to its LM;
  * district is always the single Amajuba DC25 feature.
@@ -261,12 +246,15 @@ function filterFeaturesForNotice(
 				f.properties.WardNo === wardNumber &&
 				f.properties.CAT_B === catB,
 		);
-		if (!filtered.length) return features;
+		if (!filtered.length) return features; // fallback: return all if no match
 		return { ...features, features: filtered, meta: { ...features.meta, count: filtered.length } };
 	}
 	if (layerId === "municipalities" && catB) {
 		const filtered = features.features.filter(
-			(f) => extractCatB(f.properties) === catB,
+			(f) =>
+				f.properties.cat_b === catB ||
+				f.properties.CAT_B === catB ||
+				f.properties.MDB_CAT_B === catB,
 		);
 		if (!filtered.length) return features;
 		return { ...features, features: filtered, meta: { ...features.meta, count: filtered.length } };
