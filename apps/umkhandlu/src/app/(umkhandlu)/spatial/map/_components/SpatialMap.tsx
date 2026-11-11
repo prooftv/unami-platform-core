@@ -116,6 +116,33 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
 
       mapRef.current = map;
       setMapReady(true);
+
+      // Fit to all dataset layers on load — don't leave user at static AMAJUBA_CENTRE
+      const allFeatures = datasets.flatMap((d) => d.geojson?.features ?? []);
+      if (allFeatures.length > 0) {
+        try {
+          const coords: [number, number][] = [];
+          for (const f of allFeatures) {
+            if (!f.geometry) continue;
+            const g = f.geometry as { type: string; coordinates: unknown };
+            if (g.type === 'Point') {
+              const c = g.coordinates as [number, number];
+              coords.push([c[1], c[0]]);
+            } else if (g.type === 'Polygon' || g.type === 'MultiPolygon') {
+              const layer = L.geoJSON(f as Parameters<typeof L.geoJSON>[0]);
+              const b = layer.getBounds();
+              if (b.isValid()) {
+                const c = b.getCenter();
+                coords.push([c.lat, c.lng]);
+              }
+            }
+          }
+          if (coords.length > 0) {
+            const bounds = L.latLngBounds(coords);
+            if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+          }
+        } catch { /* fallback to AMAJUBA_CENTRE */ }
+      }
     }
 
     init();

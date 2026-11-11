@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createServiceClient } from "@/lib/supabase/server";
 import { NoticeStatusActions } from "./_components/NoticeStatusActions";
+import { NoticeSpatialContext } from "./_components/NoticeSpatialContext";
 
 export const dynamic = "force-dynamic";
 
@@ -247,6 +248,11 @@ export default async function NoticeDetailPage({
 							</p>
 						</CardContent>
 					</Card>
+				)}
+
+				{/* Spatial dataset requirements for this notice type */}
+				{notice.is_statutory && (
+					<NoticeSpatialContext noticeType={notice.type} noticeId={id} />
 				)}
 
 				{/* Risks */}

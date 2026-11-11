@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getOperatorSession } from '@/lib/auth/operator';
-import { inspectService, inspectLayer } from '@/lib/gis/arcgis-connector';
+import { inspectService, inspectLayer, queryFeatures } from '@/lib/gis/arcgis-connector';
 import type { PermissionClassification } from '@/lib/gis/spatial-sources-fetcher';
 
 async function requireOperator() {
@@ -375,6 +375,130 @@ export async function inspectSourceLayersAction(sourceId: string) {
 
   revalidatePath(`/spatial/sources/${sourceId}`);
   return { success: true, layers: result.data.layers, spatialReference: result.data.spatialReference };
+}
+
+/**
+ * Fetch features live from an ArcGIS FeatureServer layer and stage them.
+ * Enforces permission before fetching. Clips to Amajuba bbox by default.
+ * Idempotency: blocks if pending features already exist for the dataset.
+ */
+export async function fetchAndStageFromArcGISAction(
+  datasetId: string,
+  layerId: number,
+  options?: { where?: string; maxFeatures?: number },
+) {
+  const session = await requireOperator();
+  const supabase = createServiceClient();
+
+  const permissionError = await checkIngestionPermission(supabase, datasetId);
+  if (permissionError) return { error: permissionError };
+
+  const { data: dataset } = await supabase
+    .from('spatial_datasets')
+    .select('id, name, source_id')
+    .eq('id', datasetId)
+    .single();
+  if (!dataset) return { error: 'Dataset not found.' };
+
+  const { data: source } = await supabase
+    .from('spatial_sources')
+    .select('base_url, source_type')
+    .eq('id', dataset.source_id)
+    .single();
+  if (!source?.base_url) return { error: 'Source has no base_url.' };
+  if (!source.source_type.startsWith('arcgis')) {
+    return { error: 'Live fetch is only available for ArcGIS sources.' };
+  }
+
+  // Idempotency guard
+  const { count: existingCount } = await supabase
+    .from('spatial_staged_features')
+    .select('*', { count: 'exact', head: true })
+    .eq('dataset_id', datasetId)
+    .eq('operator_status', 'pending');
+  if ((existingCount ?? 0) > 0) {
+    return { error: `Dataset already has ${existingCount} features pending review. Approve or reject them before re-fetching.` };
+  }
+
+  const result = await queryFeatures(source.base_url, layerId, {
+    where: options?.where ?? '1=1',
+    maxFeatures: options?.maxFeatures ?? 2000,
+  });
+  if (!result.ok) return { error: result.error.message };
+
+  const { features, totalCount } = result.data;
+  if (!features.length) return { error: 'Query returned no features. Check the layer ID and where clause.' };
+
+  const started = new Date().toISOString();
+  const { data: run, error: runErr } = await supabase
+    .from('spatial_pipeline_runs')
+    .insert({
+      pipeline_type: 'arcgis-fetch',
+      dataset_id: datasetId,
+      source_id: dataset.source_id,
+      status: 'running',
+      triggered_by: session.id,
+      started_at: started,
+      log: [{ ts: started, msg: `Fetching layer ${layerId} from ${source.base_url} — ${features.length} features` }],
+    })
+    .select('id')
+    .single();
+  if (runErr || !run) return { error: 'Failed to create pipeline run.' };
+
+  type RawFeature = { type: string; geometry: unknown; properties: Record<string, unknown> | null };
+  const staged = (features as RawFeature[]).map((f) => {
+    const geom = f.geometry as { type?: string; coordinates?: unknown } | null;
+    const hasGeom = !!geom?.type && geom.coordinates !== undefined;
+    const issues: string[] = [];
+    if (!hasGeom) issues.push('Missing or null geometry');
+    return {
+      dataset_id: datasetId,
+      pipeline_run_id: run.id,
+      feature_geojson: geom ?? {},
+      feature_properties: f.properties ?? {},
+      geometry_valid: issues.length === 0,
+      geometry_issues: issues.length ? issues : null,
+      operator_status: 'pending',
+    };
+  });
+
+  let inserted = 0;
+  for (let i = 0; i < staged.length; i += 500) {
+    const { error: insErr } = await supabase
+      .from('spatial_staged_features')
+      .insert(staged.slice(i, i + 500));
+    if (insErr) {
+      await supabase.from('spatial_pipeline_runs').update({
+        status: 'failed',
+        completed_at: new Date().toISOString(),
+        error_message: insErr.message,
+      }).eq('id', run.id);
+      return { error: `Failed to stage features: ${insErr.message}` };
+    }
+    inserted += Math.min(500, staged.length - i);
+  }
+
+  const invalid = staged.filter((f) => !f.geometry_valid).length;
+  const completed = new Date().toISOString();
+  await supabase.from('spatial_pipeline_runs').update({
+    status: 'success',
+    completed_at: completed,
+    features_fetched: totalCount ?? features.length,
+    features_processed: inserted,
+    log: [
+      { ts: started, msg: `Fetching layer ${layerId} — ${features.length} features` },
+      { ts: completed, msg: `Staged ${inserted} features. ${invalid} with geometry issues.` },
+    ],
+  }).eq('id', run.id);
+
+  await supabase.from('spatial_datasets')
+    .update({ status: 'staged', updated_at: completed })
+    .eq('id', datasetId);
+
+  revalidatePath('/spatial/staging');
+  revalidatePath('/spatial/datasets');
+  revalidatePath('/spatial/pipelines');
+  return { success: true, staged: inserted, invalid };
 }
 
 export async function inspectLayerFieldsAction(sourceId: string, layerId: number) {

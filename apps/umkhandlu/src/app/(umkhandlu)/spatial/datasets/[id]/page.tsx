@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
 import { GeoJSONUpload } from '../_components/GeoJSONUpload';
+import { LiveFetchTrigger } from '../_components/LiveFetchTrigger';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +35,7 @@ export default async function DatasetDetailPage({ params }: Props) {
   const [{ data: dataset }, { data: runs }] = await Promise.all([
     supabase
       .from('spatial_datasets')
-      .select('*, spatial_sources(name, institution, coordinate_system)')
+      .select('*, spatial_sources(name, institution, coordinate_system, source_type, permission_classification)')
       .eq('id', id)
       .single(),
     supabase
@@ -47,8 +49,8 @@ export default async function DatasetDetailPage({ params }: Props) {
   if (!dataset) notFound();
 
   const src = Array.isArray(dataset.spatial_sources)
-    ? (dataset.spatial_sources[0] as { name: string; institution: string; coordinate_system: string } | undefined)
-    : (dataset.spatial_sources as { name: string; institution: string; coordinate_system: string } | null);
+    ? (dataset.spatial_sources[0] as { name: string; institution: string; coordinate_system: string; source_type: string; permission_classification: string } | undefined)
+    : (dataset.spatial_sources as { name: string; institution: string; coordinate_system: string; source_type: string; permission_classification: string } | null);
 
   return (
     <div className="space-y-6">
@@ -109,7 +111,28 @@ export default async function DatasetDetailPage({ params }: Props) {
         <Card>
           <CardHeader><CardTitle>Ingest Data</CardTitle></CardHeader>
           <CardContent>
-            <GeoJSONUpload datasetId={dataset.id} datasetStatus={dataset.status} />
+            <Tabs defaultValue={src?.source_type?.startsWith('arcgis') ? 'live' : 'upload'}>
+              <TabsList className="mb-4">
+                {src?.source_type?.startsWith('arcgis') && (
+                  <TabsTrigger value="live">Fetch from live service</TabsTrigger>
+                )}
+                <TabsTrigger value="upload">Upload GeoJSON</TabsTrigger>
+              </TabsList>
+              {src?.source_type?.startsWith('arcgis') && (
+                <TabsContent value="live">
+                  <LiveFetchTrigger
+                    datasetId={dataset.id}
+                    datasetStatus={dataset.status}
+                    layerId={dataset.layer_id}
+                    sourceType={src.source_type}
+                    permissionClassification={src.permission_classification ?? dataset.permission_classification ?? 'pending'}
+                  />
+                </TabsContent>
+              )}
+              <TabsContent value="upload">
+                <GeoJSONUpload datasetId={dataset.id} datasetStatus={dataset.status} />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 

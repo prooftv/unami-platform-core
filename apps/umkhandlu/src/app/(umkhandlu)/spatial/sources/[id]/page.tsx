@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
 import { SourceForm } from '../_components/SourceForm';
 import { SourceActions } from '../_components/SourceActions';
+import { SourceInspector } from '../_components/SourceInspector';
 import type { SpatialSource } from '@/lib/gis/spatial-sources-fetcher';
 
 export const dynamic = 'force-dynamic';
@@ -238,6 +239,20 @@ export default async function SourceDetailPage({ params }: Props) {
             <SourceForm source={s} />
           </CardContent>
         </Card>
+
+        {/* Endpoint discovery */}
+        {s.source_type.startsWith('arcgis') && (
+          <Card>
+            <CardHeader><CardTitle>Endpoint Discovery</CardTitle></CardHeader>
+            <CardContent>
+              <SourceInspector
+                sourceId={s.id}
+                sourceType={s.source_type}
+                hasBaseUrl={!!s.base_url}
+              />
+            </CardContent>
+          </Card>
+        )}
 
       </div>
     </div>
