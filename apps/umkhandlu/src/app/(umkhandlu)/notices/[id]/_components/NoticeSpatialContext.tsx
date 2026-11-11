@@ -3,44 +3,53 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Clock, XCircle, AlertTriangle } from 'lucide-react';
 
-/**
- * Spatial dataset requirements per notice type.
- * Each entry maps a layer role to the dataset name pattern used in spatial_datasets.
- * availability reflects the current platform state — updated as datasets are ingested.
- */
-const NOTICE_SPATIAL_REQUIREMENTS: Record<string, Array<{
+type Availability = 'available' | 'pending-permission' | 'not-available';
+
+interface LayerRequirement {
   role: string;
   label: string;
   datasetPattern: string | null;
   statutoryBasis: string;
-  availability: 'available' | 'pending-permission' | 'not-available';
+  availability: Availability;
   permissionNote: string | null;
-}>> = {
+}
+
+// ---------------------------------------------------------------------------
+// Shared administrative base — used by all notice types
+// ---------------------------------------------------------------------------
+const ADMIN_BASE: LayerRequirement[] = [
+  {
+    role: 'Ward boundaries',
+    label: 'MDB Wards 2026 — Amajuba DC25',
+    datasetPattern: 'MDB Wards 2026',
+    statutoryBasis: 'Ward committee jurisdiction and community notification',
+    availability: 'available',
+    permissionNote: null,
+  },
+  {
+    role: 'Local municipality',
+    label: 'KZN DARD Local Municipalities — Amajuba DC25',
+    datasetPattern: 'KZN DARD Local Municipalities',
+    statutoryBasis: 'Determining which authority has jurisdiction',
+    availability: 'available',
+    permissionNote: null,
+  },
+  {
+    role: 'District boundary',
+    label: 'KZN DARD District Municipality — Amajuba DC25',
+    datasetPattern: 'KZN DARD District Municipality',
+    statutoryBasis: 'Amajuba DC25 district context',
+    availability: 'available',
+    permissionNote: null,
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Notice type spatial requirements
+// ---------------------------------------------------------------------------
+const NOTICE_SPATIAL_REQUIREMENTS: Record<string, LayerRequirement[]> = {
   liquor: [
-    {
-      role: 'Ward boundaries',
-      label: 'MDB Wards 2026 — Amajuba DC25',
-      datasetPattern: 'MDB Wards 2026',
-      statutoryBasis: 'KZN Liquor Licensing Act s.43 — ward committee jurisdiction',
-      availability: 'available',
-      permissionNote: null,
-    },
-    {
-      role: 'Local municipality',
-      label: 'KZN DARD Local Municipalities — Amajuba DC25',
-      datasetPattern: 'KZN DARD Local Municipalities',
-      statutoryBasis: 'KZNERA local committee jurisdiction determination',
-      availability: 'available',
-      permissionNote: null,
-    },
-    {
-      role: 'District boundary',
-      label: 'KZN DARD District Municipality — Amajuba DC25',
-      datasetPattern: 'KZN DARD District Municipality',
-      statutoryBasis: 'Amajuba DC25 district context',
-      availability: 'available',
-      permissionNote: null,
-    },
+    ...ADMIN_BASE,
     {
       role: 'Traditional authority areas',
       label: 'KZN COGTA ILIS Land Tenure Component v2',
@@ -66,20 +75,28 @@ const NOTICE_SPATIAL_REQUIREMENTS: Record<string, Array<{
       permissionNote: null,
     },
     {
-      role: 'Licensed premises',
-      label: 'KZNERA licensed premises register',
-      datasetPattern: null,
-      statutoryBasis: 'KZN Liquor Licensing Act s.43 — proximity to existing licensed premises',
-      availability: 'not-available',
-      permissionNote: 'KZNERA does not publish a machine-readable register. Manual verification required.',
-    },
-    {
       role: 'Health facilities',
       label: 'HOT OSM Health Facilities — Amajuba DC25',
       datasetPattern: 'HOT OSM Health Facilities',
       statutoryBasis: 'KZN Liquor Licensing Act s.43 — proximity to health facilities',
       availability: 'available',
       permissionNote: null,
+    },
+    {
+      role: 'Recreation facilities',
+      label: 'HOT OSM Points of Interest — Amajuba DC25',
+      datasetPattern: 'HOT OSM Points of Interest',
+      statutoryBasis: 'KZN Liquor Licensing Act s.43 — proximity to recreation facilities',
+      availability: 'available',
+      permissionNote: null,
+    },
+    {
+      role: 'Licensed premises',
+      label: 'KZNERA licensed premises register',
+      datasetPattern: null,
+      statutoryBasis: 'KZN Liquor Licensing Act s.43 — proximity to existing licensed premises',
+      availability: 'not-available',
+      permissionNote: 'KZNERA does not publish a machine-readable register. Manual verification required.',
     },
     {
       role: 'Zoning / land use',
@@ -95,25 +112,51 @@ const NOTICE_SPATIAL_REQUIREMENTS: Record<string, Array<{
       datasetPattern: null,
       statutoryBasis: 'Property parcel identification',
       availability: 'pending-permission',
-      permissionNote: 'NGI cadastral data requires formal licence. Not yet confirmed.',
+      permissionNote: 'NGI cadastral data requires formal licence.',
     },
   ],
+
   eia: [
+    ...ADMIN_BASE,
     {
-      role: 'Ward boundaries',
-      label: 'MDB Wards 2026 — Amajuba DC25',
-      datasetPattern: 'MDB Wards 2026',
-      statutoryBasis: 'NEMA EIA Regulations — affected area determination',
+      role: 'Waterways / watercourses',
+      label: 'HOT OSM Waterways — Amajuba DC25',
+      datasetPattern: 'HOT OSM Waterways',
+      statutoryBasis: 'NEMA EIA Regulations — watercourse setback (32m) and wetland proximity',
       availability: 'available',
       permissionNote: null,
     },
     {
-      role: 'Local municipality',
-      label: 'KZN DARD Local Municipalities — Amajuba DC25',
-      datasetPattern: 'KZN DARD Local Municipalities',
-      statutoryBasis: 'Competent authority jurisdiction',
+      role: 'Affected communities',
+      label: 'HOT OSM Populated Places — Amajuba DC25',
+      datasetPattern: 'HOT OSM Populated Places',
+      statutoryBasis: 'NEMA EIA — public participation affected community identification',
       availability: 'available',
       permissionNote: null,
+    },
+    {
+      role: 'Health facilities',
+      label: 'HOT OSM Health Facilities — Amajuba DC25',
+      datasetPattern: 'HOT OSM Health Facilities',
+      statutoryBasis: 'NEMA EIA — receptor sensitivity assessment',
+      availability: 'available',
+      permissionNote: null,
+    },
+    {
+      role: 'Schools',
+      label: 'HOT OSM Education Facilities — Amajuba DC25',
+      datasetPattern: 'HOT OSM Education Facilities',
+      statutoryBasis: 'NEMA EIA — receptor sensitivity assessment',
+      availability: 'available',
+      permissionNote: null,
+    },
+    {
+      role: 'Traditional authority areas',
+      label: 'KZN COGTA ILIS Land Tenure Component v2',
+      datasetPattern: null,
+      statutoryBasis: 'IPILRA — traditional community consultation',
+      availability: 'pending-permission',
+      permissionNote: 'COGTA ILIS accessible but feature queries blocked from external IPs.',
     },
     {
       role: 'Zoning / land use',
@@ -124,28 +167,22 @@ const NOTICE_SPATIAL_REQUIREMENTS: Record<string, Array<{
       permissionNote: 'COGTA FeatureServer accessible but redistribution permission pending.',
     },
     {
-      role: 'Floodlines / waterways',
-      label: 'HOT OSM Waterways — Amajuba DC25 (pending ingest)',
-      datasetPattern: 'HOT OSM Waterways',
-      statutoryBasis: 'NEMA EIA — environmental sensitivity',
-      availability: 'pending-permission',
-      permissionNote: 'HOT OSM Waterways source registered (ODbL). Dataset not yet ingested for Amajuba DC25.',
-    },
-    {
-      role: 'Traditional authority areas',
-      label: 'KZN COGTA ILIS Land Tenure Component v2',
+      role: 'Cadastral / property',
+      label: 'NGI cadastral boundaries',
       datasetPattern: null,
-      statutoryBasis: 'IPILRA — traditional community consultation',
+      statutoryBasis: 'Activity footprint property parcel identification',
       availability: 'pending-permission',
-      permissionNote: 'COGTA ILIS accessible but feature queries blocked from external IPs.',
+      permissionNote: 'NGI cadastral data requires formal licence.',
     },
   ],
+
   rezoning: [
+    ...ADMIN_BASE,
     {
-      role: 'Ward boundaries',
-      label: 'MDB Wards 2026 — Amajuba DC25',
-      datasetPattern: 'MDB Wards 2026',
-      statutoryBasis: 'SPLUMA — affected ward determination',
+      role: 'Affected communities',
+      label: 'HOT OSM Populated Places — Amajuba DC25',
+      datasetPattern: 'HOT OSM Populated Places',
+      statutoryBasis: 'SPLUMA — affected community identification for public participation',
       availability: 'available',
       permissionNote: null,
     },
@@ -158,6 +195,14 @@ const NOTICE_SPATIAL_REQUIREMENTS: Record<string, Array<{
       permissionNote: 'COGTA FeatureServer accessible but redistribution permission pending.',
     },
     {
+      role: 'Road network',
+      label: 'HOT OSM Roads — Amajuba DC25 (pending ingest)',
+      datasetPattern: null,
+      statutoryBasis: 'SPLUMA — road access and servitude analysis',
+      availability: 'pending-permission',
+      permissionNote: 'HOT OSM Roads source registered (ODbL). Dataset not yet ingested for Amajuba DC25.',
+    },
+    {
       role: 'Cadastral / property',
       label: 'NGI cadastral boundaries',
       datasetPattern: null,
@@ -166,10 +211,89 @@ const NOTICE_SPATIAL_REQUIREMENTS: Record<string, Array<{
       permissionNote: 'NGI cadastral data requires formal licence.',
     },
   ],
+
+  infrastructure: [
+    ...ADMIN_BASE,
+    {
+      role: 'Railways',
+      label: 'HOT OSM Railways — Amajuba DC25',
+      datasetPattern: 'HOT OSM Railways',
+      statutoryBasis: 'Rail corridor proximity — Newcastle coal line and freight infrastructure',
+      availability: 'available',
+      permissionNote: null,
+    },
+    {
+      role: 'Waterways',
+      label: 'HOT OSM Waterways — Amajuba DC25',
+      datasetPattern: 'HOT OSM Waterways',
+      statutoryBasis: 'Watercourse crossing and setback requirements',
+      availability: 'available',
+      permissionNote: null,
+    },
+    {
+      role: 'Affected communities',
+      label: 'HOT OSM Populated Places — Amajuba DC25',
+      datasetPattern: 'HOT OSM Populated Places',
+      statutoryBasis: 'Affected community identification',
+      availability: 'available',
+      permissionNote: null,
+    },
+    {
+      role: 'Road network',
+      label: 'HOT OSM Roads — Amajuba DC25 (pending ingest)',
+      datasetPattern: null,
+      statutoryBasis: 'Road access and servitude analysis',
+      availability: 'pending-permission',
+      permissionNote: 'HOT OSM Roads source registered (ODbL). Dataset not yet ingested for Amajuba DC25.',
+    },
+  ],
+
+  mining: [
+    ...ADMIN_BASE,
+    {
+      role: 'Waterways',
+      label: 'HOT OSM Waterways — Amajuba DC25',
+      datasetPattern: 'HOT OSM Waterways',
+      statutoryBasis: 'MPRDA / NEMA — watercourse setback and acid mine drainage risk',
+      availability: 'available',
+      permissionNote: null,
+    },
+    {
+      role: 'Affected communities',
+      label: 'HOT OSM Populated Places — Amajuba DC25',
+      datasetPattern: 'HOT OSM Populated Places',
+      statutoryBasis: 'MPRDA s.5 — affected community consultation and surface rights',
+      availability: 'available',
+      permissionNote: null,
+    },
+    {
+      role: 'Health facilities',
+      label: 'HOT OSM Health Facilities — Amajuba DC25',
+      datasetPattern: 'HOT OSM Health Facilities',
+      statutoryBasis: 'Receptor sensitivity — health facilities near mining operations',
+      availability: 'available',
+      permissionNote: null,
+    },
+    {
+      role: 'Schools',
+      label: 'HOT OSM Education Facilities — Amajuba DC25',
+      datasetPattern: 'HOT OSM Education Facilities',
+      statutoryBasis: 'Receptor sensitivity — schools near mining operations',
+      availability: 'available',
+      permissionNote: null,
+    },
+    {
+      role: 'Traditional authority areas',
+      label: 'KZN COGTA ILIS Land Tenure Component v2',
+      datasetPattern: null,
+      statutoryBasis: 'MPRDA s.5 — traditional community surface rights consultation',
+      availability: 'pending-permission',
+      permissionNote: 'COGTA ILIS accessible but feature queries blocked from external IPs.',
+    },
+  ],
 };
 
-// Default: administrative context only
-const DEFAULT_REQUIREMENTS = NOTICE_SPATIAL_REQUIREMENTS.liquor.slice(0, 3);
+const DEFAULT_REQUIREMENTS = ADMIN_BASE;
 
 const AVAILABILITY_ICON = {
   available: CheckCircle,
@@ -188,33 +312,74 @@ interface Props {
   noticeId: string;
 }
 
+export interface SpatialGapSummary {
+  available: number;
+  pending: number;
+  unavailable: number;
+  total: number;
+  criticalGaps: string[];
+}
+
+export async function getNoticeSpatialGapSummary(noticeType: string): Promise<SpatialGapSummary> {
+  const requirements = NOTICE_SPATIAL_REQUIREMENTS[noticeType] ?? DEFAULT_REQUIREMENTS;
+  const supabase = createServiceClient();
+
+  const { data: datasets } = await supabase
+    .from('spatial_datasets')
+    .select('name')
+    .eq('status', 'published')
+    .eq('active', true);
+
+  const publishedNames = new Set((datasets ?? []).map((d) => d.name));
+
+  let available = 0;
+  let pending = 0;
+  let unavailable = 0;
+  const criticalGaps: string[] = [];
+
+  for (const req of requirements) {
+    const isPublished = req.datasetPattern
+      ? [...publishedNames].some((n) => n.includes(req.datasetPattern!.split('—')[0].trim()))
+      : false;
+    const effective = isPublished ? 'available' : req.availability;
+    if (effective === 'available') available++;
+    else if (effective === 'pending-permission') {
+      pending++;
+      criticalGaps.push(req.role);
+    } else {
+      unavailable++;
+      criticalGaps.push(req.role);
+    }
+  }
+
+  return { available, pending, unavailable, total: requirements.length, criticalGaps };
+}
+
 export async function NoticeSpatialContext({ noticeType, noticeId }: Props) {
   const requirements = NOTICE_SPATIAL_REQUIREMENTS[noticeType] ?? DEFAULT_REQUIREMENTS;
   const supabase = createServiceClient();
 
-  // Check which required datasets are actually published
-  const patterns = requirements
-    .filter((r) => r.datasetPattern)
-    .map((r) => r.datasetPattern as string);
+  const { data: datasets } = await supabase
+    .from('spatial_datasets')
+    .select('name')
+    .eq('status', 'published')
+    .eq('active', true);
 
-  const publishedNames = new Set<string>();
-  if (patterns.length > 0) {
-    const { data: datasets } = await supabase
-      .from('spatial_datasets')
-      .select('name')
-      .eq('status', 'published')
-      .eq('active', true);
-    for (const d of datasets ?? []) {
-      publishedNames.add(d.name);
-    }
+  const publishedNames = new Set((datasets ?? []).map((d) => d.name));
+
+  let available = 0;
+  let pending = 0;
+  let unavailable = 0;
+
+  for (const req of requirements) {
+    const isPublished = req.datasetPattern
+      ? [...publishedNames].some((n) => n.includes(req.datasetPattern!.split('—')[0].trim()))
+      : false;
+    const effective = isPublished ? 'available' : req.availability;
+    if (effective === 'available') available++;
+    else if (effective === 'pending-permission') pending++;
+    else unavailable++;
   }
-
-  const available = requirements.filter(
-    (r) => r.availability === 'available' && r.datasetPattern &&
-      [...publishedNames].some((n) => n.includes(r.datasetPattern!.split('—')[0].trim()))
-  ).length;
-  const pending = requirements.filter((r) => r.availability === 'pending-permission').length;
-  const missing = requirements.filter((r) => r.availability === 'not-available').length;
 
   return (
     <Card>
@@ -224,7 +389,7 @@ export async function NoticeSpatialContext({ noticeType, noticeId }: Props) {
           <div className="flex items-center gap-3 text-xs">
             <span className="text-green-600 font-medium">{available} available</span>
             <span className="text-amber-600 font-medium">{pending} pending</span>
-            {missing > 0 && <span className="text-muted-foreground">{missing} unavailable</span>}
+            {unavailable > 0 && <span className="text-muted-foreground">{unavailable} unavailable</span>}
           </div>
         </div>
       </CardHeader>
@@ -275,9 +440,12 @@ export async function NoticeSpatialContext({ noticeType, noticeId }: Props) {
             );
           })}
         </div>
-        <div className="px-6 py-3 border-t">
+        <div className="px-6 py-3 border-t flex items-center justify-between">
           <Link href="/spatial/sources" className="text-xs text-blue-600 hover:underline">
             Manage spatial sources →
+          </Link>
+          <Link href={`/spatial/map`} className="text-xs text-blue-600 hover:underline">
+            View on map →
           </Link>
         </div>
       </CardContent>

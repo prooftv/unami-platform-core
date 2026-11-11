@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createServiceClient } from "@/lib/supabase/server";
 import { NoticeStatusActions } from "./_components/NoticeStatusActions";
-import { NoticeSpatialContext } from "./_components/NoticeSpatialContext";
+import { NoticeSpatialContext, getNoticeSpatialGapSummary } from "./_components/NoticeSpatialContext";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +63,7 @@ export default async function NoticeDetailPage({
 		{ data: findings },
 		{ data: controls },
 	] = await Promise.all([
+		// notice fetched first so we can use its type for spatial gap check below
 		supabase.from("notices").select("*").eq("id", id).single(),
 		supabase
 			.from("risks")
@@ -92,6 +93,10 @@ export default async function NoticeDetailPage({
 
 	if (!notice) notFound();
 
+	const spatialGaps = notice.is_statutory
+		? await getNoticeSpatialGapSummary(notice.type)
+		: null;
+
 	const canPublish = notice.status === "draft";
 	const canClose = notice.status === "open" || notice.status === "published";
 
@@ -107,6 +112,9 @@ export default async function NoticeDetailPage({
 	const nonCompliant = obligationRows.filter(
 		(o) => o.status === "non-compliant",
 	).length;
+	const spatialGapCount = spatialGaps
+		? spatialGaps.pending + spatialGaps.unavailable
+		: 0;
 
 	// URL params for creating linked records
 	const riskParams = new URLSearchParams({ notice_id: id }).toString();
@@ -209,21 +217,21 @@ export default async function NoticeDetailPage({
 					</Card>
 				</div>
 
-				{/* Intelligence summary — only shown when any records exist */}
+				{/* Intelligence summary — always shown for statutory notices, otherwise only when records exist */}
 				{(riskRows.length > 0 ||
 					obligationRows.length > 0 ||
-					findingRows.length > 0) && (
+					findingRows.length > 0 ||
+					spatialGapCount > 0) && (
 					<Card>
 						<CardHeader>
 							<div className="flex items-center justify-between">
 								<CardTitle className="text-sm">
 									Risk &amp; Compliance Summary
 								</CardTitle>
-								<div className="flex gap-2">
+								<div className="flex gap-2 flex-wrap">
 									{criticalRisks > 0 && (
 										<span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-medium">
-											{criticalRisks} critical risk
-											{criticalRisks > 1 ? "s" : ""}
+											{criticalRisks} critical risk{criticalRisks > 1 ? "s" : ""}
 										</span>
 									)}
 									{nonCompliant > 0 && (
@@ -236,15 +244,22 @@ export default async function NoticeDetailPage({
 											{openFindings} open finding{openFindings > 1 ? "s" : ""}
 										</span>
 									)}
+									{spatialGapCount > 0 && (
+										<span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
+											{spatialGapCount} spatial layer{spatialGapCount > 1 ? "s" : ""} pending
+										</span>
+									)}
 								</div>
 							</div>
 						</CardHeader>
 						<CardContent className="space-y-1 text-xs text-muted-foreground">
 							<p>
 								{riskRows.length} risk{riskRows.length !== 1 ? "s" : ""} ·{" "}
-								{obligationRows.length} obligation
-								{obligationRows.length !== 1 ? "s" : ""} · {findingRows.length}{" "}
-								finding{findingRows.length !== 1 ? "s" : ""}
+								{obligationRows.length} obligation{obligationRows.length !== 1 ? "s" : ""} ·{" "}
+								{findingRows.length} finding{findingRows.length !== 1 ? "s" : ""}
+								{spatialGaps && (
+									<> · {spatialGaps.available}/{spatialGaps.total} spatial layers available</>
+								)}
 							</p>
 						</CardContent>
 					</Card>
