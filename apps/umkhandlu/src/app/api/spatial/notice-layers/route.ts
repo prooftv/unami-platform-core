@@ -228,10 +228,47 @@ async function fetchDatasetFeatures(
 	};
 }
 
+/**
+ * Filter a FeatureCollection to only features relevant to the notice location.
+ * wardNumber + catB narrow wards to the specific ward; municipality to its LM;
+ * district is always the single Amajuba DC25 feature.
+ */
+function filterFeaturesForNotice(
+	features: LayerWithFeatures["features"],
+	layerId: string,
+	wardNumber: number | null,
+	catB: string | null,
+): LayerWithFeatures["features"] {
+	if (!features?.features.length) return features;
+	if (layerId === "wards" && wardNumber != null && catB) {
+		const filtered = features.features.filter(
+			(f) =>
+				f.properties.WardNo === wardNumber &&
+				f.properties.CAT_B === catB,
+		);
+		if (!filtered.length) return features; // fallback: return all if no match
+		return { ...features, features: filtered, meta: { ...features.meta, count: filtered.length } };
+	}
+	if (layerId === "municipalities" && catB) {
+		const filtered = features.features.filter(
+			(f) => f.properties.CAT_B === catB || f.properties.MDB_CAT_B === catB,
+		);
+		if (!filtered.length) return features;
+		return { ...features, features: filtered, meta: { ...features.meta, count: filtered.length } };
+	}
+	// district: always single feature, return as-is
+	return features;
+}
+
 export async function GET(req: Request) {
 	const url = new URL(req.url);
 	const noticeType = url.searchParams.get("noticeType") ?? "other";
 	const includeFeatures = url.searchParams.get("features") !== "false";
+	// Ward context for spatial filtering — passed by the notice page
+	const wardNumber = url.searchParams.get("wardNumber")
+		? Number(url.searchParams.get("wardNumber"))
+		: null;
+	const catB = url.searchParams.get("catB") ?? null;
 
 	const profile = LAYER_PROFILES[noticeType] ?? DEFAULT_LAYERS;
 	const supabase = createServiceClient();
@@ -245,17 +282,17 @@ export async function GET(req: Request) {
 			) {
 				return { ...layer, features: null };
 			}
-			const features = await fetchDatasetFeatures(
-				supabase,
-				layer.sourceDataset,
-			);
-			return { ...layer, features };
+			const features = await fetchDatasetFeatures(supabase, layer.sourceDataset);
+			const filtered = filterFeaturesForNotice(features, layer.id, wardNumber, catB);
+			return { ...layer, features: filtered };
 		}),
 	);
 
 	return NextResponse.json(
 		{
 			noticeType,
+			wardNumber,
+			catB,
 			layers,
 			generatedAt: new Date().toISOString(),
 			disclaimer:
