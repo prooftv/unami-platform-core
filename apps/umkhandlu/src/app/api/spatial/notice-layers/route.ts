@@ -459,6 +459,7 @@ const LAYER_PROFILES: Record<string, LayerProfile[]> = {
 const DEFAULT_LAYERS = ADMIN_LAYERS;
 
 type LayerWithFeatures = LayerProfile & {
+	featureCount?: number | null;
 	features?: {
 		type: "FeatureCollection";
 		features: Array<{
@@ -466,9 +467,13 @@ type LayerWithFeatures = LayerProfile & {
 			geometry: { type: string; coordinates: unknown };
 			properties: Record<string, unknown>;
 		}>;
-		meta: { dataset: string; attribution: string | null; count: number };
+		meta: { dataset: string; attribution: string | null; count: number; loadOnDemand?: boolean };
 	} | null;
 };
+
+// Datasets larger than this are not inlined — too large for a page payload
+const INLINE_FEATURE_LIMIT = 2000;
+const PAGE_SIZE = 1000;
 
 async function fetchDatasetFeatures(
 	supabase: ReturnType<typeof createServiceClient>,
@@ -477,7 +482,7 @@ async function fetchDatasetFeatures(
 	const searchTerm = datasetName.split("—")[0].trim();
 	const { data: dataset } = await supabase
 		.from("spatial_datasets")
-		.select("id, name, attribution")
+		.select("id, name, attribution, feature_count")
 		.eq("status", "published")
 		.eq("active", true)
 		.ilike("name", `%${searchTerm}%`)
@@ -486,22 +491,41 @@ async function fetchDatasetFeatures(
 
 	if (!dataset) return null;
 
-	const { data: rows } = await supabase
-		.from("spatial_staged_features")
-		.select("feature_geojson, feature_properties")
-		.eq("dataset_id", dataset.id)
-		.eq("operator_status", "approved");
+	// Skip inlining large datasets — client must load on demand
+	if ((dataset.feature_count ?? 0) > INLINE_FEATURE_LIMIT) {
+		return {
+			type: "FeatureCollection",
+			features: [],
+			meta: { dataset: dataset.name, attribution: dataset.attribution, count: dataset.feature_count ?? 0, loadOnDemand: true },
+		};
+	}
 
-	if (!rows?.length) return null;
+	// Paginate through all features (respects 1000-row PostgREST limit)
+	const allRows: Array<{ feature_geojson: unknown; feature_properties: unknown }> = [];
+	let page = 0;
+	while (true) {
+		const { data: rows } = await supabase
+			.from("spatial_staged_features")
+			.select("feature_geojson, feature_properties")
+			.eq("dataset_id", dataset.id)
+			.eq("operator_status", "approved")
+			.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+		if (!rows?.length) break;
+		allRows.push(...rows);
+		if (rows.length < PAGE_SIZE) break;
+		page++;
+	}
+
+	if (!allRows.length) return null;
 
 	return {
 		type: "FeatureCollection",
-		features: rows.map((r) => ({
+		features: allRows.map((r) => ({
 			type: "Feature" as const,
 			geometry: r.feature_geojson as { type: string; coordinates: unknown },
 			properties: (r.feature_properties ?? {}) as Record<string, unknown>,
 		})),
-		meta: { dataset: dataset.name, attribution: dataset.attribution, count: rows.length },
+		meta: { dataset: dataset.name, attribution: dataset.attribution, count: allRows.length },
 	};
 }
 
@@ -551,7 +575,12 @@ export async function GET(req: Request) {
 			}
 			const features = await fetchDatasetFeatures(supabase, layer.sourceDataset);
 			const filtered = filterFeaturesForNotice(features, layer.id, wardNumber, catB);
-			return { ...layer, features: filtered };
+			return {
+				...layer,
+				featureCount: filtered?.meta.count ?? null,
+				features: filtered?.meta.loadOnDemand ? null : filtered,
+				loadOnDemand: filtered?.meta.loadOnDemand ?? false,
+			};
 		}),
 	);
 

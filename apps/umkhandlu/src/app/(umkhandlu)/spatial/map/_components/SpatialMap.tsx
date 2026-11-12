@@ -64,25 +64,35 @@ const AMAJUBA_CENTRE: [number, number] = [-28.05, 29.0];
 const AMAJUBA_ZOOM = 9;
 
 const LAYER_COLOURS = [
-  '#2563eb', '#16a34a', '#dc2626', '#d97706', '#7c3aed',
-  '#0891b2', '#be185d', '#65a30d', '#ea580c', '#6366f1',
+  '#facc15', // yellow
+  '#22c55e', // green
+  '#ef4444', // red
+  '#f97316', // orange
+  '#06b6d4', // cyan
+  '#a855f7', // purple
+  '#f59e0b', // amber
+  '#ec4899', // pink
+  '#3b82f6', // blue
+  '#10b981', // emerald
+  '#8b5cf6', // violet
+  '#14b8a6', // teal
 ];
 
 const LAYER_STYLE = (colour: string) => ({
   color: colour,
-  weight: 2.5,
-  opacity: 0.95,
-  fillOpacity: 0.22,
+  weight: 3,
+  opacity: 1,
+  fillOpacity: 0.2,
   fillColor: colour,
 });
 
 const PROXIMITY_CIRCLE_STYLE = {
   color: '#7c3aed',
-  weight: 3,
+  weight: 3.5,
   opacity: 1,
-  fillOpacity: 0.08,
+  fillOpacity: 0.06,
   fillColor: '#7c3aed',
-  dashArray: '8 4',
+  dashArray: '10 6',
 };
 
 const noticeColour = (isStatutory: boolean) => isStatutory ? '#dc2626' : '#2563eb';
