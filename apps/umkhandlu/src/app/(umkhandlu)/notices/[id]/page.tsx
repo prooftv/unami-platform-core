@@ -272,9 +272,14 @@ export default async function NoticeDetailPage({
 					</Card>
 				)}
 
-				{/* Spatial dataset requirements — bottom of page, collapsed by default */}
+				{/* Spatial context — structured section with administrative, demographics, proximity, site context */}
 				{notice.is_statutory && (
-					<NoticeSpatialContext noticeType={notice.type} noticeId={id} />
+					<NoticeSpatialContext
+						noticeType={notice.type}
+						noticeId={id}
+						lat={notice.latitude ?? null}
+						lng={notice.longitude ?? null}
+					/>
 				)}
 
 				{/* Risks */}
