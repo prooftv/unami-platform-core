@@ -1,27 +1,11 @@
 import { createServiceClient } from '@/lib/supabase/server';
+import {
+  PERMITTED_OPERATIONS,
+  type PermissionClassification,
+} from '@/lib/gis/spatial-permissions';
 
-// Controlled permission classification vocabulary
-export type PermissionClassification =
-  | 'reference'
-  | 'display'
-  | 'internal'
-  | 'download'
-  | 'redistribute'
-  | 'restricted'
-  | 'prohibited'
-  | 'pending';
-
-// Operations permitted per classification
-export const PERMITTED_OPERATIONS: Record<PermissionClassification, string[]> = {
-  reference:    [],
-  display:      ['display'],
-  internal:     ['display', 'ingest', 'process'],
-  download:     ['display', 'ingest', 'process', 'download'],
-  redistribute: ['display', 'ingest', 'process', 'download', 'publish', 'redistribute'],
-  restricted:   [],
-  prohibited:   [],
-  pending:      [],
-};
+export { PERMITTED_OPERATIONS };
+export type { PermissionClassification };
 
 // Classifications that block ingestion entirely
 export const BLOCKS_INGESTION: PermissionClassification[] = ['restricted', 'prohibited', 'pending', 'reference', 'display'];

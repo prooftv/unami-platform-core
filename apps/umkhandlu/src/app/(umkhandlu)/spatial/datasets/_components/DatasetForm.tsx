@@ -58,6 +58,15 @@ export function DatasetForm({ sources }: Props) {
               <Input id="layer_id" name="layer_id" placeholder="e.g. 0" />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="source_url">Dataset source URL</Label>
+              <Input
+                id="source_url"
+                name="source_url"
+                type="url"
+                placeholder="https://data.example.org/dataset"
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" name="description" rows={3} />
             </div>

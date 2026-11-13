@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { filterPubliclyRedistributableDatasets } from "@/lib/gis/spatial-public-access";
 import { PROXIMITY_RADIUS } from "@/app/(umkhandlu)/notices/[id]/_components/notice-layer-config";
 
 export const dynamic = "force-dynamic";
 
 const CORS = {
 	"Access-Control-Allow-Origin": "*",
-	"Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+	"Cache-Control": "no-store",
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -119,20 +120,40 @@ function extractCatB(props: Record<string, unknown>): string | null {
 	return null;
 }
 
+type PublishedDataset = {
+	id: string;
+	name: string;
+	attribution: string | null;
+	dataset_date: string | null;
+	source_id: string | null;
+	permission_classification: string | null;
+};
+
 async function fetchPublishedDataset(
 	supabase: ReturnType<typeof createServiceClient>,
 	namePrefix: string,
-): Promise<{ id: string; name: string; attribution: string | null; dataset_date: string | null } | null> {
-	const { data } = await supabase
+): Promise<{ dataset: PublishedDataset | null; permissionDenied: boolean }> {
+	const { data, error } = await supabase
 		.from("spatial_datasets")
-		.select("id, name, attribution, dataset_date")
+		.select("id, name, attribution, dataset_date, source_id, permission_classification")
 		.eq("status", "published")
 		.eq("active", true)
 		.ilike("name", `${namePrefix}%`)
 		.order("published_at", { ascending: false })
 		.limit(1)
 		.maybeSingle();
-	return data ?? null;
+	if (error) {
+		throw new Error(`Could not read published ${namePrefix} dataset: ${error.message}`);
+	}
+	if (!data) return { dataset: null, permissionDenied: false };
+	const { datasets } = await filterPubliclyRedistributableDatasets(
+		supabase,
+		[data],
+	);
+	return {
+		dataset: datasets[0] ?? null,
+		permissionDenied: datasets.length === 0,
+	};
 }
 
 async function fetchApprovedFeatures(
@@ -143,12 +164,15 @@ async function fetchApprovedFeatures(
 	const allRows: Array<{ feature_geojson: unknown; feature_properties: unknown }> = [];
 	let page = 0;
 	while (true) {
-		const { data: rows } = await supabase
+		const { data: rows, error } = await supabase
 			.from("spatial_staged_features")
 			.select("feature_geojson, feature_properties")
 			.eq("dataset_id", datasetId)
 			.eq("operator_status", "approved")
 			.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+		if (error) {
+			throw new Error(`Could not read approved spatial features: ${error.message}`);
+		}
 		if (!rows?.length) break;
 		allRows.push(...rows);
 		if (rows.length < PAGE_SIZE) break;
@@ -180,8 +204,13 @@ async function resolveWard(
 	wardNumber: number | null,
 	catB: string | null,
 ): Promise<DatasetResult> {
-	const dataset = await fetchPublishedDataset(supabase, "MDB Wards 2026");
-	if (!dataset) return unavailable("MDB Wards 2026 dataset not published in Control Centre.");
+	const lookup = await fetchPublishedDataset(supabase, "MDB Wards 2026");
+	const dataset = lookup.dataset;
+	if (!dataset) {
+		return lookup.permissionDenied
+			? pendingPermission("MDB Wards 2026 is not cleared for public redistribution.")
+			: unavailable("MDB Wards 2026 dataset not published in Control Centre.");
+	}
 	const all = await fetchApprovedFeatures(supabase, dataset.id);
 	if (!all.length) return unavailable("No approved ward features in dataset.");
 	if (wardNumber == null || !catB) {
@@ -224,8 +253,13 @@ async function resolveMunicipality(
 	supabase: ReturnType<typeof createServiceClient>,
 	catB: string | null,
 ): Promise<DatasetResult> {
-	const dataset = await fetchPublishedDataset(supabase, "MDB Local Municipalities 2026");
-	if (!dataset) return unavailable("MDB Local Municipalities 2026 dataset not published.");
+	const lookup = await fetchPublishedDataset(supabase, "MDB Local Municipalities 2026");
+	const dataset = lookup.dataset;
+	if (!dataset) {
+		return lookup.permissionDenied
+			? pendingPermission("MDB Local Municipalities 2026 is not cleared for public redistribution.")
+			: unavailable("MDB Local Municipalities 2026 dataset not published.");
+	}
 	const all = await fetchApprovedFeatures(supabase, dataset.id);
 	if (!all.length) return unavailable("No approved municipality features.");
 	if (!catB) {
@@ -265,8 +299,13 @@ async function resolveMunicipality(
 async function resolveDistrict(
 	supabase: ReturnType<typeof createServiceClient>,
 ): Promise<DatasetResult> {
-	const dataset = await fetchPublishedDataset(supabase, "MDB District Municipality 2026");
-	if (!dataset) return unavailable("MDB District Municipality 2026 dataset not published.");
+	const lookup = await fetchPublishedDataset(supabase, "MDB District Municipality 2026");
+	const dataset = lookup.dataset;
+	if (!dataset) {
+		return lookup.permissionDenied
+			? pendingPermission("MDB District Municipality 2026 is not cleared for public redistribution.")
+			: unavailable("MDB District Municipality 2026 dataset not published.");
+	}
 	const features = await fetchApprovedFeatures(supabase, dataset.id);
 	if (!features.length) return unavailable("No approved district boundary features.");
 	return {
@@ -286,17 +325,25 @@ async function resolveWardDemographics(
 	catB: string | null,
 ): Promise<WardDemographics | null> {
 	if (wardNumber == null || !catB) return null;
-	const { data: dataset } = await supabase
+	const { data: dataset, error: datasetError } = await supabase
 		.from("spatial_datasets")
-		.select("id")
+		.select("id, source_id, permission_classification")
 		.eq("status", "published")
 		.eq("active", true)
 		.ilike("name", "MDB WardProfile 2021%")
 		.order("published_at", { ascending: false })
 		.limit(1)
 		.maybeSingle();
+	if (datasetError) {
+		throw new Error(`Could not read ward demographics dataset: ${datasetError.message}`);
+	}
 	if (!dataset) return null;
-	const { data: rows } = await supabase
+	const { datasets } = await filterPubliclyRedistributableDatasets(
+		supabase,
+		[dataset],
+	);
+	if (!datasets.length) return null;
+	const { data: rows, error: rowsError } = await supabase
 		.from("spatial_staged_features")
 		.select("feature_properties")
 		.eq("dataset_id", dataset.id)
@@ -305,6 +352,9 @@ async function resolveWardDemographics(
 		.eq("feature_properties->>WardNo", String(wardNumber))
 		.limit(1)
 		.maybeSingle();
+	if (rowsError) {
+		throw new Error(`Could not read ward demographics: ${rowsError.message}`);
+	}
 	if (!rows) return null;
 	return rows.feature_properties as WardDemographics;
 }
@@ -364,12 +414,27 @@ export async function GET(req: Request) {
 
 	const supabase = createServiceClient();
 
-	const [ward, municipality, district, wardDemographics] = await Promise.all([
-		resolveWard(supabase, wardNumber, catB),
-		resolveMunicipality(supabase, catB),
-		resolveDistrict(supabase),
-		resolveWardDemographics(supabase, wardNumber, catB),
-	]);
+	let ward: DatasetResult;
+	let municipality: DatasetResult;
+	let district: DatasetResult;
+	let wardDemographics: WardDemographics | null;
+	try {
+		[ward, municipality, district, wardDemographics] = await Promise.all([
+			resolveWard(supabase, wardNumber, catB),
+			resolveMunicipality(supabase, catB),
+			resolveDistrict(supabase),
+			resolveWardDemographics(supabase, wardNumber, catB),
+		]);
+	} catch (error) {
+		console.error(
+			"Could not load public spatial context:",
+			error instanceof Error ? error.message : String(error),
+		);
+		return NextResponse.json(
+			{ error: "Spatial context is temporarily unavailable" },
+			{ status: 500, headers: CORS },
+		);
+	}
 
 	const response: NoticeContextResponse = {
 		noticeType,

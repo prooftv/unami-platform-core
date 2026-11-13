@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import {
+	isGeometryWithinRadius,
+	isValidWgs84Point,
+	type Wgs84Point,
+} from "@/lib/gis/spatial-proximity";
+import { filterPubliclyRedistributableDatasets } from "@/lib/gis/spatial-public-access";
 
 export const dynamic = "force-dynamic";
 
 const CORS = {
 	"Access-Control-Allow-Origin": "*",
-	"Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+	"Cache-Control": "no-store",
 };
 
 // ─── Layer catalogue ──────────────────────────────────────────────────────────
@@ -100,7 +106,7 @@ const MAP_DATASETS: Array<{
 		weight: 1.5,
 		fillOpacity: 0.8,
 		maxInline: 0,
-		radiusKm: null,
+		radiusKm: 5,
 		noticeTypes: ["rezoning", "infrastructure", "mining", "eia"],
 	},
 	{
@@ -110,7 +116,7 @@ const MAP_DATASETS: Array<{
 		weight: 1.5,
 		fillOpacity: 0.7,
 		maxInline: 0,
-		radiusKm: null,
+		radiusKm: 5,
 		noticeTypes: ["eia", "mining", "infrastructure"],
 	},
 	{
@@ -120,120 +126,114 @@ const MAP_DATASETS: Array<{
 		weight: 2,
 		fillOpacity: 0.8,
 		maxInline: 0,
-		radiusKm: null,
+		radiusKm: 5,
 		noticeTypes: ["infrastructure", "mining"],
 	},
 ];
 
 const PAGE_SIZE = 1000;
+const MAX_NEARBY_FEATURES = 100;
+const MAX_SCANNED_FEATURES = 20_000;
 
 type SpatialFeature = {
 	type: "Feature";
-	geometry: { type: string; coordinates: unknown };
+	geometry: { type: string; coordinates?: unknown; geometries?: unknown };
 	properties: Record<string, unknown>;
 };
-
-// ─── Haversine distance (km) ──────────────────────────────────────────────────
-function haversineKm(
-	lat1: number,
-	lng1: number,
-	lat2: number,
-	lng2: number,
-): number {
-	const R = 6371;
-	const dLat = ((lat2 - lat1) * Math.PI) / 180;
-	const dLng = ((lng2 - lng1) * Math.PI) / 180;
-	const a =
-		Math.sin(dLat / 2) ** 2 +
-		Math.cos((lat1 * Math.PI) / 180) *
-			Math.cos((lat2 * Math.PI) / 180) *
-			Math.sin(dLng / 2) ** 2;
-	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// Extract the representative point from a GeoJSON geometry (first coord for lines/polygons)
-function geometryPoint(
-	geom: { type: string; coordinates: unknown },
-): [number, number] | null {
-	const c = geom.coordinates;
-	if (geom.type === "Point" && Array.isArray(c) && c.length >= 2) {
-		return [c[1] as number, c[0] as number]; // [lat, lng]
-	}
-	if (
-		(geom.type === "LineString" || geom.type === "MultiPoint") &&
-		Array.isArray(c) &&
-		Array.isArray(c[0])
-	) {
-		const p = c[0] as number[];
-		return [p[1], p[0]];
-	}
-	if (
-		geom.type === "Polygon" &&
-		Array.isArray(c) &&
-		Array.isArray(c[0]) &&
-		Array.isArray((c[0] as unknown[])[0])
-	) {
-		const p = (c[0] as number[][])[0];
-		return [p[1], p[0]];
-	}
-	return null;
-}
-
-function filterByRadius(
-	features: SpatialFeature[],
-	lat: number,
-	lng: number,
-	radiusKm: number,
-): SpatialFeature[] {
-	return features.filter((f) => {
-		const pt = geometryPoint(f.geometry);
-		if (!pt) return true; // keep if we can't determine position
-		return haversineKm(lat, lng, pt[0], pt[1]) <= radiusKm;
-	});
-}
 
 async function fetchFeaturesForDataset(
 	supabase: ReturnType<typeof createServiceClient>,
 	datasetId: string,
 	maxInline: number,
-): Promise<{ features: SpatialFeature[]; total: number; loadOnDemand: boolean }> {
-	const { count } = await supabase
+	location: Wgs84Point | null,
+	radiusKm: number | null,
+): Promise<{
+	features: SpatialFeature[];
+	total: number;
+	loadOnDemand: boolean;
+	truncated: boolean;
+}> {
+	const { count, error: countError } = await supabase
 		.from("spatial_staged_features")
 		.select("id", { count: "exact", head: true })
 		.eq("dataset_id", datasetId)
 		.eq("operator_status", "approved");
+	if (countError) {
+		throw new Error(`Could not count published spatial features: ${countError.message}`);
+	}
 
 	const total = count ?? 0;
-	if (maxInline === 0 || total > maxInline) {
-		return { features: [], total, loadOnDemand: true };
+	const loadOnDemand = maxInline === 0 || total > maxInline;
+	const needsNearbyQuery = location !== null && radiusKm !== null;
+	if (loadOnDemand && !needsNearbyQuery) {
+		return { features: [], total, loadOnDemand, truncated: false };
 	}
 
 	const allRows: Array<{
+		id: string;
 		feature_geojson: unknown;
 		feature_properties: unknown;
 	}> = [];
 	let page = 0;
+	let scanned = 0;
+	let truncated = false;
+	const maxFeatures = needsNearbyQuery ? MAX_NEARBY_FEATURES : maxInline;
 	while (true) {
-		const { data: rows } = await supabase
+		const remaining = needsNearbyQuery
+			? MAX_SCANNED_FEATURES - scanned
+			: Number.POSITIVE_INFINITY;
+		if (remaining <= 0) {
+			truncated = true;
+			break;
+		}
+		const { data: rows, error } = await supabase
 			.from("spatial_staged_features")
-			.select("feature_geojson, feature_properties")
+			.select("id, feature_geojson, feature_properties")
 			.eq("dataset_id", datasetId)
 			.eq("operator_status", "approved")
-			.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+			.order("id", { ascending: true })
+			.range(
+				page * PAGE_SIZE,
+				page * PAGE_SIZE + Math.min(PAGE_SIZE, remaining) - 1,
+			);
+		if (error) {
+			throw new Error(`Could not read published spatial features: ${error.message}`);
+		}
 		if (!rows?.length) break;
-		allRows.push(...rows);
+		scanned += rows.length;
+		for (const row of rows) {
+			const geometry = row.feature_geojson as SpatialFeature["geometry"];
+			if (
+				needsNearbyQuery &&
+				!isGeometryWithinRadius(geometry, location, radiusKm * 1000)
+			) {
+				continue;
+			}
+			allRows.push(row);
+			if (allRows.length > maxFeatures) {
+				truncated = true;
+				break;
+			}
+		}
 		if (rows.length < PAGE_SIZE) break;
+		if (truncated) break;
+		if (needsNearbyQuery && scanned >= MAX_SCANNED_FEATURES) {
+			truncated = scanned < total;
+			break;
+		}
 		page++;
 	}
 
+	const features = allRows.slice(0, maxFeatures).map((row) => ({
+		type: "Feature" as const,
+		geometry: row.feature_geojson as SpatialFeature["geometry"],
+		properties: (row.feature_properties ?? {}) as Record<string, unknown>,
+	}));
 	return {
-		features: allRows.map((r) => ({
-			type: "Feature" as const,
-			geometry: r.feature_geojson as { type: string; coordinates: unknown },
-			properties: (r.feature_properties ?? {}) as Record<string, unknown>,
-		})),
+		features,
 		total,
-		loadOnDemand: false,
+		loadOnDemand,
+		truncated,
 	};
 }
 
@@ -247,6 +247,8 @@ export type MapLayer = {
 	featureCount: number;
 	returnedCount: number;
 	loadOnDemand: boolean;
+	truncated: boolean;
+	radiusKm: number | null;
 	features: SpatialFeature[];
 	attribution: string | null;
 	publishedAt: string | null;
@@ -258,49 +260,96 @@ export type MapLayersResponse = {
 	layers: MapLayer[];
 	filterLat: number | null;
 	filterLng: number | null;
+	permissionFiltered: boolean;
 	generatedAt: string;
 };
 
 export async function GET(req: Request) {
 	const url = new URL(req.url);
-	const lat = url.searchParams.get("lat")
-		? Number(url.searchParams.get("lat"))
+	const hasLat = url.searchParams.has("lat");
+	const hasLng = url.searchParams.has("lng");
+	if (hasLat !== hasLng) {
+		return NextResponse.json(
+			{ error: "lat and lng must be provided together" },
+			{ status: 400, headers: CORS },
+		);
+	}
+	const latValue = url.searchParams.get("lat");
+	const lngValue = url.searchParams.get("lng");
+	const location = hasLat
+		? {
+				lat: latValue?.trim() ? Number(latValue) : Number.NaN,
+				lng: lngValue?.trim() ? Number(lngValue) : Number.NaN,
+			}
 		: null;
-	const lng = url.searchParams.get("lng")
-		? Number(url.searchParams.get("lng"))
-		: null;
+	if (location && !isValidWgs84Point(location)) {
+		return NextResponse.json(
+			{ error: "lat and lng must be valid WGS84 coordinates" },
+			{ status: 400, headers: CORS },
+		);
+	}
 	const noticeType = url.searchParams.get("noticeType") ?? null;
-
-	// Validate coordinates if provided
-	const hasLocation =
-		lat !== null &&
-		lng !== null &&
-		Number.isFinite(lat) &&
-		Number.isFinite(lng) &&
-		lat >= -35 &&
-		lat <= -22 &&
-		lng >= 16 &&
-		lng <= 33;
+	const reliableLocation = ["verified", "operator-provided"].includes(
+		url.searchParams.get("locationPrecision") ?? "",
+	);
 
 	const supabase = createServiceClient();
 
-	const { data: datasets } = await supabase
+	const { data: datasets, error: datasetsError } = await supabase
 		.from("spatial_datasets")
-		.select("id, name, attribution, published_at, dataset_date")
+		.select("id, name, attribution, published_at, dataset_date, source_id, permission_classification")
 		.eq("status", "published")
-		.eq("active", true);
+		.eq("active", true)
+		.order("published_at", { ascending: false });
+	if (datasetsError) {
+		console.error("Could not read published spatial datasets:", datasetsError.message);
+		return NextResponse.json(
+			{ error: "Spatial catalogue is temporarily unavailable" },
+			{ status: 500, headers: CORS },
+		);
+	}
 
 	if (!datasets?.length) {
 		return NextResponse.json(
 			{
 				layers: [],
-				filterLat: hasLocation ? lat : null,
-				filterLng: hasLocation ? lng : null,
+				filterLat: location?.lat ?? null,
+				filterLng: location?.lng ?? null,
+				permissionFiltered: false,
 				generatedAt: new Date().toISOString(),
 			} satisfies MapLayersResponse,
 			{ headers: CORS },
 		);
 	}
+
+	let publicDatasets: typeof datasets;
+	try {
+		const filtered = await filterPubliclyRedistributableDatasets(
+			supabase,
+			datasets,
+		);
+		publicDatasets = filtered.datasets;
+	} catch (error) {
+		console.error(
+			"Could not verify spatial dataset permissions:",
+			error instanceof Error ? error.message : String(error),
+		);
+		return NextResponse.json(
+			{ error: "Spatial catalogue permissions are temporarily unavailable" },
+			{ status: 500, headers: CORS },
+		);
+	}
+	const publicDatasetIds = new Set(publicDatasets.map((dataset) => dataset.id));
+	const permissionFiltered = datasets.some(
+		(dataset) =>
+			MAP_DATASETS.some(
+				(cfg) =>
+					dataset.name.startsWith(cfg.namePrefix) &&
+					(!noticeType ||
+						cfg.noticeTypes === null ||
+						cfg.noticeTypes.includes(noticeType)),
+			) && !publicDatasetIds.has(dataset.id),
+	);
 
 	const layers = await Promise.all(
 		MAP_DATASETS.map(async (cfg) => {
@@ -313,29 +362,35 @@ export async function GET(req: Request) {
 				return null;
 			}
 
-			const dataset = datasets.find((d) => d.name.startsWith(cfg.namePrefix));
+			const dataset = publicDatasets.find((d) => d.name.startsWith(cfg.namePrefix));
 			if (!dataset) return null;
+			const radiusKm =
+				noticeType === "liquor" &&
+				reliableLocation &&
+				[
+					"Giga Schools",
+					"HOT OSM Education",
+					"HOT OSM Health",
+					"HOT OSM Cultural",
+					"HOT OSM Populated Places",
+				].includes(cfg.namePrefix)
+					? 0.5
+					: cfg.radiusKm;
 
-			const { features, total, loadOnDemand } = await fetchFeaturesForDataset(
+			const {
+				features,
+				total,
+				loadOnDemand,
+				truncated,
+			} = await fetchFeaturesForDataset(
 				supabase,
 				dataset.id,
 				cfg.maxInline,
+				location,
+				radiusKm,
 			);
 
 			if (total === 0) return null;
-
-			// Apply radius filter to point datasets when location is available
-			let filtered = features;
-			let radiusFiltered = false;
-			if (hasLocation && cfg.radiusKm !== null && features.length > 0) {
-				filtered = filterByRadius(
-					features,
-					lat as number,
-					lng as number,
-					cfg.radiusKm,
-				);
-				radiusFiltered = true;
-			}
 
 			return {
 				id: cfg.namePrefix.toLowerCase().replace(/\s+/g, "-"),
@@ -345,21 +400,24 @@ export async function GET(req: Request) {
 				weight: cfg.weight,
 				fillOpacity: cfg.fillOpacity,
 				featureCount: total,
-				returnedCount: loadOnDemand ? 0 : filtered.length,
+				returnedCount: features.length,
 				loadOnDemand,
-				features: filtered,
+				truncated,
+				radiusKm,
+				features,
 				attribution: dataset.attribution,
 				publishedAt: dataset.published_at,
 				datasetDate: dataset.dataset_date,
-				radiusFiltered,
+				radiusFiltered: location !== null && radiusKm !== null,
 			} satisfies MapLayer;
 		}),
 	);
 
 	const response: MapLayersResponse = {
 		layers: layers.filter((l): l is MapLayer => l !== null),
-		filterLat: hasLocation ? (lat as number) : null,
-		filterLng: hasLocation ? (lng as number) : null,
+		filterLat: location?.lat ?? null,
+		filterLng: location?.lng ?? null,
+		permissionFiltered,
 		generatedAt: new Date().toISOString(),
 	};
 

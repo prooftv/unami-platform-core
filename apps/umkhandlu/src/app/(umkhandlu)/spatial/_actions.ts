@@ -4,7 +4,10 @@ import { revalidatePath } from 'next/cache';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getOperatorSession } from '@/lib/auth/operator';
 import { inspectService, inspectLayer, queryFeatures } from '@/lib/gis/arcgis-connector';
-import type { PermissionClassification } from '@/lib/gis/spatial-sources-fetcher';
+import {
+  canPerformSpatialOperation,
+  type PermissionClassification,
+} from '@/lib/gis/spatial-permissions';
 
 async function requireOperator() {
   const session = await getOperatorSession();
@@ -20,22 +23,6 @@ async function requireOperator() {
 const BLOCKS_INGESTION: PermissionClassification[] = [
   'restricted', 'prohibited', 'pending', 'reference', 'display',
 ];
-
-// Permitted operations per classification
-const PERMITTED_OPS: Record<PermissionClassification, string[]> = {
-  reference:    ['display', 'publish'],
-  display:      ['display', 'publish'],
-  internal:     ['display', 'ingest', 'process', 'publish'],
-  download:     ['display', 'ingest', 'process', 'download', 'publish'],
-  redistribute: ['display', 'ingest', 'process', 'download', 'publish', 'redistribute'],
-  restricted:   [],
-  prohibited:   [],
-  pending:      [],
-};
-
-function canPerform(classification: PermissionClassification, operation: string): boolean {
-  return PERMITTED_OPS[classification]?.includes(operation) ?? false;
-}
 
 // Returns an error string if ingestion is blocked, null if permitted.
 // Enforces: most restrictive permission prevails; dataset cannot override source restriction.
@@ -77,7 +64,7 @@ async function checkIngestionPermission(
   }
 
   // Source must also permit ingestion
-  if (!canPerform(sourceClass, 'ingest')) {
+  if (!canPerformSpatialOperation(sourceClass, 'ingest')) {
     return `Ingestion blocked: source permission classification is "${sourceClass}". Only internal, download or redistribute permit ingestion.`;
   }
 
@@ -114,14 +101,12 @@ async function checkPublicationPermission(
   if (sourceClass === 'prohibited') {
     return `Publication blocked: source "${source.name}" is prohibited.`;
   }
-  // 'redistribute' permits full public publication.
-  // 'download' and 'internal' permit publication within the platform (internal use).
-  // 'display', 'reference', 'pending' do not permit publication.
-  if (!canPerform(sourceClass, 'publish')) {
-    return `Publication blocked: source permission classification is "${sourceClass}". Redistribution, download or internal classification required.`;
+  // Only redistribution permission permits publishing a public dataset.
+  if (!canPerformSpatialOperation(sourceClass, 'publish')) {
+    return `Publication blocked: source permission classification is "${sourceClass}". Redistribution permission is required.`;
   }
-  if (!canPerform(datasetClass, 'publish')) {
-    return `Publication blocked: dataset permission classification is "${datasetClass}". Redistribution, download or internal classification required.`;
+  if (!canPerformSpatialOperation(datasetClass, 'publish')) {
+    return `Publication blocked: dataset permission classification is "${datasetClass}". Redistribution permission is required.`;
   }
 
   return null;
@@ -398,7 +383,7 @@ export async function fetchAndStageFromArcGISAction(
 
   const { data: dataset } = await supabase
     .from('spatial_datasets')
-    .select('id, name, source_id')
+    .select('id, name, source_id, source_url')
     .eq('id', datasetId)
     .single();
   if (!dataset) return { error: 'Dataset not found.' };
@@ -494,9 +479,18 @@ export async function fetchAndStageFromArcGISAction(
     ],
   }).eq('id', run.id);
 
-  await supabase.from('spatial_datasets')
-    .update({ status: 'staged', updated_at: completed })
+  const { error: datasetUpdateError } = await supabase.from('spatial_datasets')
+    .update({
+      status: 'staged',
+      source_url: dataset.source_url ?? `${source.base_url.replace(/\/$/, '')}/${layerId}`,
+      retrieval_date: completed,
+      updated_at: completed,
+    })
     .eq('id', datasetId);
+  if (datasetUpdateError) {
+    console.error('Could not update dataset provenance after ArcGIS fetch:', datasetUpdateError.message);
+    return { error: 'Features were staged, but dataset provenance could not be saved.' };
+  }
 
   revalidatePath('/spatial/staging');
   revalidatePath('/spatial/datasets');
@@ -595,6 +589,39 @@ export async function publishDatasetAction(datasetId: string) {
   return { success: true, featureCount: approvedCount ?? 0 };
 }
 
+export async function updateDatasetSourceUrlAction(
+  datasetId: string,
+  formData: FormData,
+) {
+  await requireOperator();
+  const supabase = createServiceClient();
+  const rawSourceUrl = String(formData.get('source_url') ?? '').trim();
+  let sourceUrl: string | null = null;
+  if (rawSourceUrl) {
+    try {
+      const parsed = new URL(rawSourceUrl);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        return { error: 'Source URL must use HTTP or HTTPS.' };
+      }
+      sourceUrl = parsed.toString();
+    } catch {
+      return { error: 'Enter a valid HTTP or HTTPS source URL.' };
+    }
+  }
+
+  const { error } = await supabase
+    .from('spatial_datasets')
+    .update({ source_url: sourceUrl, updated_at: new Date().toISOString() })
+    .eq('id', datasetId);
+  if (error) {
+    console.error('Could not update spatial dataset source URL:', error.message);
+    return { error: 'Could not save the dataset source URL.' };
+  }
+
+  revalidatePath(`/spatial/datasets/${datasetId}`);
+  return { success: true };
+}
+
 export async function archiveDatasetAction(datasetId: string) {
   const session = await requireOperator();
   const supabase = createServiceClient();
@@ -661,6 +688,7 @@ export async function createDatasetAction(formData: FormData) {
     source_id,
     name,
     layer_id:               (formData.get('layer_id') as string) || null,
+    source_url:             (formData.get('source_url') as string) || null,
     description:            (formData.get('description') as string) || null,
     geographic_coverage:    (formData.get('geographic_coverage') as string) || 'amajuba',
     crs:                    (formData.get('crs') as string) || 'EPSG:4326',

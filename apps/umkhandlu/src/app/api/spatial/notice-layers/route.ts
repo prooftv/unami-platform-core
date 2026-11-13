@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { PROXIMITY_RADIUS } from "@/app/(umkhandlu)/notices/[id]/_components/notice-layer-config";
+import { filterPubliclyRedistributableDatasets } from "@/lib/gis/spatial-public-access";
 
 export const dynamic = "force-dynamic";
 
 const CORS = {
 	"Access-Control-Allow-Origin": "*",
-	"Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+	"Cache-Control": "no-store",
 };
 
 type Availability = "available" | "pending-permission" | "not-available";
@@ -475,50 +476,68 @@ type LayerWithFeatures = LayerProfile & {
 const INLINE_FEATURE_LIMIT = 2000;
 const PAGE_SIZE = 1000;
 
+type DatasetFeatureResult = {
+	features: LayerWithFeatures["features"];
+	permissionDenied: boolean;
+};
+
 async function fetchDatasetFeatures(
 	supabase: ReturnType<typeof createServiceClient>,
 	datasetName: string,
-): Promise<LayerWithFeatures["features"]> {
+): Promise<DatasetFeatureResult> {
 	const searchTerm = datasetName.split("—")[0].trim();
-	const { data: dataset } = await supabase
+	const { data: dataset, error: datasetError } = await supabase
 		.from("spatial_datasets")
-		.select("id, name, attribution, feature_count")
+		.select("id, name, attribution, feature_count, source_id, permission_classification")
 		.eq("status", "published")
 		.eq("active", true)
 		.ilike("name", `%${searchTerm}%`)
 		.limit(1)
 		.maybeSingle();
 
-	if (!dataset) return null;
+	if (datasetError) {
+		throw new Error(`Could not read published spatial layer: ${datasetError.message}`);
+	}
+	if (!dataset) return { features: null, permissionDenied: false };
+	const { datasets } = await filterPubliclyRedistributableDatasets(
+		supabase,
+		[dataset],
+	);
+	if (!datasets.length) {
+		return { features: null, permissionDenied: true };
+	}
 
 	// Skip inlining large datasets — client must load on demand
 	if ((dataset.feature_count ?? 0) > INLINE_FEATURE_LIMIT) {
-		return {
+		return { features: {
 			type: "FeatureCollection",
 			features: [],
 			meta: { dataset: dataset.name, attribution: dataset.attribution, count: dataset.feature_count ?? 0, loadOnDemand: true },
-		};
+		}, permissionDenied: false };
 	}
 
 	// Paginate through all features (respects 1000-row PostgREST limit)
 	const allRows: Array<{ feature_geojson: unknown; feature_properties: unknown }> = [];
 	let page = 0;
 	while (true) {
-		const { data: rows } = await supabase
+		const { data: rows, error } = await supabase
 			.from("spatial_staged_features")
 			.select("feature_geojson, feature_properties")
 			.eq("dataset_id", dataset.id)
 			.eq("operator_status", "approved")
 			.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+		if (error) {
+			throw new Error(`Could not read published spatial layer features: ${error.message}`);
+		}
 		if (!rows?.length) break;
 		allRows.push(...rows);
 		if (rows.length < PAGE_SIZE) break;
 		page++;
 	}
 
-	if (!allRows.length) return null;
+	if (!allRows.length) return { features: null, permissionDenied: false };
 
-	return {
+	return { features: {
 		type: "FeatureCollection",
 		features: allRows.map((r) => ({
 			type: "Feature" as const,
@@ -526,7 +545,7 @@ async function fetchDatasetFeatures(
 			properties: (r.feature_properties ?? {}) as Record<string, unknown>,
 		})),
 		meta: { dataset: dataset.name, attribution: dataset.attribution, count: allRows.length },
-	};
+	}, permissionDenied: false };
 }
 
 function filterFeaturesForNotice(
@@ -568,21 +587,41 @@ export async function GET(req: Request) {
 	const profile = LAYER_PROFILES[noticeType] ?? DEFAULT_LAYERS;
 	const supabase = createServiceClient();
 
-	const layers: LayerWithFeatures[] = await Promise.all(
-		profile.map(async (layer) => {
-			if (!includeFeatures || layer.availability !== "available" || !layer.sourceDataset) {
-				return { ...layer, features: null };
-			}
-			const features = await fetchDatasetFeatures(supabase, layer.sourceDataset);
-			const filtered = filterFeaturesForNotice(features, layer.id, wardNumber, catB);
-			return {
-				...layer,
-				featureCount: filtered?.meta.count ?? null,
-				features: filtered?.meta.loadOnDemand ? null : filtered,
-				loadOnDemand: filtered?.meta.loadOnDemand ?? false,
-			};
-		}),
-	);
+	let layers: LayerWithFeatures[];
+	try {
+		layers = await Promise.all(
+			profile.map(async (layer) => {
+				if (!includeFeatures || layer.availability !== "available" || !layer.sourceDataset) {
+					return { ...layer, features: null };
+				}
+				const result = await fetchDatasetFeatures(supabase, layer.sourceDataset);
+				if (result.permissionDenied) {
+					return {
+						...layer,
+						availability: "pending-permission" as const,
+						permissionNote: "Source and dataset are not cleared for public redistribution.",
+						features: null,
+					};
+				}
+				const filtered = filterFeaturesForNotice(result.features, layer.id, wardNumber, catB);
+				return {
+					...layer,
+					featureCount: filtered?.meta.count ?? null,
+					features: filtered?.meta.loadOnDemand ? null : filtered,
+					loadOnDemand: filtered?.meta.loadOnDemand ?? false,
+				};
+			}),
+		);
+	} catch (error) {
+		console.error(
+			"Could not load public spatial layers:",
+			error instanceof Error ? error.message : String(error),
+		);
+		return NextResponse.json(
+			{ error: "Spatial layers are temporarily unavailable" },
+			{ status: 500, headers: CORS },
+		);
+	}
 
 	const availableCount = layers.filter((l) => l.availability === "available").length;
 	const pendingCount = layers.filter((l) => l.availability === "pending-permission").length;

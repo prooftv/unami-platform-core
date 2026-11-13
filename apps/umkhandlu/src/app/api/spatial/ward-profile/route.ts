@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { filterPubliclyRedistributableDatasets } from "@/lib/gis/spatial-public-access";
 
 export const dynamic = "force-dynamic";
 
 const CORS = {
 	"Access-Control-Allow-Origin": "*",
-	"Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+	"Cache-Control": "no-store",
 };
 
 export type WardProfileRecord = {
@@ -71,9 +72,9 @@ export async function GET(req: Request) {
 
 	const supabase = createServiceClient();
 
-	const { data: dataset } = await supabase
+	const { data: dataset, error: datasetError } = await supabase
 		.from("spatial_datasets")
-		.select("id, name, attribution, dataset_date")
+		.select("id, name, attribution, dataset_date, source_id, permission_classification")
 		.eq("status", "published")
 		.eq("active", true)
 		.ilike("name", "MDB WardProfile 2021%")
@@ -81,10 +82,38 @@ export async function GET(req: Request) {
 		.limit(1)
 		.maybeSingle();
 
+	if (datasetError) {
+		console.error("Could not read published ward profile dataset:", datasetError.message);
+		return NextResponse.json(
+			{ error: "Ward profile dataset is temporarily unavailable." },
+			{ status: 500, headers: CORS },
+		);
+	}
 	if (!dataset) {
 		return NextResponse.json(
 			{ error: "WardProfile 2021 dataset not published." },
 			{ status: 404, headers: CORS },
+		);
+	}
+	try {
+		const { datasets } = await filterPubliclyRedistributableDatasets(
+			supabase,
+			[dataset],
+		);
+		if (!datasets.length) {
+			return NextResponse.json(
+				{ error: "Ward profile dataset is not cleared for public redistribution." },
+				{ status: 403, headers: CORS },
+			);
+		}
+	} catch (error) {
+		console.error(
+			"Could not verify ward profile permissions:",
+			error instanceof Error ? error.message : String(error),
+		);
+		return NextResponse.json(
+			{ error: "Ward profile permissions are temporarily unavailable." },
+			{ status: 500, headers: CORS },
 		);
 	}
 
@@ -101,7 +130,14 @@ export async function GET(req: Request) {
 		query = query.eq("feature_properties->>WardNo", String(wardNo));
 	}
 
-	const { data: rows } = await query;
+	const { data: rows, error: rowsError } = await query;
+	if (rowsError) {
+		console.error("Could not read published ward profile features:", rowsError.message);
+		return NextResponse.json(
+			{ error: "Ward profile features are temporarily unavailable." },
+			{ status: 500, headers: CORS },
+		);
+	}
 	const wards = (rows ?? []).map((r) => r.feature_properties as WardProfileRecord);
 
 	return NextResponse.json(

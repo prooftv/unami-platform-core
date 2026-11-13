@@ -7,6 +7,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { GeoJSONUpload } from '../_components/GeoJSONUpload';
 import { LiveFetchTrigger } from '../_components/LiveFetchTrigger';
 import { DatasetActions } from '../_components/DatasetActions';
+import { DatasetSourceUrlForm } from '../_components/DatasetSourceUrlForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const dynamic = 'force-dynamic';
@@ -87,6 +88,10 @@ export default async function DatasetDetailPage({ params }: Props) {
               {dataset.custodian_name && (
                 <p><span className="text-muted-foreground">Custodian:</span> {dataset.custodian_name}</p>
               )}
+              <DatasetSourceUrlForm
+                datasetId={dataset.id}
+                sourceUrl={dataset.source_url}
+              />
             </CardContent>
           </Card>
           <Card>

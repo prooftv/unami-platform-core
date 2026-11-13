@@ -56,13 +56,21 @@ export async function GET() {
 
   // Published datasets with permission conflicts
   const published = (datasets ?? []).filter((d) => d.status === 'published');
+  const sourceById = new Map((sources ?? []).map((source) => [source.id, source]));
   for (const d of published) {
-    if (!['redistribute', 'download', 'internal'].includes(d.permission_classification ?? '')) {
+    const sourcePermission = d.source_id
+      ? sourceById.get(d.source_id)?.permission_classification
+      : null;
+    if (
+      d.permission_classification !== 'redistribute' ||
+      sourcePermission !== 'redistribute'
+    ) {
       issues.push({
         severity: 'error',
         category: 'permission-conflict',
-        message: `"${d.name}" is published but permission_classification is "${d.permission_classification}". Publication requires redistribute, download or internal.`,
+        message: `"${d.name}" is published but public redistribution requires both dataset and source classifications to be "redistribute" (dataset: ${d.permission_classification ?? 'missing'}, source: ${sourcePermission ?? 'missing'}).`,
         datasetId: d.id,
+        sourceId: d.source_id ?? undefined,
       });
     }
   }
