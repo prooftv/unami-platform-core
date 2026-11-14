@@ -67,8 +67,10 @@ export async function fetchSpatialSources(): Promise<SpatialSource[]> {
     .from('spatial_sources')
     .select('*')
     .order('institution', { ascending: true });
-  if (error || !data) return [];
-  return data as SpatialSource[];
+  if (error) {
+    throw new Error(`Could not fetch spatial sources: ${error.message}`);
+  }
+  return (data ?? []) as SpatialSource[];
 }
 
 export async function fetchRecentImports(limit = 20): Promise<SpatialImport[]> {
@@ -78,6 +80,8 @@ export async function fetchRecentImports(limit = 20): Promise<SpatialImport[]> {
     .select('*')
     .order('started_at', { ascending: false })
     .limit(limit);
-  if (error || !data) return [];
-  return data as SpatialImport[];
+  if (error) {
+    throw new Error(`Could not fetch recent spatial imports: ${error.message}`);
+  }
+  return (data ?? []) as SpatialImport[];
 }
