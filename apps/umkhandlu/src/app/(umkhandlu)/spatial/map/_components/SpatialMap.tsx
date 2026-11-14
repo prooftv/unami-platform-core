@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Map as LeafletMap, GeoJSON as LeafletGeoJSON, Marker } from 'leaflet';
 import { AreaInfoPanel } from './AreaInfoPanel';
@@ -60,8 +60,26 @@ interface Props {
   nodeGeoRefs: NodeGeoRef[];
 }
 
-const AMAJUBA_CENTRE: [number, number] = [-28.05, 29.0];
 const AMAJUBA_ZOOM = 9;
+
+type SpatialMapBounds = {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+};
+
+type SpatialMapLayer = {
+  id: string;
+  datasetId: string;
+  colour: string;
+  features: GeoJSONFeature[];
+};
+
+type SpatialMapLayersResponse = {
+  layers: SpatialMapLayer[];
+  permissionFiltered: boolean;
+};
 
 const LAYER_COLOURS = [
   '#facc15', // yellow
@@ -110,6 +128,7 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRefs = useRef<Map<string, LeafletGeoJSON>>(new Map());
+  const initialBoundsRef = useRef<import('leaflet').LatLngBounds | null>(null);
   const noticeMarkerRefs = useRef<Marker[]>([]);
   const nodeMarkerRefs = useRef<Marker[]>([]);
 
@@ -119,6 +138,12 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   );
   const [loadingLayers, setLoadingLayers] = useState<Set<string>>(new Set());
   const [loadedGeojson, setLoadedGeojson] = useState<Map<string, GeoJSONFeatureCollection>>(new Map());
+  const [spatialLayerColours, setSpatialLayerColours] = useState<Map<string, string>>(new Map());
+  const [mapViewport, setMapViewport] = useState<SpatialMapBounds | null>(null);
+  const [mapLayerError, setMapLayerError] = useState<string | null>(null);
+  const [mapLayerRetry, setMapLayerRetry] = useState(0);
+  const [permissionFiltered, setPermissionFiltered] = useState(false);
+  const [mapInitialError, setMapInitialError] = useState<string | null>(null);
   const [showNotices, setShowNotices] = useState(true);
   const [showNodeActivity, setShowNodeActivity] = useState(true);
   const proximityCircleRef = useRef<import('leaflet').Circle | null>(null);
@@ -131,25 +156,11 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   const [selectedNotice, setSelectedNotice] = useState<NoticeMarker | null>(null);
   const [selectedNodeRef, setSelectedNodeRef] = useState<NodeGeoRef | null>(null);
   const [mapReady, setMapReady] = useState(false);
-
-  // Fetch features for a large dataset on demand
-  const fetchDatasetFeatures = useCallback(async (datasetId: string) => {
-    setLoadingLayers((prev) => new Set(prev).add(datasetId));
-    try {
-      const res = await fetch(`/api/spatial/features?id=${datasetId}&limit=5000`, { cache: 'no-store' });
-      if (res.ok) {
-        const fc = await res.json() as GeoJSONFeatureCollection;
-        setLoadedGeojson((prev) => new Map(prev).set(datasetId, fc));
-      }
-    } catch {
-      // Failed to load — layer stays empty
-    }
-    setLoadingLayers((prev) => {
-      const next = new Set(prev);
-      next.delete(datasetId);
-      return next;
-    });
-  }, []);
+  const visibleDatasetIds = useMemo(
+    () => datasets.filter((dataset) => visibleLayers.has(dataset.id)).map((dataset) => dataset.id),
+    [datasets, visibleLayers],
+  );
+  const visibleDatasetIdsKey = visibleDatasetIds.join(',');
 
   // Initialise map
   useEffect(() => {
@@ -161,50 +172,169 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
       if (cancelled || !containerRef.current) return;
       loadLeafletCss();
 
-      const map = createMap(L, containerRef.current, AMAJUBA_CENTRE, AMAJUBA_ZOOM, {
-        scrollWheelZoom: true,
-      });
-
-      mapRef.current = map;
-      setMapReady(true);
-
-      // Fit to inline datasets that have geometry
-      const inlineFeatures = datasets
-        .filter((d) => !d.loadOnDemand && d.geojson?.features?.length)
-        .flatMap((d) => d.geojson!.features);
-
-      if (inlineFeatures.length > 0) {
-        try {
-          const coords: [number, number][] = [];
-          for (const f of inlineFeatures) {
-            if (!f.geometry) continue;
-            const g = f.geometry as { type: string; coordinates: unknown };
-            if (g.type === 'Point') {
-              const c = g.coordinates as [number, number];
-              coords.push([c[1], c[0]]);
-            } else if (g.type === 'Polygon' || g.type === 'MultiPolygon') {
-              const layer = L.geoJSON(f as Parameters<typeof L.geoJSON>[0]);
-              const b = layer.getBounds();
-              if (b.isValid()) {
-                const c = b.getCenter();
-                coords.push([c.lat, c.lng]);
-              }
-            } else if (g.type === 'LineString') {
-              const c = (g.coordinates as [number, number][])[0];
-              if (c) coords.push([c[1], c[0]]);
-            }
-          }
-          if (coords.length > 0) {
-            const bounds = L.latLngBounds(coords);
-            if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
-          }
-        } catch { /* fallback */ }
+      const coverage = L.latLngBounds([]);
+      for (const notice of notices) {
+        coverage.extend([notice.latitude, notice.longitude]);
       }
+      for (const ref of nodeGeoRefs) {
+        coverage.extend([ref.latitude, ref.longitude]);
+      }
+
+      let wardLoadError: string | null = null;
+      try {
+        const response = await fetch('/api/spatial/wards', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`Ward boundaries request failed (${response.status})`);
+        }
+        const collection = (await response.json()) as GeoJSONFeatureCollection;
+        const wardLayer = L.geoJSON(collection as Parameters<typeof L.geoJSON>[0]);
+        const wardBounds = wardLayer.getBounds();
+        if (wardBounds.isValid()) coverage.extend(wardBounds);
+      } catch (error) {
+        wardLoadError =
+          error instanceof Error ? error.message : 'Ward boundaries unavailable';
+      }
+
+      if (cancelled) return;
+      if (!coverage.isValid()) {
+        setMapInitialError(
+          wardLoadError ??
+            'No published spatial boundaries or georeferenced activity are available to set the map extent.',
+        );
+        return;
+      }
+
+      initialBoundsRef.current = coverage;
+      const centre = coverage.getCenter();
+      const map = createMap(
+        L,
+        containerRef.current,
+        [centre.lat, centre.lng],
+        AMAJUBA_ZOOM,
+        { scrollWheelZoom: true },
+      );
+      map.fitBounds(coverage, { padding: [40, 40], maxZoom: AMAJUBA_ZOOM });
+      map.on('moveend', () => {
+        const bounds = map.getBounds();
+        setMapViewport({
+          west: bounds.getWest(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          north: bounds.getNorth(),
+        });
+      });
+      const bounds = map.getBounds();
+      setMapViewport({
+        west: bounds.getWest(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        north: bounds.getNorth(),
+      });
+      mapRef.current = map;
+      setMapInitialError(wardLoadError);
+      setMapReady(true);
     }
 
     init();
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      cancelled = true;
+      mapRef.current?.remove();
+      mapRef.current = null;
+      setMapReady(false);
+      setMapViewport(null);
+      layerRefs.current.clear();
+    };
+  }, [notices, nodeGeoRefs]);
+
+  // Load only visible datasets for the current viewport. Permission checks live on the API.
+  useEffect(() => {
+    if (!mapReady || !mapViewport) return;
+    if (visibleDatasetIds.length === 0) {
+      setLoadingLayers(new Set());
+      setLoadedGeojson(new Map());
+      setSpatialLayerColours(new Map());
+      setMapLayerError(null);
+      setPermissionFiltered(false);
+      return;
+    }
+    const controller = new AbortController();
+    let active = true;
+    const boundsValue = [
+      mapViewport.west,
+      mapViewport.south,
+      mapViewport.east,
+      mapViewport.north,
+    ].join(',');
+    const query = new URLSearchParams({
+      bbox: boundsValue,
+      datasetIds: visibleDatasetIdsKey,
+    });
+
+    setMapLayerError(null);
+    setPermissionFiltered(false);
+    setLoadingLayers(new Set(visibleDatasetIds));
+    setLoadedGeojson(new Map());
+    setSpatialLayerColours(new Map());
+    const timeout = window.setTimeout(() => {
+      void fetch(`/api/spatial/map-layers?${query}`, {
+        cache: 'no-store',
+        signal: controller.signal,
+      })
+        .then(async (response) => {
+          const body = (await response.json()) as
+            | SpatialMapLayersResponse
+            | { error?: string };
+          if (!response.ok) {
+            throw new Error(
+              'error' in body && body.error
+                ? body.error
+                : `Spatial layers request failed (${response.status})`,
+            );
+          }
+          return body as SpatialMapLayersResponse;
+        })
+        .then((body) => {
+          if (!active) return;
+          const features = new Map<string, GeoJSONFeatureCollection>();
+          const colours = new Map<string, string>();
+          for (const layer of body.layers) {
+            features.set(layer.datasetId, {
+              type: 'FeatureCollection',
+              features: layer.features,
+            });
+            colours.set(layer.datasetId, layer.colour);
+          }
+          setLoadedGeojson(features);
+          setSpatialLayerColours(colours);
+          setPermissionFiltered(body.permissionFiltered);
+        })
+        .catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+          if (active) {
+            setMapLayerError(
+              error instanceof Error ? error.message : 'Spatial layers unavailable',
+            );
+            setLoadedGeojson(new Map());
+            setSpatialLayerColours(new Map());
+          }
+        })
+        .finally(() => {
+          if (active) setLoadingLayers(new Set());
+        });
+    }, 150);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [
+    mapReady,
+    mapViewport,
+    visibleDatasetIds,
+    visibleDatasetIdsKey,
+    mapLayerRetry,
+  ]);
 
   // Sync spatial dataset layers
   useEffect(() => {
@@ -215,26 +345,20 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
       const map = mapRef.current!;
 
       datasets.forEach((dataset, idx) => {
-        const colour = LAYER_COLOURS[idx % LAYER_COLOURS.length];
         const existing = layerRefs.current.get(dataset.id);
-
-        if (!visibleLayers.has(dataset.id)) {
-          if (existing) { map.removeLayer(existing); layerRefs.current.delete(dataset.id); }
-          return;
+        if (existing) {
+          map.removeLayer(existing);
+          layerRefs.current.delete(dataset.id);
         }
 
-        if (existing) return;
+        if (!visibleLayers.has(dataset.id)) return;
 
-        // Resolve geojson: inline or previously loaded on-demand
-        const geojson = dataset.geojson ?? loadedGeojson.get(dataset.id) ?? null;
-
-        // If on-demand and not yet loaded, trigger fetch
-        if (dataset.loadOnDemand && !geojson && !loadingLayers.has(dataset.id)) {
-          fetchDatasetFeatures(dataset.id);
-          return;
-        }
+        const geojson = loadedGeojson.get(dataset.id) ?? null;
 
         if (!geojson?.features?.length) return;
+        const colour =
+          spatialLayerColours.get(dataset.id) ??
+          LAYER_COLOURS[idx % LAYER_COLOURS.length];
 
         const layer = L.geoJSON(geojson as Parameters<typeof L.geoJSON>[0], {
           style: () => LAYER_STYLE(colour),
@@ -260,7 +384,7 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
     }
 
     syncLayers();
-  }, [mapReady, datasets, visibleLayers, loadedGeojson, loadingLayers, fetchDatasetFeatures]);
+  }, [mapReady, datasets, visibleLayers, loadedGeojson, spatialLayerColours]);
 
   // Sync notice markers
   useEffect(() => {
@@ -378,11 +502,20 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
     const map = mapRef.current;
     if (!map) return;
     const all = Array.from(layerRefs.current.values());
-    if (!all.length) { map.setView(AMAJUBA_CENTRE, AMAJUBA_ZOOM); return; }
+    if (!all.length) {
+      if (initialBoundsRef.current?.isValid()) {
+        map.fitBounds(initialBoundsRef.current, { padding: [20, 20] });
+      }
+      return;
+    }
     try {
       const bounds = all.reduce((acc, l) => acc.extend(l.getBounds()), all[0].getBounds());
       if (bounds.isValid()) map.fitBounds(bounds, { padding: [20, 20] });
-    } catch { map.setView(AMAJUBA_CENTRE, AMAJUBA_ZOOM); }
+    } catch {
+      if (initialBoundsRef.current?.isValid()) {
+        map.fitBounds(initialBoundsRef.current, { padding: [20, 20] });
+      }
+    }
   }
 
   // Group datasets for sidebar display
@@ -390,7 +523,8 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
   const largeDatasets = datasets.filter((d) => (d.feature_count ?? 0) > LARGE_THRESHOLD);
 
   function LayerRow({ d, idx }: { d: PublishedDataset; idx: number }) {
-    const colour = LAYER_COLOURS[idx % LAYER_COLOURS.length];
+    const colour =
+      spatialLayerColours.get(d.id) ?? LAYER_COLOURS[idx % LAYER_COLOURS.length];
     const visible = visibleLayers.has(d.id);
     const loading = loadingLayers.has(d.id);
     const hasData = d.geojson?.features?.length || loadedGeojson.has(d.id);
@@ -594,10 +728,35 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
       <div className="flex-1 rounded-lg border overflow-hidden relative min-h-[400px]">
         {!mapReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
-            <p className="text-sm text-muted-foreground">Loading map…</p>
+            <p className="text-sm text-muted-foreground">
+              {mapInitialError ?? 'Loading published map context…'}
+            </p>
           </div>
         )}
         <div ref={containerRef} className="w-full h-full" />
+        {(mapInitialError || mapLayerError || permissionFiltered) && mapReady && (
+          <div className="absolute bottom-3 left-3 z-[1000] max-w-[min(32rem,70%)] rounded bg-background/95 px-2.5 py-1.5 text-xs text-amber-700 shadow">
+            {mapLayerError
+              ? `Spatial layers unavailable: ${mapLayerError}`
+              : mapInitialError
+                ? `Administrative boundaries unavailable: ${mapInitialError}`
+                : 'Some spatial datasets are withheld pending redistribution permission verification.'}
+            {mapLayerError && (
+              <button
+                type="button"
+                onClick={() => setMapLayerRetry((current) => current + 1)}
+                className="ml-2 underline"
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        )}
+        {loadingLayers.size > 0 && mapReady && !mapLayerError && (
+          <div className="absolute top-3 left-3 z-[1000] rounded bg-background/95 px-2.5 py-1.5 text-xs text-muted-foreground shadow">
+            Loading spatial layers for this map view…
+          </div>
+        )}
       </div>
     </div>
   );

@@ -15,6 +15,30 @@ async function requireOperator() {
   return session;
 }
 
+function parseOptionalHttpUrl(value: string): {
+  url: string | null;
+  error?: string;
+} {
+  const trimmed = value.trim();
+  if (!trimmed) return { url: null };
+  try {
+    const parsed = new URL(trimmed);
+    if (
+      (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') ||
+      parsed.username ||
+      parsed.password
+    ) {
+      return {
+        url: null,
+        error: 'Source URL must be HTTP or HTTPS without embedded credentials.',
+      };
+    }
+    return { url: parsed.toString() };
+  } catch {
+    return { url: null, error: 'Enter a valid HTTP or HTTPS source URL.' };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Permission enforcement
 // ---------------------------------------------------------------------------
@@ -595,28 +619,25 @@ export async function updateDatasetSourceUrlAction(
 ) {
   await requireOperator();
   const supabase = createServiceClient();
-  const rawSourceUrl = String(formData.get('source_url') ?? '').trim();
-  let sourceUrl: string | null = null;
-  if (rawSourceUrl) {
-    try {
-      const parsed = new URL(rawSourceUrl);
-      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-        return { error: 'Source URL must use HTTP or HTTPS.' };
-      }
-      sourceUrl = parsed.toString();
-    } catch {
-      return { error: 'Enter a valid HTTP or HTTPS source URL.' };
-    }
-  }
+  const parsedUrl = parseOptionalHttpUrl(
+    String(formData.get('source_url') ?? ''),
+  );
+  if (parsedUrl.error) return { error: parsedUrl.error };
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('spatial_datasets')
-    .update({ source_url: sourceUrl, updated_at: new Date().toISOString() })
-    .eq('id', datasetId);
+    .update({
+      source_url: parsedUrl.url,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', datasetId)
+    .select('id')
+    .maybeSingle();
   if (error) {
     console.error('Could not update spatial dataset source URL:', error.message);
     return { error: 'Could not save the dataset source URL.' };
   }
+  if (!updated) return { error: 'Dataset not found.' };
 
   revalidatePath(`/spatial/datasets/${datasetId}`);
   return { success: true };
@@ -683,12 +704,16 @@ export async function createDatasetAction(formData: FormData) {
   const permission_classification = (formData.get('permission_classification') as PermissionClassification) ?? 'pending';
 
   if (!source_id || !name) return { error: 'Source and name are required.' };
+  const parsedUrl = parseOptionalHttpUrl(
+    String(formData.get('source_url') ?? ''),
+  );
+  if (parsedUrl.error) return { error: parsedUrl.error };
 
   const { error } = await supabase.from('spatial_datasets').insert({
     source_id,
     name,
     layer_id:               (formData.get('layer_id') as string) || null,
-    source_url:             (formData.get('source_url') as string) || null,
+    source_url:             parsedUrl.url,
     description:            (formData.get('description') as string) || null,
     geographic_coverage:    (formData.get('geographic_coverage') as string) || 'amajuba',
     crs:                    (formData.get('crs') as string) || 'EPSG:4326',

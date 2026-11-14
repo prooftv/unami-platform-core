@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import {
+  isGeometryWithinBounds,
   isGeometryWithinRadius,
+  isValidGeoJSONGeometry,
+  isValidWgs84Bounds,
   isValidWgs84Point,
+  type Wgs84Bounds,
   type Wgs84Point,
 } from '@/lib/gis/spatial-proximity';
 import { filterPubliclyRedistributableDatasets } from '@/lib/gis/spatial-public-access';
@@ -14,6 +18,7 @@ const REQUEST_CAP = 20000; // Hard cap per API call
 const NEARBY_REQUEST_CAP = 500;
 const MAX_UNFILTERED_FEATURES = 3000;
 const MAX_RADIUS_METRES = 20_000;
+const MAX_VIEWPORT_SPAN_DEGREES = 2;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -23,35 +28,78 @@ const CORS = {
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const datasetId = url.searchParams.get('id');
-  if (!datasetId) {
-    return NextResponse.json({ error: 'id parameter required' }, { status: 400, headers: CORS });
+  if (
+    !datasetId ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      datasetId,
+    )
+  ) {
+    return NextResponse.json({ error: 'Valid id parameter required' }, { status: 400, headers: CORS });
   }
 
   const hasLat = url.searchParams.has('lat');
   const hasLng = url.searchParams.has('lng');
   const hasRadius = url.searchParams.has('radiusMeters');
-  const hasSpatialFilter = hasLat || hasLng || hasRadius;
-  if (hasSpatialFilter && !(hasLat && hasLng && hasRadius)) {
+  const bboxValue = url.searchParams.get('bbox');
+  const hasSpatialFilter = hasLat || hasLng || hasRadius || bboxValue !== null;
+  const hasPointRadiusFilter = hasLat || hasLng || hasRadius;
+  if (
+    (bboxValue !== null && hasPointRadiusFilter) ||
+    (bboxValue === null &&
+      hasPointRadiusFilter &&
+      !(hasLat && hasLng && hasRadius))
+  ) {
     return NextResponse.json(
-      { error: 'lat, lng and radiusMeters must be provided together' },
+      { error: 'Provide either bbox or lat, lng and radiusMeters together' },
       { status: 400, headers: CORS },
     );
   }
 
   const latValue = url.searchParams.get('lat');
   const lngValue = url.searchParams.get('lng');
-  const location: Wgs84Point | null = hasSpatialFilter
+  const location: Wgs84Point | null = hasLat && hasLng
     ? {
         lat: latValue?.trim() ? Number(latValue) : Number.NaN,
         lng: lngValue?.trim() ? Number(lngValue) : Number.NaN,
       }
     : null;
-  const radiusMeters = hasSpatialFilter
+  const radiusMeters = hasRadius
     ? Number(url.searchParams.get('radiusMeters'))
     : null;
+  let bounds: Wgs84Bounds | null = null;
+  if (bboxValue !== null) {
+    const rawValues = bboxValue.split(',');
+    const values = rawValues.map((value) =>
+      value.trim() === '' ? Number.NaN : Number(value),
+    );
+    if (values.length === 4) {
+      const candidate = {
+        west: values[0],
+        south: values[1],
+        east: values[2],
+        north: values[3],
+      };
+      if (
+        values.every((value) => Number.isFinite(value)) &&
+        isValidWgs84Bounds(candidate) &&
+        candidate.east - candidate.west <= MAX_VIEWPORT_SPAN_DEGREES &&
+        candidate.north - candidate.south <= MAX_VIEWPORT_SPAN_DEGREES
+      ) {
+        bounds = candidate;
+      }
+    }
+    if (!bounds) {
+      return NextResponse.json(
+        {
+          error: `bbox must be valid WGS84 bounds no wider than ${MAX_VIEWPORT_SPAN_DEGREES} degrees`,
+        },
+        { status: 400, headers: CORS },
+      );
+    }
+  }
   if (
     (location && !isValidWgs84Point(location)) ||
-    (radiusMeters !== null &&
+    (bboxValue === null && radiusMeters !== null &&
       (!Number.isFinite(radiusMeters) ||
         radiusMeters <= 0 ||
         radiusMeters > MAX_RADIUS_METRES))
@@ -62,9 +110,14 @@ export async function GET(req: Request) {
     );
   }
 
-  const requestedLimit = Number(url.searchParams.get('limit') ?? (hasSpatialFilter ? 100 : REQUEST_CAP));
+  const requestedLimit = Number(
+    url.searchParams.get('limit') ??
+      (hasSpatialFilter ? 100 : MAX_UNFILTERED_FEATURES),
+  );
   const offset = Number(url.searchParams.get('offset') ?? '0');
-  const limitCap = hasSpatialFilter ? NEARBY_REQUEST_CAP : MAX_UNFILTERED_FEATURES;
+  const limitCap = hasSpatialFilter
+    ? NEARBY_REQUEST_CAP
+    : MAX_UNFILTERED_FEATURES;
   if (
     !Number.isInteger(requestedLimit) ||
     requestedLimit < 1 ||
@@ -83,7 +136,7 @@ export async function GET(req: Request) {
 
   const { data: dataset, error: datasetError } = await supabase
     .from('spatial_datasets')
-    .select('id, name, feature_count, attribution, dataset_date, published_at, status, active, source_id, permission_classification')
+    .select('id, name, feature_count, attribution, dataset_date, published_at, status, active, source_id, permission_classification, spatial_sources(name, institution, attribution)')
     .eq('id', datasetId)
     .single();
 
@@ -121,12 +174,16 @@ export async function GET(req: Request) {
       { status: 500, headers: CORS },
     );
   }
+  const spatialSource = Array.isArray(dataset.spatial_sources)
+    ? dataset.spatial_sources[0] ?? null
+    : dataset.spatial_sources;
 
   let totalCount: number | null = null;
   let complete = true;
   let hasMore = false;
   let features: Array<{
     type: 'Feature';
+    id: string;
     geometry: { type: string; coordinates?: unknown; geometries?: unknown };
     properties: Record<string, unknown>;
   }> = [];
@@ -160,7 +217,7 @@ export async function GET(req: Request) {
       const pageSize = Math.min(PAGE_SIZE, requestedLimit - fetched);
       const { data: rows, error } = await supabase
         .from('spatial_staged_features')
-        .select('feature_geojson, feature_properties')
+        .select('id, feature_geojson, feature_properties')
         .eq('dataset_id', datasetId)
         .eq('operator_status', 'approved')
         .order('id', { ascending: true })
@@ -174,16 +231,28 @@ export async function GET(req: Request) {
       }
       const pageFeatures = (rows ?? []).map((row) => ({
         type: 'Feature' as const,
+        id: row.id,
         geometry: row.feature_geojson as { type: string; coordinates?: unknown; geometries?: unknown },
         properties: (row.feature_properties ?? {}) as Record<string, unknown>,
       }));
+      if (
+        pageFeatures.some(
+          (feature) => !isValidGeoJSONGeometry(feature.geometry),
+        )
+      ) {
+        console.error('Published spatial dataset contains invalid geometry.');
+        return NextResponse.json(
+          { error: 'Spatial dataset contains invalid geometry' },
+          { status: 500, headers: CORS },
+        );
+      }
       features.push(...pageFeatures);
       fetched += pageFeatures.length;
       if (pageFeatures.length < pageSize) break;
     }
     hasMore = totalCount !== null && offset + features.length < totalCount;
     complete = !hasMore;
-  } else if (location && radiusMeters !== null) {
+  } else if (bounds || (location && radiusMeters !== null)) {
     const { count, error: countError } = await supabase
       .from('spatial_staged_features')
       .select('id', { count: 'exact', head: true })
@@ -204,7 +273,7 @@ export async function GET(req: Request) {
     while (scanned < scanLimit) {
       const { data: rows, error } = await supabase
         .from('spatial_staged_features')
-        .select('feature_geojson, feature_properties')
+        .select('id, feature_geojson, feature_properties')
         .eq('dataset_id', datasetId)
         .eq('operator_status', 'approved')
         .order('id', { ascending: true })
@@ -221,10 +290,23 @@ export async function GET(req: Request) {
 
       for (const row of rows) {
         const geometry = row.feature_geojson as { type: string; coordinates?: unknown; geometries?: unknown };
-        if (!isGeometryWithinRadius(geometry, location, radiusMeters)) continue;
+        if (!isValidGeoJSONGeometry(geometry)) {
+          console.error('Published spatial dataset contains invalid geometry.');
+          return NextResponse.json(
+            { error: 'Spatial dataset contains invalid geometry' },
+            { status: 500, headers: CORS },
+          );
+        }
+        const matches = bounds
+          ? isGeometryWithinBounds(geometry, bounds)
+          : location !== null &&
+            radiusMeters !== null &&
+            isGeometryWithinRadius(geometry, location, radiusMeters);
+        if (!matches) continue;
         if (matched >= offset && features.length < requestedLimit) {
           features.push({
             type: 'Feature',
+            id: row.id,
             geometry,
             properties: (row.feature_properties ?? {}) as Record<string, unknown>,
           });
@@ -248,7 +330,10 @@ export async function GET(req: Request) {
       meta: {
         datasetId,
         datasetName: dataset.name,
-        attribution: dataset.attribution,
+        attribution: dataset.attribution ?? spatialSource?.attribution ?? null,
+        sourceId: dataset.source_id,
+        sourceName: spatialSource?.name ?? null,
+        sourceInstitution: spatialSource?.institution ?? null,
         datasetDate: dataset.dataset_date,
         publishedAt: dataset.published_at,
         total: totalCount ?? dataset.feature_count,
@@ -256,6 +341,7 @@ export async function GET(req: Request) {
         limit: requestedLimit,
         returned: features.length,
         radiusMeters,
+        bounds,
         filtered: hasSpatialFilter,
         complete,
         hasMore,

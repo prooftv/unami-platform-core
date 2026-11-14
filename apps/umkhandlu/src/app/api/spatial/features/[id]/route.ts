@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { filterPubliclyRedistributableDatasets } from "@/lib/gis/spatial-public-access";
+import { isValidGeoJSONGeometry } from "@/lib/gis/spatial-proximity";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,19 @@ const CORS = {
 	"Access-Control-Allow-Origin": "*",
 	"Cache-Control": "no-store",
 };
+
+type SpatialSourceSummary = {
+	name: string;
+	institution: string;
+	attribution: string | null;
+};
+
+function getSource(
+	source: SpatialSourceSummary | SpatialSourceSummary[] | null,
+): SpatialSourceSummary | null {
+	if (Array.isArray(source)) return source[0] ?? null;
+	return source;
+}
 
 /**
  * Public endpoint — no auth required.
@@ -20,7 +34,7 @@ export async function GET(
 ) {
 	const { id } = await params;
 
-	if (!id || !/^[0-9a-f-]{36}$/i.test(id)) {
+	if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
 		return NextResponse.json(
 			{ error: "Invalid feature id" },
 			{ status: 400, headers: CORS },
@@ -49,10 +63,17 @@ export async function GET(
 			{ status: 404, headers: CORS },
 		);
 	}
+	if (!isValidGeoJSONGeometry(row.feature_geojson)) {
+		console.error("Published spatial feature contains invalid geometry.");
+		return NextResponse.json(
+			{ error: "Spatial feature contains invalid geometry" },
+			{ status: 500, headers: CORS },
+		);
+	}
 
 	const { data: dataset, error: datasetError } = await supabase
 		.from("spatial_datasets")
-		.select("id, name, status, active, source_id, permission_classification, attribution, dataset_date")
+		.select("id, name, status, active, source_id, permission_classification, attribution, dataset_date, published_at, spatial_sources(name, institution, attribution)")
 		.eq("id", row.dataset_id)
 		.maybeSingle();
 	if (datasetError) {
@@ -89,18 +110,27 @@ export async function GET(
 			{ status: 500, headers: CORS },
 		);
 	}
+	const source = getSource(
+		dataset.spatial_sources as SpatialSourceSummary | SpatialSourceSummary[] | null,
+	);
 
 	return NextResponse.json(
 		{
 			type: "Feature",
+			id: row.id,
 			geometry: row.feature_geojson,
 			properties: row.feature_properties ?? {},
 			meta: {
 				source: "unami-platform-core",
 				featureId: row.id,
+				datasetId: dataset.id,
 				dataset: dataset.name,
-				attribution: dataset.attribution,
+				sourceId: dataset.source_id,
+				sourceName: source?.name ?? null,
+				sourceInstitution: source?.institution ?? null,
+				attribution: dataset.attribution ?? source?.attribution ?? null,
 				datasetDate: dataset.dataset_date,
+				publishedAt: dataset.published_at,
 			},
 		},
 		{ headers: CORS },

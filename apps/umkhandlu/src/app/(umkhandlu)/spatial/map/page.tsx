@@ -1,5 +1,6 @@
 import { PageHeader } from '@unami/ui';
 import { createServiceClient } from '@/lib/supabase/server';
+import { filterPubliclyRedistributableDatasets } from '@/lib/gis/spatial-public-access';
 import { fetchNodeGeoRefs } from '@/lib/nodes/fetcher';
 import { SpatialMapClient } from './_components/SpatialMapClient';
 import type { PublishedDataset, NoticeMarker, NodeGeoRef } from './_components/SpatialMap';
@@ -7,77 +8,39 @@ import { PROXIMITY_RADIUS } from '@/app/(umkhandlu)/notices/[id]/_components/not
 
 export const dynamic = 'force-dynamic';
 
-// Datasets with more features than this are loaded on-demand via the API route
-// rather than inlined into the page payload.
-const INLINE_LIMIT = 1000;
-
 export default async function SpatialMapPage() {
   const supabase = createServiceClient();
 
-  const { data: datasets } = await supabase
+  const { data: datasetRows, error: datasetError } = await supabase
     .from('spatial_datasets')
-    .select('id, name, feature_count, dataset_date, crs, attribution, spatial_sources(name, institution)')
+    .select('id, name, feature_count, dataset_date, attribution, source_id, permission_classification, spatial_sources(name, institution, attribution)')
     .eq('status', 'published')
     .eq('active', true)
     .order('published_at', { ascending: false });
 
-  const rows = datasets ?? [];
-
-  // Load features per-dataset — avoids the 1,000-row PostgREST default limit
-  // that silently truncates a single cross-dataset query.
-  const publishedDatasets: PublishedDataset[] = await Promise.all(
-    rows.map(async (d) => {
-      const src = Array.isArray(d.spatial_sources)
-        ? (d.spatial_sources[0] as { name: string; institution: string } | undefined)
-        : (d.spatial_sources as { name: string; institution: string } | null);
-
-      const featureCount = d.feature_count ?? 0;
-
-      // Large datasets: defer to client-side on-demand loading via /api/spatial/features
-      if (featureCount > INLINE_LIMIT) {
-        return {
-          id: d.id,
-          name: d.name,
-          source_institution: src?.institution ?? 'Unknown',
-          feature_count: featureCount,
-          dataset_date: d.dataset_date,
-          geojson: null,
-          attribution: d.attribution ?? null,
-          loadOnDemand: true,
-        };
-      }
-
-      // Small/medium datasets: inline features into page payload
-      const { data: featureRows } = await supabase
-        .from('spatial_staged_features')
-        .select('feature_geojson, feature_properties')
-        .eq('dataset_id', d.id)
-        .eq('operator_status', 'approved')
-        .limit(INLINE_LIMIT);
-
-      const geojson = featureRows?.length
-        ? {
-            type: 'FeatureCollection' as const,
-            features: featureRows.map((f) => ({
-              type: 'Feature' as const,
-              geometry: f.feature_geojson as { type: string; coordinates: unknown },
-              properties: (f.feature_properties ?? {}) as Record<string, unknown>,
-            })),
-          }
-        : null;
-
-      return {
-        id: d.id,
-        name: d.name,
-        source_institution: src?.institution ?? 'Unknown',
-        feature_count: featureCount,
-        dataset_date: d.dataset_date,
-        geojson,
-        attribution: d.attribution ?? null,
-        loadOnDemand: false,
-      };
-    }),
+  if (datasetError) {
+    throw new Error(`Could not load published map datasets: ${datasetError.message}`);
+  }
+  const { datasets: rows } = await filterPubliclyRedistributableDatasets(
+    supabase,
+    datasetRows ?? [],
   );
+
+  const publishedDatasets: PublishedDataset[] = rows.map((d) => {
+    const src = Array.isArray(d.spatial_sources)
+      ? d.spatial_sources[0]
+      : d.spatial_sources;
+    return {
+      id: d.id,
+      name: d.name,
+      source_institution: src?.institution ?? 'Unknown',
+      feature_count: d.feature_count,
+      dataset_date: d.dataset_date,
+      geojson: null,
+      attribution: d.attribution ?? src?.attribution ?? null,
+      loadOnDemand: true,
+    };
+  });
 
   // Notices with coordinates
   const { data: noticeRows } = await supabase

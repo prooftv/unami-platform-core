@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { filterPubliclyRedistributableDatasets } from "@/lib/gis/spatial-public-access";
+import { isValidGeoJSONGeometry, isValidWgs84Point } from "@/lib/gis/spatial-proximity";
 import { PROXIMITY_RADIUS } from "@/app/(umkhandlu)/notices/[id]/_components/notice-layer-config";
 
 export const dynamic = "force-dynamic";
+const PAGE_SIZE = 1000;
+const MAX_NOTICE_CONTEXT_FEATURES = 5000;
 
 const CORS = {
 	"Access-Control-Allow-Origin": "*",
@@ -12,10 +15,15 @@ const CORS = {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type GeoJSONGeometry = { type: string; coordinates: unknown };
+type GeoJSONGeometry = {
+	type: string;
+	coordinates?: unknown;
+	geometries?: unknown;
+};
 
 type SpatialFeature = {
 	type: "Feature";
+	id: string;
 	geometry: GeoJSONGeometry;
 	properties: Record<string, unknown>;
 };
@@ -127,6 +135,11 @@ type PublishedDataset = {
 	dataset_date: string | null;
 	source_id: string | null;
 	permission_classification: string | null;
+	spatial_sources: {
+		attribution: string | null;
+	} | Array<{
+		attribution: string | null;
+	}> | null;
 };
 
 async function fetchPublishedDataset(
@@ -135,7 +148,7 @@ async function fetchPublishedDataset(
 ): Promise<{ dataset: PublishedDataset | null; permissionDenied: boolean }> {
 	const { data, error } = await supabase
 		.from("spatial_datasets")
-		.select("id, name, attribution, dataset_date, source_id, permission_classification")
+		.select("id, name, attribution, dataset_date, source_id, permission_classification, spatial_sources(attribution)")
 		.eq("status", "published")
 		.eq("active", true)
 		.ilike("name", `${namePrefix}%`)
@@ -156,19 +169,39 @@ async function fetchPublishedDataset(
 	};
 }
 
+function getDatasetAttribution(dataset: PublishedDataset): string | null {
+	const source = Array.isArray(dataset.spatial_sources)
+		? dataset.spatial_sources[0]
+		: dataset.spatial_sources;
+	return dataset.attribution ?? source?.attribution ?? null;
+}
+
 async function fetchApprovedFeatures(
 	supabase: ReturnType<typeof createServiceClient>,
 	datasetId: string,
 ): Promise<SpatialFeature[]> {
-	const PAGE_SIZE = 1000;
-	const allRows: Array<{ feature_geojson: unknown; feature_properties: unknown }> = [];
+	const { count, error: countError } = await supabase
+		.from("spatial_staged_features")
+		.select("id", { count: "exact", head: true })
+		.eq("dataset_id", datasetId)
+		.eq("operator_status", "approved");
+	if (countError) {
+		throw new Error(`Could not count approved spatial features: ${countError.message}`);
+	}
+	if ((count ?? 0) > MAX_NOTICE_CONTEXT_FEATURES) {
+		throw new Error(
+			`Published context dataset exceeds the ${MAX_NOTICE_CONTEXT_FEATURES}-feature response limit.`,
+		);
+	}
+	const allRows: Array<{ id: string; feature_geojson: unknown; feature_properties: unknown }> = [];
 	let page = 0;
 	while (true) {
 		const { data: rows, error } = await supabase
 			.from("spatial_staged_features")
-			.select("feature_geojson, feature_properties")
+			.select("id, feature_geojson, feature_properties")
 			.eq("dataset_id", datasetId)
 			.eq("operator_status", "approved")
+			.order("id", { ascending: true })
 			.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 		if (error) {
 			throw new Error(`Could not read approved spatial features: ${error.message}`);
@@ -180,9 +213,15 @@ async function fetchApprovedFeatures(
 	}
 	return allRows.map((r) => ({
 		type: "Feature" as const,
+		id: r.id,
 		geometry: r.feature_geojson as GeoJSONGeometry,
 		properties: (r.feature_properties ?? {}) as Record<string, unknown>,
-	}));
+	})).map((feature) => {
+		if (!isValidGeoJSONGeometry(feature.geometry)) {
+			throw new Error("Published spatial dataset contains invalid geometry.");
+		}
+		return feature;
+	});
 }
 
 function unavailable(note: string): DatasetResult {
@@ -217,7 +256,7 @@ async function resolveWard(
 		return {
 			status: "found",
 			datasetName: dataset.name,
-			attribution: dataset.attribution,
+			attribution: getDatasetAttribution(dataset),
 			datasetDate: dataset.dataset_date,
 			featureCount: all.length,
 			features: all,
@@ -231,7 +270,7 @@ async function resolveWard(
 		return {
 			status: "not-found",
 			datasetName: dataset.name,
-			attribution: dataset.attribution,
+			attribution: getDatasetAttribution(dataset),
 			datasetDate: dataset.dataset_date,
 			featureCount: 0,
 			features: [],
@@ -241,7 +280,7 @@ async function resolveWard(
 	return {
 		status: "found",
 		datasetName: dataset.name,
-		attribution: dataset.attribution,
+		attribution: getDatasetAttribution(dataset),
 		datasetDate: dataset.dataset_date,
 		featureCount: filtered.length,
 		features: filtered,
@@ -266,7 +305,7 @@ async function resolveMunicipality(
 		return {
 			status: "found",
 			datasetName: dataset.name,
-			attribution: dataset.attribution,
+			attribution: getDatasetAttribution(dataset),
 			datasetDate: dataset.dataset_date,
 			featureCount: all.length,
 			features: all,
@@ -278,7 +317,7 @@ async function resolveMunicipality(
 		return {
 			status: "not-found",
 			datasetName: dataset.name,
-			attribution: dataset.attribution,
+			attribution: getDatasetAttribution(dataset),
 			datasetDate: dataset.dataset_date,
 			featureCount: 0,
 			features: all,
@@ -288,7 +327,7 @@ async function resolveMunicipality(
 	return {
 		status: "found",
 		datasetName: dataset.name,
-		attribution: dataset.attribution,
+		attribution: getDatasetAttribution(dataset),
 		datasetDate: dataset.dataset_date,
 		featureCount: filtered.length,
 		features: filtered,
@@ -311,7 +350,7 @@ async function resolveDistrict(
 	return {
 		status: "found",
 		datasetName: dataset.name,
-		attribution: dataset.attribution,
+		attribution: getDatasetAttribution(dataset),
 		datasetDate: dataset.dataset_date,
 		featureCount: features.length,
 		features,
@@ -406,11 +445,29 @@ function resolveSiteContext(): NoticeContextResponse["siteContext"] {
 export async function GET(req: Request) {
 	const url = new URL(req.url);
 	const noticeType = url.searchParams.get("noticeType") ?? "other";
-	const wardNumber = url.searchParams.get("wardNumber") ? Number(url.searchParams.get("wardNumber")) : null;
+	const wardNumberValue = url.searchParams.get("wardNumber");
+	const wardNumber = wardNumberValue === null ? null : Number(wardNumberValue);
 	const catB = url.searchParams.get("catB") ?? null;
-	const lat = url.searchParams.get("lat") ? Number(url.searchParams.get("lat")) : null;
-	const lng = url.searchParams.get("lng") ? Number(url.searchParams.get("lng")) : null;
+	const latValue = url.searchParams.get("lat");
+	const lngValue = url.searchParams.get("lng");
+	const lat = latValue === null ? null : Number(latValue);
+	const lng = lngValue === null ? null : Number(lngValue);
 	const locationPrecision = url.searchParams.get("locationPrecision") ?? null;
+	if (
+		(wardNumberValue !== null &&
+			(!Number.isInteger(wardNumber) || (wardNumber ?? 0) < 1)) ||
+		(latValue === null) !== (lngValue === null) ||
+		(latValue !== null && latValue.trim() === "") ||
+		(lngValue !== null && lngValue.trim() === "") ||
+		(lat !== null &&
+			lng !== null &&
+			!isValidWgs84Point({ lat, lng }))
+	) {
+		return NextResponse.json(
+			{ error: "Invalid notice spatial context parameters." },
+			{ status: 400, headers: CORS },
+		);
+	}
 
 	const supabase = createServiceClient();
 

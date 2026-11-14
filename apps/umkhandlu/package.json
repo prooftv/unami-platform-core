@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:permissions": "node --experimental-strip-types src/lib/gis/__tests__/permission-enforcement.test.ts"
+    "test:permissions": "node --experimental-strip-types src/lib/gis/__tests__/permission-enforcement.test.ts",
+    "test:spatial-api": "node --experimental-strip-types --import ./src/app/api/spatial/__tests__/register-alias-loader.mjs --test src/app/api/spatial/__tests__/routes.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
