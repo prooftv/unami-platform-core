@@ -41,6 +41,9 @@ export interface NodeGeoRef {
   municipality?: string;
   ward?: string;
   timestamp?: string;
+  coordinateSource?: string;
+  coordinateRole?: 'site' | 'area-reference';
+  locationPrecision?: string | null;
 }
 
 interface GeoJSONFeatureCollection {
@@ -702,6 +705,19 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
             </div>
             <div className="space-y-1 text-xs text-muted-foreground">
               <p className="capitalize">{selectedNodeRef.recordType} · Node activity</p>
+              <p>
+                Coordinate role:{' '}
+                {selectedNodeRef.coordinateRole === 'site'
+                  ? 'site location'
+                  : selectedNodeRef.coordinateRole === 'area-reference'
+                    ? 'area reference, not a site location'
+                    : 'not specified'}
+              </p>
+              <p>Coordinate source: {selectedNodeRef.coordinateSource ?? 'not provided'}</p>
+              <p>
+                Declared location precision:{' '}
+                {selectedNodeRef.locationPrecision ?? 'not declared'}
+              </p>
               {selectedNodeRef.municipality && <p>Municipality: {selectedNodeRef.municipality}</p>}
               {selectedNodeRef.ward && <p>Ward: {selectedNodeRef.ward}</p>}
               {selectedNodeRef.timestamp && (

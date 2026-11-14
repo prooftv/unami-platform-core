@@ -218,6 +218,17 @@ export default async function SpatialReportPage({ searchParams }: Props) {
                         {ref.latitude != null && ref.longitude != null && (
                           <span>{ref.latitude.toFixed(4)}, {ref.longitude.toFixed(4)}</span>
                         )}
+                        {ref.coordinateRole && (
+                          <span>
+                            {ref.coordinateRole === 'site'
+                              ? 'Site coordinate'
+                              : 'Area reference, not site location'}
+                          </span>
+                        )}
+                        {ref.coordinateSource && <span>Coordinate source: {ref.coordinateSource}</span>}
+                        {ref.locationPrecision && (
+                          <span>Declared precision: {ref.locationPrecision}</span>
+                        )}
                         {ref.timestamp && <span>{new Date(ref.timestamp).toLocaleDateString()}</span>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">

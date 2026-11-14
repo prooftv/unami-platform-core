@@ -78,6 +78,9 @@ export default async function SpatialMapPage() {
       municipality: r.municipality,
       ward:         r.ward,
       timestamp:    r.timestamp,
+      coordinateSource: r.coordinateSource,
+      coordinateRole: r.coordinateRole,
+      locationPrecision: r.locationPrecision,
     }));
 
   return (

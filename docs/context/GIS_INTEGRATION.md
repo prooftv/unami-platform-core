@@ -69,9 +69,9 @@ The Governance Node exposes these records and their geographic references throug
 
 The two systems use a shared geographic reference vocabulary to connect information without sharing ownership of their underlying records.
 
-The GeoRef contract provides record identity, record type, geographic context and relevant temporal information. Geographic references are resolved against the Control Centre's published spatial datasets.
+The GeoRef contract provides record identity, record type, geographic context, relevant temporal information, and coordinate provenance where coordinates are supplied. Spatial summary references identify the originating Sanity coordinate field, distinguish a site point from an area reference, and retain any declared notice location precision.
 
-Where precise coordinates are unavailable, records may still be associated with verified administrative or locality references. Geographic precision and source confidence must be retained rather than inferred.
+Where precise coordinates are unavailable, records may still be associated with verified administrative or locality references. An area-reference point is not presented as a site location. Geographic precision and source confidence must be retained rather than inferred; declared location precision is not independent verification.
 
 ### 4. Unified Geographic Intelligence Experience
 
@@ -767,10 +767,11 @@ back to its authoritative governance record.
 
 **Four technical refinements required before this milestone is complete:**
 
-A. GeoRef provenance — source record should carry originating system, source institution,
-source document reference, verification and publication status, geographic reference type
-and precision, evidence references and access permissions. Confidential information must
-not be exposed through public spatial summaries.
+A. GeoRef provenance — the spatial summary now carries the Sanity coordinate source field,
+site-versus-area-reference role, and declared notice location precision. These values are
+not independent verification. Originating institution, verification/publication status,
+evidence references and access permissions remain future work; confidential information
+must not be exposed through public spatial summaries.
 
 B. Multiple geographic associations — a campaign associated with several wards, settlements
 or project sites must not be represented as though it only concerns the first location.

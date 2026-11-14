@@ -170,6 +170,13 @@ export function AreaInfoPanel({ feature, onClose }: Props) {
                       {ref.recordType ?? 'record'}
                     </span>
                     <span className="truncate text-muted-foreground">{ref.label ?? ref.recordId}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {ref.coordinateRole === 'site'
+                        ? 'site point'
+                        : ref.coordinateRole === 'area-reference'
+                          ? 'area reference'
+                          : 'coordinate role not specified'}
+                    </span>
                   </div>
                 ))}
               </div>

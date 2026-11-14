@@ -57,6 +57,9 @@ export interface GeoRef {
   locality?: string;       // e.g. 'Madadeni'
   latitude?: number;       // WGS84
   longitude?: number;      // WGS84
+  coordinateSource?: string; // originating Sanity field or data source
+  coordinateRole?: 'site' | 'area-reference';
+  locationPrecision?: string | null; // declared precision; not independent verification
   nodeId?: string;         // originating node identifier
   recordId?: string;       // originating record/notice/project id
   recordType?: string;     // 'record' | 'notice' | 'project'
