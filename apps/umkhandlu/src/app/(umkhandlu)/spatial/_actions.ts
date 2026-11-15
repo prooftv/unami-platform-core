@@ -5,9 +5,18 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getOperatorSession } from '@/lib/auth/operator';
 import { inspectService, inspectLayer, queryFeatures } from '@/lib/gis/arcgis-connector';
 import {
+  discoverGratisGisCollections,
+  fetchGratisGisCollectionFeatures,
+  getConfiguredGratisGisOgcApiUrl,
+} from '@/lib/gis/gratisgis-client';
+import {
   canPerformSpatialOperation,
+  isPermissionClassification,
+  toLegacyPermissionStatus,
   type PermissionClassification,
 } from '@/lib/gis/spatial-permissions';
+import { validateDatasetSourceIdentity } from '@/lib/gis/spatial-pipeline';
+import { isValidGeoJSONGeometry } from '@/lib/gis/spatial-proximity';
 
 async function requireOperator() {
   const session = await getOperatorSession();
@@ -170,10 +179,18 @@ export async function createSourceAction(formData: FormData) {
   const name                      = formData.get('name') as string;
   const institution               = formData.get('institution') as string;
   const source_type               = formData.get('source_type') as string;
-  const permission_classification = (formData.get('permission_classification') as PermissionClassification) ?? 'pending';
+  const rawPermissionClassification = formData.get('permission_classification');
+  const permission_classification = rawPermissionClassification === null
+    ? 'pending'
+    : isPermissionClassification(rawPermissionClassification)
+      ? rawPermissionClassification
+      : null;
 
   if (!name || !institution || !source_type) {
     return { error: 'Name, institution and source type are required.' };
+  }
+  if (!permission_classification) {
+    return { error: 'Select a valid permission classification.' };
   }
 
   const { data, error } = await supabase.from('spatial_sources').insert({
@@ -188,7 +205,7 @@ export async function createSourceAction(formData: FormData) {
     geographic_coverage:       (formData.get('geographic_coverage') as string) || 'amajuba',
     coordinate_system:         (formData.get('coordinate_system') as string) || 'EPSG:4326',
     requires_auth:             false,
-    permission_status:         permission_classification,
+    permission_status:         toLegacyPermissionStatus(permission_classification),
     permission_classification,
     permission_notes:          (formData.get('permission_notes') as string) || null,
     attribution:               (formData.get('attribution') as string) || null,
@@ -216,7 +233,13 @@ export async function updateSourceAction(id: string, formData: FormData) {
   const supabase = await createClient();
   const sb = createServiceClient();
 
-  const newClass = (formData.get('permission_classification') as PermissionClassification) ?? 'pending';
+  const rawPermissionClassification = formData.get('permission_classification');
+  const newClass = rawPermissionClassification === null
+    ? 'pending'
+    : isPermissionClassification(rawPermissionClassification)
+      ? rawPermissionClassification
+      : null;
+  if (!newClass) return { error: 'Select a valid permission classification.' };
 
   // Read previous state for audit
   const { data: prev } = await sb.from('spatial_sources')
@@ -235,7 +258,7 @@ export async function updateSourceAction(id: string, formData: FormData) {
     description:               (formData.get('description') as string) || null,
     geographic_coverage:       (formData.get('geographic_coverage') as string) || 'amajuba',
     coordinate_system:         (formData.get('coordinate_system') as string) || 'EPSG:4326',
-    permission_status:         newClass,
+    permission_status:         toLegacyPermissionStatus(newClass),
     permission_classification: newClass,
     permission_notes:          (formData.get('permission_notes') as string) || null,
     attribution:               (formData.get('attribution') as string) || null,
@@ -398,6 +421,7 @@ export async function fetchAndStageFromArcGISAction(
   datasetId: string,
   layerId: number,
   options?: { where?: string; maxFeatures?: number },
+  expectedSourceId?: string,
 ) {
   const session = await requireOperator();
   const supabase = createServiceClient();
@@ -411,6 +435,10 @@ export async function fetchAndStageFromArcGISAction(
     .eq('id', datasetId)
     .single();
   if (!dataset) return { error: 'Dataset not found.' };
+  if (expectedSourceId) {
+    const identity = validateDatasetSourceIdentity(expectedSourceId, dataset.source_id);
+    if (!identity.valid) return { error: identity.error };
+  }
 
   const { data: source } = await supabase
     .from('spatial_sources')
@@ -548,6 +576,311 @@ export async function inspectLayerFieldsAction(sourceId: string, layerId: number
       copyrightText: result.data.copyrightText,
     },
   };
+}
+
+export async function discoverGratisGisCollectionsAction(sourceId: string) {
+  await requireOperator();
+  const supabase = createServiceClient();
+  const { data: source, error } = await supabase
+    .from('spatial_sources')
+    .select('id, source_type')
+    .eq('id', sourceId)
+    .single();
+  if (error || !source) return { error: error?.message ?? 'Source not found.' };
+  if (source.source_type !== 'gratisgis-ogc') {
+    return { error: 'Selected source is not registered as a GratisGIS OGC source.' };
+  }
+
+  try {
+    const collections = await discoverGratisGisCollections(
+      getConfiguredGratisGisOgcApiUrl(),
+    );
+    return { collections };
+  } catch (error) {
+    return {
+      error: `GratisGIS catalogue discovery failed: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+export async function registerGratisGisCollectionAction(
+  sourceId: string,
+  collectionId: string,
+) {
+  await requireOperator();
+  const supabase = await createClient();
+  const serviceSupabase = createServiceClient();
+  const { data: source, error: sourceError } = await serviceSupabase
+    .from('spatial_sources')
+    .select('id, source_type, active')
+    .eq('id', sourceId)
+    .single();
+  if (sourceError || !source) {
+    return { error: sourceError?.message ?? 'Source not found.' };
+  }
+  if (source.source_type !== 'gratisgis-ogc') {
+    return { error: 'Selected source is not registered as a GratisGIS OGC source.' };
+  }
+  if (!source.active) return { error: 'Inactive sources cannot register GratisGIS collections.' };
+
+  let collection: Awaited<ReturnType<typeof discoverGratisGisCollections>>[number] | undefined;
+  try {
+    const collections = await discoverGratisGisCollections(
+      getConfiguredGratisGisOgcApiUrl(),
+    );
+    collection = collections.find((candidate) => candidate.id === collectionId);
+  } catch (error) {
+    return {
+      error: `GratisGIS catalogue discovery failed: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+  if (!collection) return { error: 'Collection ID was not found in the current GratisGIS catalogue.' };
+
+  const { data: existing, error: existingError } = await serviceSupabase
+    .from('spatial_datasets')
+    .select('id')
+    .eq('source_id', sourceId)
+    .eq('layer_id', collection.id)
+    .maybeSingle();
+  if (existingError) return { error: `Could not check for an existing dataset: ${existingError.message}` };
+  if (existing) return { error: 'This GratisGIS collection is already registered for the source.' };
+
+  const { error: insertError } = await supabase.from('spatial_datasets').insert({
+    source_id: sourceId,
+    name: collection.title,
+    layer_id: collection.id,
+    description: collection.description,
+    geographic_coverage: 'unknown',
+    crs: collection.crs[0] ?? 'unknown',
+    permission_status: 'pending',
+    permission_classification: 'pending',
+    permission_notes: 'Pending operator verification. GratisGIS catalogue visibility or license metadata does not establish source or dataset redistribution permission.',
+    provenance: `GratisGIS OGC API collection ${collection.id}; registered from catalogue discovery. Upstream license metadata: ${collection.license ?? 'not supplied'}.`,
+  });
+  if (insertError) return { error: `Could not register GratisGIS collection: ${insertError.message}` };
+
+  revalidatePath('/spatial/datasets');
+  revalidatePath(`/spatial/sources/${sourceId}`);
+  return { success: true };
+}
+
+export async function fetchAndStageFromGratisGisAction(datasetId: string) {
+  const session = await requireOperator();
+  const supabase = createServiceClient();
+
+  const permissionError = await checkIngestionPermission(supabase, datasetId);
+  if (permissionError) return { error: permissionError };
+
+  const { data: dataset, error: datasetError } = await supabase
+    .from('spatial_datasets')
+    .select('id, name, source_id, layer_id, status, active, permission_classification, attribution, dataset_date, provenance')
+    .eq('id', datasetId)
+    .single();
+  if (datasetError || !dataset) {
+    return { error: datasetError?.message ?? 'Dataset not found.' };
+  }
+  if (!dataset.active || !['pending', 'staged'].includes(dataset.status)) {
+    return { error: 'Only active pending or staged datasets can be fetched.' };
+  }
+  if (!dataset.layer_id) {
+    return { error: 'Dataset has no GratisGIS collection ID in its layer ID field.' };
+  }
+
+  const { data: source, error: sourceError } = await supabase
+    .from('spatial_sources')
+    .select('id, name, source_type, active, permission_classification, attribution, licence_terms')
+    .eq('id', dataset.source_id)
+    .single();
+  if (sourceError || !source) {
+    return { error: sourceError?.message ?? 'Source not found for dataset.' };
+  }
+  if (!source.active) return { error: 'Inactive sources cannot be fetched.' };
+  if (source.source_type !== 'gratisgis-ogc') {
+    return { error: 'Selected dataset is not registered as a GratisGIS OGC source.' };
+  }
+
+  const { count: pendingCount, error: pendingError } = await supabase
+    .from('spatial_staged_features')
+    .select('id', { count: 'exact', head: true })
+    .eq('dataset_id', datasetId);
+  if (pendingError) return { error: `Could not check existing staged features: ${pendingError.message}` };
+  if ((pendingCount ?? 0) > 0) {
+    return { error: `Dataset already has ${pendingCount} staged features. Review or archive them before re-fetching.` };
+  }
+
+  const started = new Date().toISOString();
+  const runLog = [{
+    ts: started,
+    msg: `Started read-only retrieval from GratisGIS collection ${dataset.layer_id}.`,
+    metadata: {
+      sourceId: source.id,
+      datasetId: dataset.id,
+      collectionId: dataset.layer_id,
+      sourceAttribution: source.attribution,
+      datasetAttribution: dataset.attribution,
+      sourceLicenceTerms: source.licence_terms,
+      datasetVintage: dataset.dataset_date,
+      datasetProvenance: dataset.provenance,
+      sourcePermission: source.permission_classification,
+      datasetPermission: dataset.permission_classification,
+    },
+  }];
+  const { data: run, error: runError } = await supabase
+    .from('spatial_pipeline_runs')
+    .insert({
+      pipeline_type: 'gratisgis-fetch',
+      source_id: source.id,
+      dataset_id: datasetId,
+      status: 'running',
+      triggered_by: 'operator',
+      operator_id: session.id,
+      started_at: started,
+      log: runLog,
+    })
+    .select('id')
+    .single();
+  if (runError || !run) return { error: runError?.message ?? 'Failed to create GratisGIS pipeline run.' };
+
+  let fetched: Awaited<ReturnType<typeof fetchGratisGisCollectionFeatures>>;
+  try {
+    fetched = await fetchGratisGisCollectionFeatures({
+      ogcApiUrl: getConfiguredGratisGisOgcApiUrl(),
+      collectionId: dataset.layer_id,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const completed = new Date().toISOString();
+    const { error: failureUpdateError } = await supabase
+      .from('spatial_pipeline_runs')
+      .update({
+        status: 'failed',
+        completed_at: completed,
+        error_message: message,
+        log: [...runLog, { ts: completed, msg: `GratisGIS retrieval failed: ${message}` }],
+      })
+      .eq('id', run.id);
+    return {
+      error: failureUpdateError
+        ? `GratisGIS retrieval failed: ${message}. The failure could not be recorded: ${failureUpdateError.message}`
+        : `GratisGIS retrieval failed: ${message}`,
+    };
+  }
+
+  if (fetched.features.length === 0) {
+    const completed = new Date().toISOString();
+    const message = 'GratisGIS collection contains no features.';
+    const { error: failureUpdateError } = await supabase
+      .from('spatial_pipeline_runs')
+      .update({
+        status: 'failed',
+        completed_at: completed,
+        error_message: message,
+        log: [...runLog, { ts: completed, msg: message }],
+      })
+      .eq('id', run.id);
+    return {
+      error: failureUpdateError
+        ? `${message} The pipeline failure could not be recorded: ${failureUpdateError.message}`
+        : message,
+    };
+  }
+
+  const collectionMetadataLog = {
+    ts: new Date().toISOString(),
+    msg: `Retrieved ${fetched.features.length} features from GratisGIS collection ${fetched.collection.id}.`,
+    metadata: {
+      collectionTitle: fetched.collection.title,
+      upstreamCollectionLicence: fetched.collection.license,
+    },
+  };
+  const completeRunLog = [...runLog, collectionMetadataLog];
+
+  const staged = fetched.features.map((feature) => {
+    const valid = isValidGeoJSONGeometry(feature.geometry);
+    return {
+      dataset_id: datasetId,
+      pipeline_run_id: run.id,
+      source_feature_id: feature.id,
+      feature_geojson: feature.geometry ?? {},
+      feature_properties: feature.properties,
+      geometry_valid: valid,
+      geometry_issues: valid ? null : ['Missing or invalid GeoJSON geometry or WGS84 coordinates'],
+      operator_status: 'pending',
+    };
+  });
+
+  let inserted = 0;
+  for (let index = 0; index < staged.length; index += 500) {
+    const { error: insertError } = await supabase
+      .from('spatial_staged_features')
+      .insert(staged.slice(index, index + 500));
+    if (insertError) {
+      const completed = new Date().toISOString();
+      const { error: failureUpdateError } = await supabase.from('spatial_pipeline_runs').update({
+        status: inserted > 0 ? 'partial' : 'failed',
+        completed_at: completed,
+        features_fetched: fetched.features.length,
+        features_processed: inserted,
+        error_message: insertError.message,
+        log: [...completeRunLog, { ts: completed, msg: `Staging failed after ${inserted} features: ${insertError.message}` }],
+      }).eq('id', run.id);
+      return {
+        error: failureUpdateError
+          ? `Failed to stage GratisGIS features: ${insertError.message}. Pipeline failure could not be recorded: ${failureUpdateError.message}`
+          : `Failed to stage GratisGIS features: ${insertError.message}`,
+      };
+    }
+    inserted += Math.min(500, staged.length - index);
+  }
+
+  const completed = new Date().toISOString();
+  const invalid = staged.filter((feature) => !feature.geometry_valid).length;
+  const { error: datasetUpdateError } = await supabase
+    .from('spatial_datasets')
+    .update({
+      status: 'staged',
+      feature_count: fetched.features.length,
+      retrieval_date: completed,
+      updated_at: completed,
+    })
+    .eq('id', datasetId);
+  if (datasetUpdateError) {
+    const { error: partialRunError } = await supabase.from('spatial_pipeline_runs').update({
+      status: 'partial',
+      completed_at: completed,
+      features_fetched: fetched.features.length,
+      features_processed: inserted,
+      error_message: `Features were staged, but dataset metadata could not be saved: ${datasetUpdateError.message}`,
+      log: [...completeRunLog, { ts: completed, msg: `Dataset retrieval metadata could not be saved: ${datasetUpdateError.message}` }],
+    }).eq('id', run.id);
+    return {
+      error: partialRunError
+        ? `Features were staged, but dataset retrieval metadata could not be saved: ${datasetUpdateError.message}. Pipeline activity could not be updated: ${partialRunError.message}`
+        : `Features were staged, but dataset retrieval metadata could not be saved: ${datasetUpdateError.message}`,
+    };
+  }
+
+  const { error: runUpdateError } = await supabase
+    .from('spatial_pipeline_runs')
+    .update({
+      status: 'success',
+      completed_at: completed,
+      features_fetched: fetched.features.length,
+      features_processed: inserted,
+      log: [...completeRunLog, {
+        ts: completed,
+        msg: `Staged ${inserted} features for operator review; ${invalid} need geometry review.`,
+      }],
+    })
+    .eq('id', run.id);
+  if (runUpdateError) {
+    return { error: `Features were staged and dataset metadata saved, but pipeline activity could not be completed: ${runUpdateError.message}` };
+  }
+
+  revalidatePath('/spatial/staging');
+  revalidatePath('/spatial/datasets');
+  revalidatePath('/spatial/pipelines');
+  return { success: true, staged: inserted, invalid };
 }
 
 // ---------------------------------------------------------------------------
@@ -688,7 +1021,7 @@ export async function triggerPipelineAction(
   layerId: number,
   options?: { where?: string; maxFeatures?: number },
 ) {
-  return fetchAndStageFromArcGISAction(datasetId, layerId, options);
+  return fetchAndStageFromArcGISAction(datasetId, layerId, options, sourceId);
 }
 
 // ---------------------------------------------------------------------------
@@ -701,9 +1034,17 @@ export async function createDatasetAction(formData: FormData) {
 
   const source_id               = formData.get('source_id') as string;
   const name                    = formData.get('name') as string;
-  const permission_classification = (formData.get('permission_classification') as PermissionClassification) ?? 'pending';
+  const rawPermissionClassification = formData.get('permission_classification');
+  const permission_classification = rawPermissionClassification === null
+    ? 'pending'
+    : isPermissionClassification(rawPermissionClassification)
+      ? rawPermissionClassification
+      : null;
 
   if (!source_id || !name) return { error: 'Source and name are required.' };
+  if (!permission_classification) {
+    return { error: 'Select a valid permission classification.' };
+  }
   const parsedUrl = parseOptionalHttpUrl(
     String(formData.get('source_url') ?? ''),
   );
@@ -718,7 +1059,7 @@ export async function createDatasetAction(formData: FormData) {
     geographic_coverage:    (formData.get('geographic_coverage') as string) || 'amajuba',
     crs:                    (formData.get('crs') as string) || 'EPSG:4326',
     dataset_date:           (formData.get('dataset_date') as string) || null,
-    permission_status:      permission_classification,
+    permission_status:      toLegacyPermissionStatus(permission_classification),
     permission_classification,
     permission_notes:       (formData.get('permission_notes') as string) || null,
     attribution:            (formData.get('attribution') as string) || null,

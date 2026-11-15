@@ -28,6 +28,7 @@ const DATASET_QUERY_CONCURRENCY = 4;
 type SpatialFeature = {
   type: 'Feature';
   id: string;
+  sourceFeatureId: string | null;
   geometry: { type: string; coordinates?: unknown; geometries?: unknown };
   properties: Record<string, unknown>;
 };
@@ -36,12 +37,17 @@ type SpatialSourceSummary = {
   name: string;
   institution: string;
   attribution: string | null;
+  licence_terms: string | null;
+  permission_classification: string | null;
+  dataset_date: string | null;
 };
 
 type SpatialDataset = {
   id: string;
   name: string;
   attribution: string | null;
+  licence_terms: string | null;
+  provenance: string | null;
   published_at: string | null;
   dataset_date: string | null;
   feature_count: number | null;
@@ -52,6 +58,7 @@ type SpatialDataset = {
 
 type FeatureRow = {
   id: string;
+  source_feature_id: string | null;
   feature_geojson: unknown;
   feature_properties: unknown;
 };
@@ -80,6 +87,12 @@ type SpatialMapLayerResponse = {
   sourceId: string | null;
   sourceName: string | null;
   sourceInstitution: string | null;
+  sourceLicenseTerms: string | null;
+  datasetLicenseTerms: string | null;
+  sourcePermission: string | null;
+  sourceVintage: string | null;
+  datasetPermission: string | null;
+  provenance: string | null;
   publishedAt: string | null;
   datasetDate: string | null;
   radiusFiltered: boolean;
@@ -208,7 +221,7 @@ async function fetchFeaturesForDataset(
     const end = Math.min(scanned + PAGE_SIZE, MAX_SCANNED_FEATURES) - 1;
     const { data: rows, error } = await supabase
       .from('spatial_staged_features')
-      .select('id, feature_geojson, feature_properties')
+      .select('id, source_feature_id, feature_geojson, feature_properties')
       .eq('dataset_id', datasetId)
       .eq('operator_status', 'approved')
       .order('id', { ascending: true })
@@ -230,6 +243,7 @@ async function fetchFeaturesForDataset(
         features.push({
           type: 'Feature',
           id: row.id,
+          sourceFeatureId: row.source_feature_id,
           geometry,
           properties: (row.feature_properties ?? {}) as Record<string, unknown>,
         });
@@ -296,7 +310,7 @@ export async function GET(req: Request) {
   const { data, error } = await supabase
     .from('spatial_datasets')
     .select(
-      'id, name, attribution, published_at, dataset_date, feature_count, source_id, permission_classification, spatial_sources(name, institution, attribution)',
+      'id, name, attribution, licence_terms, provenance, published_at, dataset_date, feature_count, source_id, permission_classification, spatial_sources(name, institution, attribution, licence_terms, permission_classification, dataset_date)',
     )
     .eq('status', 'published')
     .eq('active', true)
@@ -376,6 +390,12 @@ export async function GET(req: Request) {
           sourceId: dataset.source_id,
           sourceName: source?.name ?? null,
           sourceInstitution: source?.institution ?? null,
+          sourceLicenseTerms: source?.licence_terms ?? null,
+          datasetLicenseTerms: dataset.licence_terms,
+          sourcePermission: source?.permission_classification ?? null,
+          sourceVintage: source?.dataset_date ?? null,
+          datasetPermission: dataset.permission_classification,
+          provenance: dataset.provenance,
           publishedAt: dataset.published_at,
           datasetDate: dataset.dataset_date,
           radiusFiltered: filter.radiusMeters !== null,

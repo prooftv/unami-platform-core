@@ -14,6 +14,9 @@ type SpatialSourceSummary = {
 	name: string;
 	institution: string;
 	attribution: string | null;
+	licence_terms: string | null;
+	permission_classification: string | null;
+	dataset_date: string | null;
 };
 
 function getSource(
@@ -45,7 +48,7 @@ export async function GET(
 
 	const { data: row, error: featureError } = await supabase
 		.from("spatial_staged_features")
-		.select("id, feature_geojson, feature_properties, dataset_id")
+		.select("id, source_feature_id, feature_geojson, feature_properties, dataset_id")
 		.eq("id", id)
 		.eq("operator_status", "approved")
 		.maybeSingle();
@@ -73,7 +76,7 @@ export async function GET(
 
 	const { data: dataset, error: datasetError } = await supabase
 		.from("spatial_datasets")
-		.select("id, name, status, active, source_id, permission_classification, attribution, dataset_date, published_at, spatial_sources(name, institution, attribution)")
+		.select("id, name, status, active, source_id, permission_classification, attribution, licence_terms, provenance, dataset_date, published_at, spatial_sources(name, institution, attribution, licence_terms, permission_classification, dataset_date)")
 		.eq("id", row.dataset_id)
 		.maybeSingle();
 	if (datasetError) {
@@ -118,17 +121,25 @@ export async function GET(
 		{
 			type: "Feature",
 			id: row.id,
+			sourceFeatureId: row.source_feature_id,
 			geometry: row.feature_geojson,
 			properties: row.feature_properties ?? {},
 			meta: {
 				source: "unami-platform-core",
 				featureId: row.id,
+				sourceFeatureId: row.source_feature_id,
 				datasetId: dataset.id,
 				dataset: dataset.name,
 				sourceId: dataset.source_id,
 				sourceName: source?.name ?? null,
 				sourceInstitution: source?.institution ?? null,
 				attribution: dataset.attribution ?? source?.attribution ?? null,
+				datasetLicenseTerms: dataset.licence_terms ?? null,
+				sourceLicenseTerms: source?.licence_terms ?? null,
+				datasetProvenance: dataset.provenance ?? null,
+				datasetPermission: dataset.permission_classification,
+				sourcePermission: source?.permission_classification ?? null,
+				sourceVintage: source?.dataset_date ?? null,
 				datasetDate: dataset.dataset_date,
 				publishedAt: dataset.published_at,
 			},

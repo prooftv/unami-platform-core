@@ -8,6 +8,8 @@ import { GeoJSONUpload } from '../_components/GeoJSONUpload';
 import { LiveFetchTrigger } from '../_components/LiveFetchTrigger';
 import { DatasetActions } from '../_components/DatasetActions';
 import { DatasetSourceUrlForm } from '../_components/DatasetSourceUrlForm';
+import { DatasetCoverageReview } from '../_components/DatasetCoverageReview';
+import { GratisGisFetchTrigger } from '../_components/GratisGisFetchTrigger';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const dynamic = 'force-dynamic';
@@ -140,12 +142,24 @@ export default async function DatasetDetailPage({ params }: Props) {
         )}
 
         <Card>
+          <CardHeader>
+            <CardTitle>Geographic coverage review</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DatasetCoverageReview datasetId={dataset.id} />
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader><CardTitle>Ingest Data</CardTitle></CardHeader>
           <CardContent>
-            <Tabs defaultValue={src?.source_type?.startsWith('arcgis') ? 'live' : 'upload'}>
+            <Tabs defaultValue={src?.source_type?.startsWith('arcgis') ? 'live' : src?.source_type === 'gratisgis-ogc' ? 'gratisgis' : 'upload'}>
               <TabsList className="mb-4">
                 {src?.source_type?.startsWith('arcgis') && (
                   <TabsTrigger value="live">Fetch from live service</TabsTrigger>
+                )}
+                {src?.source_type === 'gratisgis-ogc' && (
+                  <TabsTrigger value="gratisgis">Fetch from GratisGIS</TabsTrigger>
                 )}
                 <TabsTrigger value="upload">Upload GeoJSON</TabsTrigger>
               </TabsList>
@@ -158,6 +172,16 @@ export default async function DatasetDetailPage({ params }: Props) {
                     sourceType={src.source_type}
                     permissionClassification={src.permission_classification ?? dataset.permission_classification ?? 'pending'}
                     sourceName={src.name}
+                  />
+                </TabsContent>
+              )}
+              {src?.source_type === 'gratisgis-ogc' && (
+                <TabsContent value="gratisgis">
+                  <GratisGisFetchTrigger
+                    datasetId={dataset.id}
+                    datasetStatus={dataset.status}
+                    collectionId={dataset.layer_id}
+                    permissionClassification={src.permission_classification ?? dataset.permission_classification ?? 'pending'}
                   />
                 </TabsContent>
               )}

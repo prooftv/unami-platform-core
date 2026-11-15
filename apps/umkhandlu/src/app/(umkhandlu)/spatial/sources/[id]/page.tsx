@@ -9,6 +9,7 @@ import { SourceForm } from '../_components/SourceForm';
 import { SourceActions } from '../_components/SourceActions';
 import { SourceInspector } from '../_components/SourceInspector';
 import { LiveServiceProbe } from '../_components/LiveServiceProbe';
+import { GratisGisCatalogue } from '../_components/GratisGisCatalogue';
 import type { SpatialSource } from '@/lib/gis/spatial-sources-fetcher';
 
 export const dynamic = 'force-dynamic';
@@ -257,6 +258,14 @@ export default async function SourceDetailPage({ params }: Props) {
                   sourceType={s.source_type}
                   hasBaseUrl={!!s.base_url}
                 />
+              )}
+              {s.source_type === 'gratisgis-ogc' && (
+                <Card>
+                  <CardHeader><CardTitle>GratisGIS OGC Catalogue</CardTitle></CardHeader>
+                  <CardContent>
+                    <GratisGisCatalogue sourceId={s.id} />
+                  </CardContent>
+                </Card>
               )}
             </CardContent>
           </Card>

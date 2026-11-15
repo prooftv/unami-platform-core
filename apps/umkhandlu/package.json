@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:gratisgis": "node --experimental-strip-types --test src/lib/gis/__tests__/gratisgis-client.test.mjs",
+    "test:coverage-review": "node --experimental-strip-types --test src/lib/gis/__tests__/coverage-review.test.mjs",
     "test:permissions": "node --experimental-strip-types src/lib/gis/__tests__/permission-enforcement.test.ts",
     "test:spatial-api": "node --experimental-strip-types --import ./src/app/api/spatial/__tests__/register-alias-loader.mjs --test src/app/api/spatial/__tests__/routes.test.mjs"
   },

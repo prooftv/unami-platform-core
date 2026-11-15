@@ -517,12 +517,12 @@ async function fetchDatasetFeatures(
 	}
 
 	// Paginate through all features (respects 1000-row PostgREST limit)
-	const allRows: Array<{ feature_geojson: unknown; feature_properties: unknown }> = [];
+	const allRows: Array<{ source_feature_id: string | null; feature_geojson: unknown; feature_properties: unknown }> = [];
 	let page = 0;
 	while (true) {
 		const { data: rows, error } = await supabase
 			.from("spatial_staged_features")
-			.select("feature_geojson, feature_properties")
+			.select("source_feature_id, feature_geojson, feature_properties")
 			.eq("dataset_id", dataset.id)
 			.eq("operator_status", "approved")
 			.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -541,6 +541,7 @@ async function fetchDatasetFeatures(
 		type: "FeatureCollection",
 		features: allRows.map((r) => ({
 			type: "Feature" as const,
+			sourceFeatureId: r.source_feature_id,
 			geometry: r.feature_geojson as { type: string; coordinates: unknown },
 			properties: (r.feature_properties ?? {}) as Record<string, unknown>,
 		})),

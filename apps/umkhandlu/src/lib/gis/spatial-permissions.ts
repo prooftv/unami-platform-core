@@ -8,6 +8,53 @@ export type PermissionClassification =
   | 'prohibited'
   | 'pending';
 
+export type LegacyPermissionStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'restricted'
+  | 'denied'
+  | 'reference';
+
+const PERMISSION_CLASSIFICATIONS: ReadonlySet<string> = new Set([
+  'reference',
+  'display',
+  'internal',
+  'download',
+  'redistribute',
+  'restricted',
+  'prohibited',
+  'pending',
+]);
+
+export function isPermissionClassification(
+  value: unknown,
+): value is PermissionClassification {
+  return (
+    typeof value === 'string' &&
+    PERMISSION_CLASSIFICATIONS.has(value)
+  );
+}
+
+export function toLegacyPermissionStatus(
+  classification: PermissionClassification,
+): LegacyPermissionStatus {
+  switch (classification) {
+    case 'pending':
+      return 'pending';
+    case 'reference':
+      return 'reference';
+    case 'restricted':
+      return 'restricted';
+    case 'prohibited':
+      return 'denied';
+    case 'display':
+    case 'internal':
+    case 'download':
+    case 'redistribute':
+      return 'confirmed';
+  }
+}
+
 export const PERMITTED_OPERATIONS: Record<PermissionClassification, string[]> = {
   reference: [],
   display: ['display'],

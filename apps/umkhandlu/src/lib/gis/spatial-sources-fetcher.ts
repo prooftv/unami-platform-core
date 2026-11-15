@@ -49,14 +49,13 @@ export interface SpatialSource {
   updated_at: string;
 }
 
-export interface SpatialImport {
+export interface SpatialActivity {
   id: string;
   source_id: string;
   status: string;
-  features_imported: number;
+  activity: string;
+  features_processed: number;
   error_message: string | null;
-  import_type: string | null;
-  target_node_url: string | null;
   started_at: string;
   completed_at: string | null;
 }
@@ -73,15 +72,49 @@ export async function fetchSpatialSources(): Promise<SpatialSource[]> {
   return (data ?? []) as SpatialSource[];
 }
 
-export async function fetchRecentImports(limit = 20): Promise<SpatialImport[]> {
+export async function fetchRecentActivity(limit = 20): Promise<SpatialActivity[]> {
   const supabase = createServiceClient();
-  const { data, error } = await supabase
+  const [pipelineResult, importResult] = await Promise.all([
+    supabase
+      .from('spatial_pipeline_runs')
+      .select('id, source_id, pipeline_type, status, features_processed, error_message, started_at, completed_at')
+      .order('started_at', { ascending: false })
+      .limit(limit),
+    supabase
     .from('spatial_imports')
-    .select('*')
-    .order('started_at', { ascending: false })
-    .limit(limit);
-  if (error) {
-    throw new Error(`Could not fetch recent spatial imports: ${error.message}`);
+      .select('id, source_id, status, features_imported, error_message, import_type, target_node_url, started_at, completed_at')
+      .order('started_at', { ascending: false })
+      .limit(limit),
+  ]);
+  if (pipelineResult.error) {
+    throw new Error(`Could not fetch recent spatial pipeline runs: ${pipelineResult.error.message}`);
   }
-  return (data ?? []) as SpatialImport[];
+  if (importResult.error) {
+    throw new Error(`Could not fetch recent spatial imports: ${importResult.error.message}`);
+  }
+
+  const pipelineActivity: SpatialActivity[] = (pipelineResult.data ?? []).map((run) => ({
+    id: `pipeline-${run.id}`,
+    source_id: run.source_id ?? '',
+    status: run.status,
+    activity: run.pipeline_type,
+    features_processed: run.features_processed,
+    error_message: run.error_message,
+    started_at: run.started_at,
+    completed_at: run.completed_at,
+  }));
+  const importActivity: SpatialActivity[] = (importResult.data ?? []).map((item) => ({
+    id: `import-${item.id}`,
+    source_id: item.source_id,
+    status: item.status,
+    activity: `${item.import_type ?? 'import'} → ${item.target_node_url ?? 'node'}`,
+    features_processed: item.features_imported,
+    error_message: item.error_message,
+    started_at: item.started_at,
+    completed_at: item.completed_at,
+  }));
+
+  return [...pipelineActivity, ...importActivity]
+    .sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at))
+    .slice(0, limit);
 }

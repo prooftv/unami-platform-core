@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Pagination, parsePage, PAGE_SIZE } from '@/components/ui/pagination';
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
-import { fetchRecentImports } from '@/lib/gis/spatial-sources-fetcher';
+import { fetchRecentActivity } from '@/lib/gis/spatial-sources-fetcher';
 import type { SpatialSource } from '@/lib/gis/spatial-sources-fetcher';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +24,7 @@ const permissionColour: Record<string, string> = {
 const sourceTypeLabel: Record<string, string> = {
   'arcgis-featureserver': 'ArcGIS FeatureServer',
   'arcgis-mapserver':     'ArcGIS MapServer',
+  'gratisgis-ogc':        'GratisGIS OGC API Features',
   'wfs':                  'WFS',
   'download':             'Download',
   'static-map':           'Static Map',
@@ -52,7 +53,7 @@ export default async function SpatialSourcesPage({ searchParams }: Props) {
 
   const [{ count, data: sourceRows }, imports] = await Promise.all([
     query.order('institution', { ascending: true }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
-    fetchRecentImports(10),
+    fetchRecentActivity(10),
   ]);
 
   const sources = (sourceRows ?? []) as SpatialSource[];
@@ -130,6 +131,7 @@ export default async function SpatialSourcesPage({ searchParams }: Props) {
                 <option value="">All types</option>
                 <option value="arcgis-featureserver">ArcGIS FeatureServer</option>
                 <option value="arcgis-mapserver">ArcGIS MapServer</option>
+                <option value="gratisgis-ogc">GratisGIS OGC API Features</option>
                 <option value="wfs">WFS</option>
                 <option value="download">Download</option>
                 <option value="static-map">Static Map</option>
@@ -208,20 +210,20 @@ export default async function SpatialSourcesPage({ searchParams }: Props) {
       {imports.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Recent Import Activity</CardTitle>
+            <CardTitle>Recent Spatial Activity</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y">
               {imports.map((imp) => (
                 <div key={imp.id} className="px-6 py-3 flex items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-sm">{imp.import_type ?? 'import'} → {imp.target_node_url ?? 'node'}</p>
+                    <p className="text-sm">{imp.activity}</p>
                     {imp.error_message && (
                       <p className="text-xs text-destructive">{imp.error_message}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0 text-xs text-muted-foreground">
-                    <span>{imp.features_imported} features</span>
+                    <span>{imp.features_processed} features</span>
                     <span className={`px-2 py-0.5 rounded-full font-medium ${importStatusColour[imp.status] ?? ''}`}>
                       {imp.status}
                     </span>

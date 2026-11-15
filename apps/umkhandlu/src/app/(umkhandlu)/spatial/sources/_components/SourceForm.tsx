@@ -14,6 +14,7 @@ import type { SpatialSource, PermissionClassification } from '@/lib/gis/spatial-
 const SOURCE_TYPES = [
   { value: 'arcgis-featureserver', label: 'ArcGIS FeatureServer' },
   { value: 'arcgis-mapserver',     label: 'ArcGIS MapServer' },
+  { value: 'gratisgis-ogc',        label: 'GratisGIS OGC API Features' },
   { value: 'wfs',                  label: 'WFS' },
   { value: 'download',             label: 'Download' },
   { value: 'static-map',           label: 'Static Map' },

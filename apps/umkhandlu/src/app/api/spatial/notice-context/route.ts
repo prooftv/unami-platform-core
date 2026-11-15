@@ -193,12 +193,12 @@ async function fetchApprovedFeatures(
 			`Published context dataset exceeds the ${MAX_NOTICE_CONTEXT_FEATURES}-feature response limit.`,
 		);
 	}
-	const allRows: Array<{ id: string; feature_geojson: unknown; feature_properties: unknown }> = [];
+	const allRows: Array<{ id: string; source_feature_id: string | null; feature_geojson: unknown; feature_properties: unknown }> = [];
 	let page = 0;
 	while (true) {
 		const { data: rows, error } = await supabase
 			.from("spatial_staged_features")
-			.select("id, feature_geojson, feature_properties")
+			.select("id, source_feature_id, feature_geojson, feature_properties")
 			.eq("dataset_id", datasetId)
 			.eq("operator_status", "approved")
 			.order("id", { ascending: true })
@@ -214,6 +214,7 @@ async function fetchApprovedFeatures(
 	return allRows.map((r) => ({
 		type: "Feature" as const,
 		id: r.id,
+		sourceFeatureId: r.source_feature_id,
 		geometry: r.feature_geojson as GeoJSONGeometry,
 		properties: (r.feature_properties ?? {}) as Record<string, unknown>,
 	})).map((feature) => {

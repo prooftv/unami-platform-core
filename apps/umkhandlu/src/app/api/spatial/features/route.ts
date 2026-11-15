@@ -136,7 +136,7 @@ export async function GET(req: Request) {
 
   const { data: dataset, error: datasetError } = await supabase
     .from('spatial_datasets')
-    .select('id, name, feature_count, attribution, dataset_date, published_at, status, active, source_id, permission_classification, spatial_sources(name, institution, attribution)')
+    .select('id, name, feature_count, attribution, licence_terms, provenance, dataset_date, published_at, status, active, source_id, permission_classification, spatial_sources(name, institution, attribution, licence_terms, permission_classification, dataset_date)')
     .eq('id', datasetId)
     .single();
 
@@ -184,6 +184,7 @@ export async function GET(req: Request) {
   let features: Array<{
     type: 'Feature';
     id: string;
+    sourceFeatureId: string | null;
     geometry: { type: string; coordinates?: unknown; geometries?: unknown };
     properties: Record<string, unknown>;
   }> = [];
@@ -217,7 +218,7 @@ export async function GET(req: Request) {
       const pageSize = Math.min(PAGE_SIZE, requestedLimit - fetched);
       const { data: rows, error } = await supabase
         .from('spatial_staged_features')
-        .select('id, feature_geojson, feature_properties')
+        .select('id, source_feature_id, feature_geojson, feature_properties')
         .eq('dataset_id', datasetId)
         .eq('operator_status', 'approved')
         .order('id', { ascending: true })
@@ -232,6 +233,7 @@ export async function GET(req: Request) {
       const pageFeatures = (rows ?? []).map((row) => ({
         type: 'Feature' as const,
         id: row.id,
+        sourceFeatureId: row.source_feature_id,
         geometry: row.feature_geojson as { type: string; coordinates?: unknown; geometries?: unknown },
         properties: (row.feature_properties ?? {}) as Record<string, unknown>,
       }));
@@ -273,7 +275,7 @@ export async function GET(req: Request) {
     while (scanned < scanLimit) {
       const { data: rows, error } = await supabase
         .from('spatial_staged_features')
-        .select('id, feature_geojson, feature_properties')
+        .select('id, source_feature_id, feature_geojson, feature_properties')
         .eq('dataset_id', datasetId)
         .eq('operator_status', 'approved')
         .order('id', { ascending: true })
@@ -307,6 +309,7 @@ export async function GET(req: Request) {
           features.push({
             type: 'Feature',
             id: row.id,
+            sourceFeatureId: row.source_feature_id,
             geometry,
             properties: (row.feature_properties ?? {}) as Record<string, unknown>,
           });
@@ -331,9 +334,15 @@ export async function GET(req: Request) {
         datasetId,
         datasetName: dataset.name,
         attribution: dataset.attribution ?? spatialSource?.attribution ?? null,
+        datasetLicenseTerms: dataset.licence_terms ?? null,
+        sourceLicenseTerms: spatialSource?.licence_terms ?? null,
+        datasetProvenance: dataset.provenance ?? null,
         sourceId: dataset.source_id,
         sourceName: spatialSource?.name ?? null,
         sourceInstitution: spatialSource?.institution ?? null,
+        datasetPermission: dataset.permission_classification,
+        sourcePermission: spatialSource?.permission_classification ?? null,
+        sourceVintage: spatialSource?.dataset_date ?? null,
         datasetDate: dataset.dataset_date,
         publishedAt: dataset.published_at,
         total: totalCount ?? dataset.feature_count,

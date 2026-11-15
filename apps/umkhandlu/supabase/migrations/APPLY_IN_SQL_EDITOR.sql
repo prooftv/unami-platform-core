@@ -1,7 +1,7 @@
 -- ============================================================
 -- UMKHANDLU PENDING MIGRATIONS — PASTE INTO SUPABASE SQL EDITOR
 -- Project: ufsmpqxniswdnsywjzje (Umkhandlu Control Centre)
--- Includes: 005-fix, 006, 007
+-- Includes: 005-fix, 006, 007, 014, 015
 -- ============================================================
 
 -- ── 005-FIX: Missing GRANTs on spatial_sources / spatial_imports ──────────
@@ -197,6 +197,27 @@ CREATE POLICY "service_role_spatial_staged_features" ON spatial_staged_features 
 CREATE POLICY "authenticated_read_spatial_datasets"        ON spatial_datasets        FOR SELECT TO authenticated USING (true);
 CREATE POLICY "authenticated_read_spatial_pipeline_runs"   ON spatial_pipeline_runs   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "authenticated_read_spatial_staged_features" ON spatial_staged_features FOR SELECT TO authenticated USING (true);
+
+-- ── 014: staged spatial features are restricted to operator service actions ──
+DROP POLICY IF EXISTS "authenticated_read_spatial_staged_features"
+  ON public.spatial_staged_features;
+REVOKE SELECT ON TABLE public.spatial_staged_features FROM anon, authenticated;
+GRANT ALL ON TABLE public.spatial_staged_features TO service_role;
+
+-- ── 015: GratisGIS retrieval identity and pipeline type ───────────────────
+ALTER TABLE public.spatial_staged_features
+  ADD COLUMN IF NOT EXISTS source_feature_id TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS spatial_staged_dataset_source_feature_idx
+  ON public.spatial_staged_features (dataset_id, source_feature_id)
+  WHERE source_feature_id IS NOT NULL;
+ALTER TABLE public.spatial_pipeline_runs
+  DROP CONSTRAINT IF EXISTS spatial_pipeline_runs_pipeline_type_check;
+ALTER TABLE public.spatial_pipeline_runs
+  ADD CONSTRAINT spatial_pipeline_runs_pipeline_type_check CHECK (pipeline_type IN (
+    'health-check', 'arcgis-fetch', 'wfs-fetch', 'download-fetch',
+    'gdal-process', 'geometry-validate', 'publication', 'reconciliation',
+    'freshness-check', 'risk-reminder', 'compliance-alert', 'gratisgis-fetch'
+  ));
 
 -- ── 007: risk, compliance, controls, evidence, findings, remediation, audit ─
 
