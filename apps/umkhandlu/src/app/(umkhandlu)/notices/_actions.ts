@@ -150,3 +150,123 @@ export async function closeNoticeAction(id: string) {
   revalidatePath(`/notices/${id}`);
   return { success: true };
 }
+
+// ---------------------------------------------------------------------------
+// Spatial feature search — for the Notice site feature association UI
+// ---------------------------------------------------------------------------
+
+export async function searchApprovedFeaturesAction(
+  query: string,
+  datasetId?: string,
+) {
+  await requireOperator();
+  const supabase = createServiceClient();
+
+  // Build a query against approved features with their dataset names
+  let q = supabase
+    .from('spatial_staged_features')
+    .select('id, dataset_id, feature_properties, feature_geojson, spatial_datasets(name, source_id, spatial_sources(institution))')
+    .eq('operator_status', 'approved')
+    .limit(20);
+
+  if (datasetId) {
+    q = q.eq('dataset_id', datasetId);
+  }
+
+  const { data, error } = await q;
+  if (error) return { error: error.message };
+
+  const rows = (data ?? []).map((row) => {
+    const props = (row.feature_properties ?? {}) as Record<string, unknown>;
+    const nameKeys = ['name', 'NAME', 'Name', 'title', 'TITLE', 'label', 'LABEL', 'NAMECODE', 'MUNICNAME'];
+    let featureName = '';
+    for (const k of nameKeys) {
+      if (props[k]) { featureName = String(props[k]); break; }
+    }
+    if (!featureName) {
+      featureName = Object.entries(props).slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(' · ');
+    }
+    const ds = Array.isArray(row.spatial_datasets) ? row.spatial_datasets[0] : row.spatial_datasets;
+    const src = ds && !Array.isArray(ds.spatial_sources) ? ds.spatial_sources : null;
+    const geom = row.feature_geojson as { type?: string } | null;
+    return {
+      id: row.id,
+      featureName: featureName || '(unnamed feature)',
+      datasetId: row.dataset_id,
+      datasetName: (ds as { name?: string } | null)?.name ?? 'Unknown dataset',
+      institution: (src as { institution?: string } | null)?.institution ?? '',
+      geometryType: geom?.type ?? 'Unknown',
+    };
+  });
+
+  // Filter by query string if provided
+  const filtered = query.trim()
+    ? rows.filter((r) =>
+        r.featureName.toLowerCase().includes(query.toLowerCase()) ||
+        r.datasetName.toLowerCase().includes(query.toLowerCase())
+      )
+    : rows;
+
+  return { features: filtered };
+}
+
+// ---------------------------------------------------------------------------
+// Associate an approved spatial feature with a notice
+// ---------------------------------------------------------------------------
+
+export async function associateNoticeSiteFeatureAction(
+  noticeId: string,
+  featureId: string,
+) {
+  const session = await requireOperator();
+  const supabase = createServiceClient();
+
+  // Use the SECURITY DEFINER function from migration 016
+  const { data, error } = await supabase.rpc('associate_notice_site_feature', {
+    p_notice_id:   noticeId,
+    p_feature_id:  featureId,
+    p_operator_id: session.email,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath(`/notices/${noticeId}`);
+  return { success: true, result: data };
+}
+
+// ---------------------------------------------------------------------------
+// Remove spatial feature association from a notice
+// ---------------------------------------------------------------------------
+
+export async function removeNoticeSiteFeatureAction(noticeId: string) {
+  const session = await requireOperator();
+  const supabase = createServiceClient();
+
+  const { data: prev } = await supabase
+    .from('notices')
+    .select('site_feature_id')
+    .eq('id', noticeId)
+    .single();
+
+  const { error } = await supabase.from('notices').update({
+    site_feature_id:            null,
+    site_feature_associated_at: null,
+    site_feature_associated_by: null,
+    updated_at:                 new Date().toISOString(),
+  }).eq('id', noticeId);
+
+  if (error) return { error: error.message };
+
+  await supabase.from('gis_audit_log').insert({
+    table_name: 'notices',
+    record_id:  noticeId,
+    actor:      session.email,
+    action:     'update',
+    previous_state: { site_feature_id: prev?.site_feature_id },
+    new_state:      { site_feature_id: null },
+    reason:         'Operator removed spatial feature association',
+  });
+
+  revalidatePath(`/notices/${noticeId}`);
+  return { success: true };
+}

@@ -54,6 +54,25 @@ type SpatialDataset = {
   source_id: string | null;
   permission_classification: string | null;
   spatial_sources: SpatialSourceSummary | SpatialSourceSummary[] | null;
+  spatial_layer_config: {
+    colour: string;
+    fill_opacity: number;
+    stroke_weight: number;
+    display_order: number;
+    visible_default: boolean;
+    active: boolean;
+    legend_label: string | null;
+    category: string;
+  } | Array<{
+    colour: string;
+    fill_opacity: number;
+    stroke_weight: number;
+    display_order: number;
+    visible_default: boolean;
+    active: boolean;
+    legend_label: string | null;
+    category: string;
+  }> | null;
 };
 
 type FeatureRow = {
@@ -77,6 +96,10 @@ type SpatialMapLayerResponse = {
   colour: string;
   weight: number;
   fillOpacity: number;
+  visibleDefault: boolean;
+  displayOrder: number;
+  category: string;
+  legendLabel: string | null;
   featureCount: number;
   returnedCount: number;
   loadOnDemand: boolean;
@@ -98,9 +121,19 @@ type SpatialMapLayerResponse = {
   radiusFiltered: boolean;
 };
 
-function getLayerColour(datasetId: string): string {
+function getLayerConfig(dataset: SpatialDataset) {
+  const cfg = Array.isArray(dataset.spatial_layer_config)
+    ? dataset.spatial_layer_config[0] ?? null
+    : dataset.spatial_layer_config;
+  return cfg;
+}
+
+function getLayerColour(dataset: SpatialDataset): string {
+  const cfg = getLayerConfig(dataset);
+  if (cfg?.colour) return cfg.colour;
+  // Deterministic fallback from dataset ID
   let hash = 0;
-  for (const character of datasetId) {
+  for (const character of dataset.id) {
     hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
   }
   return `hsl(${hash % 360} 68% 42%)`;
@@ -310,7 +343,7 @@ export async function GET(req: Request) {
   const { data, error } = await supabase
     .from('spatial_datasets')
     .select(
-      'id, name, attribution, licence_terms, provenance, published_at, dataset_date, feature_count, source_id, permission_classification, spatial_sources(name, institution, attribution, licence_terms, permission_classification, dataset_date)',
+      'id, name, attribution, licence_terms, provenance, published_at, dataset_date, feature_count, source_id, permission_classification, spatial_sources(name, institution, attribution, licence_terms, permission_classification, dataset_date), spatial_layer_config(colour, fill_opacity, stroke_weight, display_order, visible_default, active, legend_label, category)',
     )
     .eq('status', 'published')
     .eq('active', true)
@@ -371,14 +404,19 @@ export async function GET(req: Request) {
       async (dataset) => {
         const result = await fetchFeaturesForDataset(supabase, dataset.id, filter);
         const source = getSource(dataset);
+        const cfg = getLayerConfig(dataset);
         return {
           id: dataset.id,
           datasetId: dataset.id,
           status: result.total === 0 ? 'empty' : 'available',
           label: dataset.name,
-          colour: getLayerColour(dataset.id),
-          weight: 2,
-          fillOpacity: 0.2,
+          colour: getLayerColour(dataset),
+          weight: cfg?.stroke_weight ?? 2,
+          fillOpacity: cfg?.fill_opacity ?? 0.2,
+          visibleDefault: cfg?.visible_default ?? true,
+          displayOrder: cfg?.display_order ?? 100,
+          category: cfg?.category ?? 'general',
+          legendLabel: cfg?.legend_label ?? null,
           featureCount: result.total,
           returnedCount: result.features.length,
           loadOnDemand: !filter.bounds && !filter.location,

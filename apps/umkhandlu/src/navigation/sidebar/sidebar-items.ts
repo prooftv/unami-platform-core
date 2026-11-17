@@ -16,10 +16,12 @@ import {
 	Lock,
 	Map as MapIcon,
 	Network,
+	Palette,
 	Settings,
 	ShieldAlert,
 	ShieldCheck,
 	Users,
+	Zap,
 } from "lucide-react";
 
 export type {
@@ -113,6 +115,18 @@ export const sidebarItems: NavGroup[] = [
 				title: "Staging Review",
 				url: "/spatial/staging",
 				icon: Inbox,
+			},
+			{
+				id: "spatial-layers",
+				title: "Layer Configuration",
+				url: "/spatial/layers",
+				icon: Palette,
+			},
+			{
+				id: "spatial-gratisgis",
+				title: "GratisGIS",
+				url: "/spatial/gratisgis",
+				icon: Zap,
 			},
 			{
 				id: "spatial-monitoring",

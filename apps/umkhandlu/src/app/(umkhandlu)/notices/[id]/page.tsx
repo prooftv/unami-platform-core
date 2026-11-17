@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createServiceClient } from "@/lib/supabase/server";
 import { NoticeStatusActions } from "./_components/NoticeStatusActions";
 import { NoticeSpatialContext, getNoticeSpatialGapSummary } from "./_components/NoticeSpatialContext";
+import { NoticeSiteFeatureAssociation } from "./_components/NoticeSiteFeatureAssociation";
 import { PROXIMITY_RADIUS } from "./_components/notice-layer-config";
 
 export const dynamic = "force-dynamic";
@@ -65,7 +66,7 @@ export default async function NoticeDetailPage({
 		{ data: controls },
 	] = await Promise.all([
 		// notice fetched first so we can use its type for spatial gap check below
-		supabase.from("notices").select("*").eq("id", id).single(),
+		supabase.from("notices").select("*, spatial_staged_features(id, dataset_id, feature_properties, spatial_datasets(name))").eq("id", id).single(),
 		supabase
 			.from("risks")
 			.select(
@@ -281,6 +282,31 @@ export default async function NoticeDetailPage({
 						lng={notice.longitude ?? null}
 					/>
 				)}
+
+				{/* Site / property boundary association */}
+				{notice.is_statutory && (() => {
+					const siteFeature = Array.isArray(notice.spatial_staged_features)
+						? notice.spatial_staged_features[0]
+						: notice.spatial_staged_features;
+					const ds = siteFeature && !Array.isArray(siteFeature.spatial_datasets)
+						? siteFeature.spatial_datasets
+						: null;
+					return (
+						<NoticeSiteFeatureAssociation
+							noticeId={id}
+							currentAssociation={
+								notice.site_feature_id
+									? {
+											featureId: notice.site_feature_id,
+											datasetName: (ds as { name?: string } | null)?.name ?? 'Unknown dataset',
+											associatedAt: notice.site_feature_associated_at ?? null,
+											associatedBy: notice.site_feature_associated_by ?? null,
+									  }
+									: null
+							}
+						/>
+					);
+				})()}
 
 				{/* Risks */}
 				<Card>
