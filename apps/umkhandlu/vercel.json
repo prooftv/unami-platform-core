@@ -1,6 +1,6 @@
 {
   "installCommand": "cd ../.. && pnpm install",
-  "buildCommand": "cd ../.. && pnpm --filter @unami/umkhandlu build",
+  "buildCommand": "cd ../.. && pnpm --filter @unami/umkhandlu exec next build --webpack",
   "outputDirectory": ".next",
   "ignoreCommand": "exit 1"
 }
