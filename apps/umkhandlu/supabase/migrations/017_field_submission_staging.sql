@@ -194,8 +194,12 @@ ALTER TABLE field_submission_attachments ENABLE ROW LEVEL SECURITY;
 -- Add operator-role policies here when auth is wired.
 
 -- ─── Grants ───────────────────────────────────────────────────────────────────
--- Service role already has full access via RLS bypass.
--- Anon role: no access (intentional — field submissions are not public).
+-- Service role: full access (used by CC server-side actions and API routes).
+GRANT ALL ON field_collectors TO service_role;
+GRANT ALL ON field_submissions TO service_role;
+GRANT ALL ON field_submission_events TO service_role;
+GRANT ALL ON field_submission_attachments TO service_role;
+-- Anon and authenticated roles: no access (field submissions are not public).
 REVOKE ALL ON field_collectors FROM anon, authenticated;
 REVOKE ALL ON field_submissions FROM anon, authenticated;
 REVOKE ALL ON field_submission_events FROM anon, authenticated;
