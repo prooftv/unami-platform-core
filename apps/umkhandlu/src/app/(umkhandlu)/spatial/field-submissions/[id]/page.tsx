@@ -169,13 +169,14 @@ export default async function FieldSubmissionDetailPage({
                     {a.caption && <p className="text-xs text-muted-foreground">{a.caption}</p>}
                     <p className="text-xs text-muted-foreground">{a.mime_type}</p>
                   </div>
-                  {a.public_url ? (
-                    <a href={a.public_url} target="_blank" rel="noopener noreferrer" className="text-xs underline">
-                      View
-                    </a>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Not yet published</span>
-                  )}
+                  <a
+                    href={`/api/attachments/${a.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs underline"
+                  >
+                    View
+                  </a>
                 </div>
               ))}
             </div>
