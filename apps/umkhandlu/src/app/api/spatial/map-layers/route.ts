@@ -93,6 +93,7 @@ type SpatialMapLayerResponse = {
   datasetId: string;
   status: 'available' | 'empty';
   label: string;
+  geometryType: string | null;
   colour: string;
   weight: number;
   fillOpacity: number;
@@ -419,6 +420,9 @@ export async function GET(req: Request) {
           legendLabel: cfg?.legend_label ?? null,
           featureCount: result.total,
           returnedCount: result.features.length,
+          geometryType: result.features.length > 0
+            ? (result.features[0].geometry?.type ?? null)
+            : null,
           loadOnDemand: !filter.bounds && !filter.location,
           truncated: result.truncated,
           radiusKm:

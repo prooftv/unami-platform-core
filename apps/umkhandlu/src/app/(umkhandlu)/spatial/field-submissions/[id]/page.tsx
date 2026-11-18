@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createServiceClient } from '@/lib/supabase/server';
 import { SubmissionReviewActions } from '../_components/SubmissionReviewActions';
+import { EvidenceUpload } from '../_components/EvidenceUpload';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +77,10 @@ export default async function FieldSubmissionDetailPage({
             {['pending', 'under_review', 'correction_requested'].includes(submission.status) && (
               <SubmissionReviewActions submissionId={id} currentStatus={submission.status} />
             )}
+            <div className="pt-2 border-t">
+              <p className="text-xs text-muted-foreground mb-2">Upload evidence</p>
+              <EvidenceUpload submissionId={id} />
+            </div>
             {submission.approved_feature_id && (
               <p className="text-xs text-muted-foreground">
                 Promoted to staged feature:{' '}
