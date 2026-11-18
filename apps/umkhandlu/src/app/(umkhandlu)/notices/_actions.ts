@@ -39,7 +39,7 @@ export async function createNoticeAction(formData: FormData) {
     ward_ref: ward_ref || null,
     latitude: latitude ? parseFloat(latitude) : null,
     longitude: longitude ? parseFloat(longitude) : null,
-    created_by: session.email,
+    created_by: session.name ?? 'Operator',
   }).select().single();
 
   if (error) return { error: error.message };

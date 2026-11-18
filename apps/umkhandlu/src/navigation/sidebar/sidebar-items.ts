@@ -47,19 +47,60 @@ export const sidebarItems: NavGroup[] = [
 	},
 	{
 		id: 2,
-		label: "Nodes",
+		label: "Spatial Data",
 		items: [
-			{ id: "nodes", title: "Registered Nodes", url: "/nodes", icon: Network },
 			{
-				id: "node-health",
-				title: "Node Health",
-				url: "/nodes/health",
-				icon: Activity,
+				id: "spatial-sources",
+				title: "Data Sources",
+				url: "/spatial/sources",
+				icon: Database,
+			},
+			{
+				id: "spatial-datasets",
+				title: "Datasets",
+				url: "/spatial/datasets",
+				icon: Layers,
+			},
+			{
+				id: "spatial-layers",
+				title: "Layer Configuration",
+				url: "/spatial/layers",
+				icon: Palette,
+			},
+			{
+				id: "spatial-staging",
+				title: "Staging Review",
+				url: "/spatial/staging",
+				icon: Inbox,
+			},
+			{
+				id: "field-submissions",
+				title: "Field Submissions",
+				url: "/spatial/field-submissions",
+				icon: FolderOpen,
 			},
 		],
 	},
 	{
 		id: 3,
+		label: "Map",
+		items: [
+			{
+				id: "spatial-map",
+				title: "Geographic View",
+				url: "/spatial/map",
+				icon: MapIcon,
+			},
+			{
+				id: "spatial-report",
+				title: "Spatial Report",
+				url: "/spatial/report",
+				icon: BarChart3,
+			},
+		],
+	},
+	{
+		id: 4,
 		label: "Intelligence",
 		items: [
 			{
@@ -80,84 +121,6 @@ export const sidebarItems: NavGroup[] = [
 				url: "/intelligence/audit",
 				icon: GitBranch,
 			},
-			{
-				id: "intel-operators",
-				title: "Operators",
-				url: "/intelligence/operators",
-				icon: Users,
-			},
-		],
-	},
-	{
-		id: 4,
-		label: "Spatial",
-		items: [
-			{
-				id: "spatial-sources",
-				title: "Data Sources",
-				url: "/spatial/sources",
-				icon: Database,
-			},
-			{
-				id: "spatial-datasets",
-				title: "Datasets",
-				url: "/spatial/datasets",
-				icon: Layers,
-			},
-			{
-				id: "spatial-pipelines",
-				title: "Pipeline Runs",
-				url: "/spatial/pipelines",
-				icon: Activity,
-			},
-			{
-				id: "spatial-staging",
-				title: "Staging Review",
-				url: "/spatial/staging",
-				icon: Inbox,
-			},
-			{
-				id: "field-submissions",
-				title: "Field Submissions",
-				url: "/spatial/field-submissions",
-				icon: Inbox,
-			},
-			{
-				id: "spatial-layers",
-				title: "Layer Configuration",
-				url: "/spatial/layers",
-				icon: Palette,
-			},
-			{
-				id: "spatial-gratisgis",
-				title: "GratisGIS",
-				url: "/spatial/gratisgis",
-				icon: Zap,
-			},
-			{
-				id: "spatial-monitoring",
-				title: "Monitoring",
-				url: "/spatial/monitoring",
-				icon: BarChart3,
-			},
-			{
-				id: "spatial-cogta",
-				title: "COGTA Catalogue",
-				url: "/spatial/cogta",
-				icon: Globe,
-			},
-			{
-				id: "spatial-map",
-				title: "Geographic View",
-				url: "/spatial/map",
-				icon: MapIcon,
-			},
-			{
-				id: "spatial-report",
-				title: "Spatial Report",
-				url: "/spatial/report",
-				icon: BarChart3,
-			},
 		],
 	},
 	{
@@ -165,6 +128,23 @@ export const sidebarItems: NavGroup[] = [
 		label: "Governance",
 		items: [
 			{ id: "notices", title: "Notices", url: "/notices", icon: FileText },
+			{
+				id: "nodes",
+				title: "Nodes",
+				icon: Network,
+				subItems: [
+					{
+						id: "nodes-list",
+						title: "Registered Nodes",
+						url: "/nodes",
+					},
+					{
+						id: "node-health",
+						title: "Node Health",
+						url: "/nodes/health",
+					},
+				],
+			},
 		],
 	},
 	{
@@ -185,20 +165,69 @@ export const sidebarItems: NavGroup[] = [
 				url: "/findings",
 				icon: CheckSquare,
 			},
-			{ id: "evidence", title: "Evidence", url: "/evidence", icon: FolderOpen },
+			{
+				id: "evidence",
+				title: "Evidence",
+				url: "/evidence",
+				icon: FolderOpen,
+			},
+		],
+	},
+	{
+		id: 7,
+		label: "Organisation",
+		items: [
+			{
+				id: "settings",
+				title: "Settings",
+				url: "/settings",
+				icon: Settings,
+			},
+			{
+				id: "operators",
+				title: "Operators",
+				url: "/settings/operators",
+				icon: Users,
+			},
+		],
+	},
+	{
+		id: 8,
+		label: "System",
+		items: [
 			{
 				id: "audit-log",
 				title: "Audit Log",
 				url: "/audit-log",
 				icon: GitBranch,
 			},
-		],
-	},
-	{
-		id: 7,
-		label: "System",
-		items: [
-			{ id: "settings", title: "Settings", url: "/settings", icon: Settings },
+			{
+				id: "spatial-ops",
+				title: "Spatial Operations",
+				icon: Activity,
+				subItems: [
+					{
+						id: "spatial-pipelines",
+						title: "Pipeline Runs",
+						url: "/spatial/pipelines",
+					},
+					{
+						id: "spatial-monitoring",
+						title: "Monitoring",
+						url: "/spatial/monitoring",
+					},
+					{
+						id: "spatial-gratisgis",
+						title: "GratisGIS",
+						url: "/spatial/gratisgis",
+					},
+					{
+						id: "spatial-cogta",
+						title: "COGTA Catalogue",
+						url: "/spatial/cogta",
+					},
+				],
+			},
 			{
 				id: "founders",
 				title: "Founders Briefing",

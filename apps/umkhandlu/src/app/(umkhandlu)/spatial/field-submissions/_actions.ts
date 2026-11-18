@@ -2,15 +2,33 @@
 
 import { revalidatePath } from 'next/cache';
 import { createServiceClient } from '@/lib/supabase/server';
+import { getOperatorSession } from '@/lib/auth/operator';
 
 type ReviewAction = 'approve' | 'reject' | 'request_correction' | 'open_review';
+
+const TERMINAL_STATUSES = new Set(['approved', 'rejected']);
 
 export async function reviewFieldSubmission(
   submissionId: string,
   action: ReviewAction,
   notes?: string,
 ): Promise<{ success: boolean; error?: string }> {
+  const session = await getOperatorSession();
+  if (!session) return { success: false, error: 'Unauthorized.' };
+
   const supabase = createServiceClient();
+
+  // Guard: prevent re-processing terminal submissions
+  const { data: current } = await supabase
+    .from('field_submissions')
+    .select('status')
+    .eq('id', submissionId)
+    .single();
+
+  if (!current) return { success: false, error: 'Submission not found.' };
+  if (TERMINAL_STATUSES.has(current.status) && action !== 'open_review') {
+    return { success: false, error: `Submission is already ${current.status}.` };
+  }
 
   const statusMap: Record<ReviewAction, string> = {
     open_review: 'under_review',
@@ -32,7 +50,10 @@ export async function reviewFieldSubmission(
     .from('field_submissions')
     .update({
       status: newStatus,
-      ...(action !== 'open_review' ? { reviewed_at: new Date().toISOString(), review_notes: notes ?? null } : {}),
+      ...(action !== 'open_review' ? {
+        reviewed_at: new Date().toISOString(),
+        review_notes: notes ?? null,
+      } : {}),
     })
     .eq('id', submissionId);
 
@@ -45,7 +66,7 @@ export async function reviewFieldSubmission(
       event_type: eventTypeMap[action],
       actor_type: 'operator',
       notes: notes ?? null,
-      metadata: { action },
+      metadata: { action, operator: session.email },
     });
 
   if (eventError) return { success: false, error: eventError.message };
@@ -59,11 +80,18 @@ export async function reviewFieldSubmission(
       .single();
 
     if (submission?.geometry_geojson) {
+      const datasetId = await getOrCreateFieldDataset(supabase, submission.activity_type);
+      const pipelineRunId = await getOrCreateFieldPipelineRun(supabase, submissionId);
+      if (!datasetId || !pipelineRunId) {
+        console.error('[reviewFieldSubmission] failed to resolve dataset or pipeline run');
+        return { success: false, error: 'Failed to resolve staging dataset.' };
+      }
+
       const { data: staged, error: stageError } = await supabase
         .from('spatial_staged_features')
         .insert({
-          dataset_id: await getOrCreateFieldDataset(supabase, submission.activity_type),
-          pipeline_run_id: await getOrCreateFieldPipelineRun(supabase, submissionId),
+          dataset_id: datasetId,
+          pipeline_run_id: pipelineRunId,
           feature_geojson: submission.geometry_geojson,
           feature_properties: {
             ...submission.attributes,
@@ -104,13 +132,13 @@ export async function reviewFieldSubmission(
 async function getOrCreateFieldDataset(
   supabase: ReturnType<typeof createServiceClient>,
   activityType: string,
-): Promise<string> {
+): Promise<string | null> {
   const name = `Field Submissions — ${activityType.replace(/_/g, ' ')}`;
   const { data: existing } = await supabase
     .from('spatial_datasets')
     .select('id')
     .eq('name', name)
-    .single();
+    .maybeSingle();
 
   if (existing) return existing.id;
 
@@ -118,11 +146,11 @@ async function getOrCreateFieldDataset(
     .from('spatial_sources')
     .select('id')
     .eq('source_type', 'field-collection')
-    .single();
+    .maybeSingle();
 
   let sourceId = source?.id;
   if (!sourceId) {
-    const { data: newSource } = await supabase
+    const { data: newSource, error: srcErr } = await supabase
       .from('spatial_sources')
       .insert({
         name: 'Umkhandlu Field Collection',
@@ -133,10 +161,11 @@ async function getOrCreateFieldDataset(
       })
       .select('id')
       .single();
+    if (srcErr) return null;
     sourceId = newSource?.id;
   }
 
-  const { data: newDataset } = await supabase
+  const { data: newDataset, error: dsErr } = await supabase
     .from('spatial_datasets')
     .insert({
       name,
@@ -147,14 +176,15 @@ async function getOrCreateFieldDataset(
     .select('id')
     .single();
 
-  return newDataset!.id;
+  if (dsErr) return null;
+  return newDataset?.id ?? null;
 }
 
 async function getOrCreateFieldPipelineRun(
   supabase: ReturnType<typeof createServiceClient>,
   submissionId: string,
-): Promise<string> {
-  const { data } = await supabase
+): Promise<string | null> {
+  const { data, error } = await supabase
     .from('spatial_pipeline_runs')
     .insert({
       pipeline_type: 'field-submission',
@@ -165,5 +195,6 @@ async function getOrCreateFieldPipelineRun(
     })
     .select('id')
     .single();
-  return data!.id;
+  if (error) return null;
+  return data?.id ?? null;
 }
