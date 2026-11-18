@@ -117,6 +117,12 @@ export const sidebarItems: NavGroup[] = [
 				icon: Inbox,
 			},
 			{
+				id: "field-submissions",
+				title: "Field Submissions",
+				url: "/spatial/field-submissions",
+				icon: Inbox,
+			},
+			{
 				id: "spatial-layers",
 				title: "Layer Configuration",
 				url: "/spatial/layers",
