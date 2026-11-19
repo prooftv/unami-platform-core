@@ -64,6 +64,20 @@ interface Props {
 }
 
 const AMAJUBA_ZOOM = 9;
+const MAX_VIEWPORT_SPAN = 1.9; // Must be < both API limits: map-layers (5°) and features (2°)
+
+function clampBounds(b: SpatialMapBounds): SpatialMapBounds {
+  const midLon = (b.west + b.east) / 2;
+  const midLat = (b.south + b.north) / 2;
+  const lonSpan = b.east - b.west;
+  const latSpan = b.north - b.south;
+  return {
+    west:  lonSpan > MAX_VIEWPORT_SPAN ? midLon - MAX_VIEWPORT_SPAN / 2 : b.west,
+    south: latSpan > MAX_VIEWPORT_SPAN ? midLat - MAX_VIEWPORT_SPAN / 2 : b.south,
+    east:  lonSpan > MAX_VIEWPORT_SPAN ? midLon + MAX_VIEWPORT_SPAN / 2 : b.east,
+    north: latSpan > MAX_VIEWPORT_SPAN ? midLat + MAX_VIEWPORT_SPAN / 2 : b.north,
+  };
+}
 
 type SpatialMapBounds = {
   west: number;
@@ -219,20 +233,20 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
       map.fitBounds(coverage, { padding: [40, 40], maxZoom: AMAJUBA_ZOOM });
       map.on('moveend', () => {
         const bounds = map.getBounds();
-        setMapViewport({
+        setMapViewport(clampBounds({
           west: bounds.getWest(),
           south: bounds.getSouth(),
           east: bounds.getEast(),
           north: bounds.getNorth(),
-        });
+        }));
       });
       const bounds = map.getBounds();
-      setMapViewport({
+      setMapViewport(clampBounds({
         west: bounds.getWest(),
         south: bounds.getSouth(),
         east: bounds.getEast(),
         north: bounds.getNorth(),
-      });
+      }));
       mapRef.current = map;
       setMapInitialError(wardLoadError);
       setMapReady(true);
