@@ -113,11 +113,18 @@ const LAYER_COLOURS = [
   '#14b8a6', // teal
 ];
 
-const LAYER_STYLE = (colour: string) => ({
+// Boundary polygon labels — use very low fill opacity so they don't dominate
+const BOUNDARY_LABEL_FRAGMENTS = ['ward', 'district', 'municipalit', 'boundary'];
+function isBoundaryLayer(name: string): boolean {
+  const l = name.toLowerCase();
+  return BOUNDARY_LABEL_FRAGMENTS.some((f) => l.includes(f));
+}
+
+const LAYER_STYLE = (colour: string, name: string) => ({
   color: colour,
-  weight: 3,
+  weight: isBoundaryLayer(name) ? 1.5 : 3,
   opacity: 1,
-  fillOpacity: 0.2,
+  fillOpacity: isBoundaryLayer(name) ? 0.04 : 0.2,
   fillColor: colour,
 });
 
@@ -384,7 +391,7 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
           LAYER_COLOURS[idx % LAYER_COLOURS.length];
 
         const layer = L.geoJSON(geojson as Parameters<typeof L.geoJSON>[0], {
-          style: () => LAYER_STYLE(colour),
+          style: () => LAYER_STYLE(colour, dataset.name),
           pointToLayer: (_f, latlng) =>
             L.circleMarker(latlng, { radius: 6, fillColor: colour, color: '#fff', weight: 1.5, opacity: 1, fillOpacity: 0.9 }),
           onEachFeature: (feature, fl) => {
