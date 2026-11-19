@@ -248,6 +248,9 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
         north: bounds.getNorth(),
       }));
       mapRef.current = map;
+      requestAnimationFrame(() => {
+        if (!cancelled) map.invalidateSize();
+      });
       setMapInitialError(wardLoadError);
       setMapReady(true);
     }
@@ -261,7 +264,10 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
       setMapViewport(null);
       layerRefs.current.clear();
     };
-  }, [notices, nodeGeoRefs]);
+  // notices and nodeGeoRefs are read once at init time for coverage extent.
+  // Excluding them prevents map teardown/re-init on every parent render.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: notices/nodeGeoRefs excluded intentionally
+  }, []);
 
   // Load only visible datasets for the current viewport. Permission checks live on the API.
   useEffect(() => {
