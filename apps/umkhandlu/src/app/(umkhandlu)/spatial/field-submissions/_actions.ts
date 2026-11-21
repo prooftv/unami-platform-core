@@ -71,7 +71,10 @@ export async function reviewFieldSubmission(
 
   if (eventError) return { success: false, error: eventError.message };
 
-  // If approved, promote geometry to spatial_staged_features
+  // If approved, promote geometry to spatial_staged_features.
+  // If promotion fails, revert the submission status to 'under_review' so the
+  // operator can retry — prevents a partial state where status=approved but
+  // no approved_feature_id exists.
   if (action === 'approve') {
     const { data: submission } = await supabase
       .from('field_submissions')
@@ -83,8 +86,12 @@ export async function reviewFieldSubmission(
       const datasetId = await getOrCreateFieldDataset(supabase, submission.activity_type);
       const pipelineRunId = await getOrCreateFieldPipelineRun(supabase, submissionId);
       if (!datasetId || !pipelineRunId) {
-        console.error('[reviewFieldSubmission] failed to resolve dataset or pipeline run');
-        return { success: false, error: 'Failed to resolve staging dataset.' };
+        // Revert to under_review so the operator can retry
+        await supabase
+          .from('field_submissions')
+          .update({ status: 'under_review' })
+          .eq('id', submissionId);
+        return { success: false, error: 'Failed to resolve staging dataset. Submission reverted to under review.' };
       }
 
       const { data: staged, error: stageError } = await supabase
@@ -108,19 +115,26 @@ export async function reviewFieldSubmission(
         .select('id')
         .single();
 
-      if (!stageError && staged) {
+      if (stageError || !staged) {
+        // Revert to under_review so the operator can retry
         await supabase
           .from('field_submissions')
-          .update({ approved_feature_id: staged.id })
+          .update({ status: 'under_review' })
           .eq('id', submissionId);
-
-        await supabase.from('field_submission_events').insert({
-          submission_id: submissionId,
-          event_type: 'feature_promoted',
-          actor_type: 'system',
-          metadata: { staged_feature_id: staged.id },
-        });
+        return { success: false, error: 'Failed to promote geometry to staging. Submission reverted to under review.' };
       }
+
+      await supabase
+        .from('field_submissions')
+        .update({ approved_feature_id: staged.id })
+        .eq('id', submissionId);
+
+      await supabase.from('field_submission_events').insert({
+        submission_id: submissionId,
+        event_type: 'feature_promoted',
+        actor_type: 'system',
+        metadata: { staged_feature_id: staged.id },
+      });
     }
   }
 
