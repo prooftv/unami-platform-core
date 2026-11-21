@@ -37,8 +37,9 @@ async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
   }
 }
 
+// governance_nodes contains api_key — always use service role, never anon.
 export async function getRegisteredNodes(): Promise<GovernanceNodeRow[]> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('governance_nodes')
     .select('*')
@@ -49,7 +50,7 @@ export async function getRegisteredNodes(): Promise<GovernanceNodeRow[]> {
 }
 
 export async function getAllNodes(): Promise<GovernanceNodeRow[]> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('governance_nodes')
     .select('*')
@@ -411,7 +412,7 @@ export async function fetchAllNodeOperators(): Promise<NodeOperatorsSummary[]> {
 }
 
 export async function fetchNodeIdentity(nodeId: string): Promise<{ node: GovernanceNodeRow; identity: GovernanceNodeIdentity; operators: OperatorsSummary | null } | null> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .from('governance_nodes')
     .select('*')
