@@ -86,6 +86,12 @@ export type WardDemographics = {
 	Area_SqKm: number;
 };
 
+export type ScreeningStatus =
+	| "complete"
+	| "complete-with-gaps"
+	| "incomplete-no-geometry"
+	| "incomplete-reference-data";
+
 export type NoticeContextResponse = {
 	noticeType: string;
 	wardNumber: number | null;
@@ -93,6 +99,9 @@ export type NoticeContextResponse = {
 	lat: number | null;
 	lng: number | null;
 	locationPrecision: string | null;
+	screeningStatus: ScreeningStatus;
+	subjectGeometrySource: string | null;
+	coverageNote: string | null;
 	administrative: {
 		ward: DatasetResult;
 		municipality: DatasetResult;
@@ -441,6 +450,72 @@ function resolveSiteContext(): NoticeContextResponse["siteContext"] {
 	};
 }
 
+// ─── Screening status ────────────────────────────────────────────────────────
+
+/**
+ * Determine the top-level screening status from the resolved proximity and
+ * site-context results. "Required" datasets are those that are not
+ * not-applicable for this notice type — i.e. they were attempted.
+ */
+function computeScreeningStatus(
+	lat: number | null,
+	lng: number | null,
+	locationPrecision: string | null,
+	proximity: NoticeContextResponse["proximity"],
+	siteContext: NoticeContextResponse["siteContext"],
+): { screeningStatus: ScreeningStatus; subjectGeometrySource: string | null; coverageNote: string | null } {
+	if (lat === null || lng === null || !isValidWgs84Point({ lat, lng })) {
+		return {
+			screeningStatus: "incomplete-no-geometry",
+			subjectGeometrySource: null,
+			coverageNote: "No valid site coordinates provided. Proximity and site-context assessments were not performed.",
+		};
+	}
+
+	const precisionLabel = locationPrecision ? ` (${locationPrecision})` : "";
+	const subjectGeometrySource = `Sanity developmentNotice.geopoint${precisionLabel}`;
+
+	// Collect all required (non-not-applicable) dataset results
+	const required: DatasetResult[] = [
+		...Object.values(proximity),
+		...Object.values(siteContext),
+	].filter((r) => r.status !== "not-applicable");
+
+	if (required.length === 0) {
+		// No required datasets for this notice type — assessment is complete by definition
+		return { screeningStatus: "complete", subjectGeometrySource, coverageNote: null };
+	}
+
+	const incomplete = required.filter(
+		(r) => r.status === "unavailable" || r.status === "pending-permission",
+	);
+
+	if (incomplete.length === 0) {
+		return { screeningStatus: "complete", subjectGeometrySource, coverageNote: null };
+	}
+
+	if (incomplete.length === required.length) {
+		return {
+			screeningStatus: "incomplete-reference-data",
+			subjectGeometrySource,
+			coverageNote: "Proximity assessment incomplete: all required reference datasets are unavailable or pending permission.",
+		};
+	}
+
+	const gapNames = incomplete
+		.map((r) => r.note)
+		.filter(Boolean)
+		.slice(0, 3)
+		.join(" ");
+	return {
+		screeningStatus: "complete-with-gaps",
+		subjectGeometrySource,
+		coverageNote: gapNames
+			? `Proximity assessment incomplete: some required datasets are unavailable or pending permission. ${gapNames}`
+			: "Proximity assessment incomplete: some required datasets are unavailable or pending permission.",
+	};
+}
+
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function GET(req: Request) {
@@ -494,6 +569,16 @@ export async function GET(req: Request) {
 		);
 	}
 
+	const proximity = resolveProximityLayers(noticeType);
+	const siteContext = resolveSiteContext();
+	const { screeningStatus, subjectGeometrySource, coverageNote } = computeScreeningStatus(
+		lat,
+		lng,
+		locationPrecision,
+		proximity,
+		siteContext,
+	);
+
 	const response: NoticeContextResponse = {
 		noticeType,
 		wardNumber,
@@ -501,10 +586,13 @@ export async function GET(req: Request) {
 		lat,
 		lng,
 		locationPrecision,
+		screeningStatus,
+		subjectGeometrySource,
+		coverageNote,
 		administrative: { ward, municipality, district },
 		wardDemographics,
-		proximity: resolveProximityLayers(noticeType),
-		siteContext: resolveSiteContext(),
+		proximity,
+		siteContext,
 		proximityRadiusMetres: PROXIMITY_RADIUS[noticeType]?.metres ?? null,
 		proximityRadiusNote: PROXIMITY_RADIUS[noticeType]
 			? `${PROXIMITY_RADIUS[noticeType]!.statutoryBasis}. ${PROXIMITY_RADIUS[noticeType]!.caveat ?? ''}`

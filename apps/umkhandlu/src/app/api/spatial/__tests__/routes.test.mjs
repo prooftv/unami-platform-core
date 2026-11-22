@@ -314,3 +314,112 @@ test('notice-context validates coordinates and returns stable boundary identity 
   assert.equal(body.administrative.ward.features[0].id, wardId);
   assert.equal(body.administrative.ward.attribution, 'Source attribution');
 });
+
+test('notice-context returns incomplete-no-geometry when lat/lng absent', async () => {
+  resetState();
+  state.datasets = [
+    dataset(publishedId, { name: 'MDB Wards 2026 — Amajuba' }),
+    dataset('b8532e74-88f4-4f66-9e93-e504347f1123', { name: 'MDB Local Municipalities 2026 — Amajuba' }),
+    dataset('c9532e74-88f4-4f66-9e93-e504347f1123', { name: 'MDB District Municipality 2026 — Amajuba' }),
+  ];
+  state.features = [];
+
+  const response = await getNoticeContext(
+    new Request('https://control.example/api/spatial/notice-context?noticeType=liquor&wardNumber=7&catB=KZN123'),
+  );
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.screeningStatus, 'incomplete-no-geometry');
+  assert.equal(body.subjectGeometrySource, null);
+  assert.ok(body.coverageNote.includes('No valid site coordinates'));
+});
+
+test('notice-context returns incomplete-reference-data when all required datasets unavailable', async () => {
+  resetState();
+  // No datasets published — all proximity results will be unavailable/pending
+  state.datasets = [];
+  state.features = [];
+
+  const response = await getNoticeContext(
+    new Request('https://control.example/api/spatial/notice-context?noticeType=liquor&lat=-27.75&lng=29.93'),
+  );
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.screeningStatus, 'incomplete-reference-data');
+  assert.ok(body.subjectGeometrySource.includes('developmentNotice.geopoint'));
+  assert.ok(body.coverageNote.includes('all required reference datasets'));
+});
+
+test('notice-context returns complete-with-gaps when some required datasets available', async () => {
+  resetState();
+  // Only ward dataset published — proximity layers still pending
+  state.datasets = [
+    dataset(publishedId, { name: 'MDB Wards 2026 — Amajuba' }),
+    dataset('b8532e74-88f4-4f66-9e93-e504347f1123', { name: 'MDB Local Municipalities 2026 — Amajuba' }),
+    dataset('c9532e74-88f4-4f66-9e93-e504347f1123', { name: 'MDB District Municipality 2026 — Amajuba' }),
+  ];
+  state.features = [];
+
+  // noticeType=other: proximity all not-applicable, siteContext both pending-permission
+  // → all required datasets are pending → incomplete-reference-data
+  const otherResponse = await getNoticeContext(
+    new Request('https://control.example/api/spatial/notice-context?noticeType=other&lat=-27.75&lng=29.93'),
+  );
+  const otherBody = await otherResponse.json();
+  assert.equal(otherBody.screeningStatus, 'incomplete-reference-data');
+  assert.ok(otherBody.subjectGeometrySource.includes('developmentNotice.geopoint'));
+
+  // noticeType=liquor has proximity layers — all pending → incomplete-reference-data
+  const liquorResponse = await getNoticeContext(
+    new Request('https://control.example/api/spatial/notice-context?noticeType=liquor&lat=-27.75&lng=29.93'),
+  );
+  const liquorBody = await liquorResponse.json();
+  // liquor has more required datasets, all pending → incomplete-reference-data
+  assert.equal(liquorBody.screeningStatus, 'incomplete-reference-data');
+  assert.ok(liquorBody.coverageNote.includes('all required reference datasets'));
+});
+
+test('notice-context subjectGeometrySource includes locationPrecision when provided', async () => {
+  resetState();
+  state.datasets = [];
+  state.features = [];
+
+  const response = await getNoticeContext(
+    new Request('https://control.example/api/spatial/notice-context?noticeType=other&lat=-27.75&lng=29.93&locationPrecision=verified'),
+  );
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.ok(body.subjectGeometrySource.includes('verified'));
+});
+
+test('notice-context preserves existing DatasetResult fields alongside screeningStatus', async () => {
+  resetState();
+  const wardId = 'a8532e74-88f4-4f66-9e93-e504347f1123';
+  state.datasets = [
+    dataset(publishedId, { name: 'MDB Wards 2026 — Amajuba' }),
+    dataset('b8532e74-88f4-4f66-9e93-e504347f1123', { name: 'MDB Local Municipalities 2026 — Amajuba' }),
+    dataset('c9532e74-88f4-4f66-9e93-e504347f1123', { name: 'MDB District Municipality 2026 — Amajuba' }),
+  ];
+  state.features = [
+    feature(wardId, publishedId, {
+      type: 'Polygon',
+      coordinates: [[[29.92, -27.76], [29.94, -27.76], [29.94, -27.74], [29.92, -27.74], [29.92, -27.76]]],
+    }, { feature_properties: { WardNo: 7, CAT_B: 'KZN123' } }),
+  ];
+
+  const response = await getNoticeContext(
+    new Request('https://control.example/api/spatial/notice-context?noticeType=other&wardNumber=7&catB=KZN123&lat=-27.75&lng=29.93'),
+  );
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  // New fields present
+  assert.ok('screeningStatus' in body);
+  assert.ok('subjectGeometrySource' in body);
+  assert.ok('coverageNote' in body);
+  // Existing fields preserved
+  assert.ok('administrative' in body);
+  assert.ok('proximity' in body);
+  assert.ok('siteContext' in body);
+  assert.ok('disclaimer' in body);
+  assert.equal(body.administrative.ward.features[0].id, wardId);
+});
