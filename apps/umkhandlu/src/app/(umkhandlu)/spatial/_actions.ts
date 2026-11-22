@@ -17,6 +17,7 @@ import {
 } from '@/lib/gis/spatial-permissions';
 import { validateDatasetSourceIdentity } from '@/lib/gis/spatial-pipeline';
 import { isValidGeoJSONGeometry } from '@/lib/gis/spatial-proximity';
+import { runPostStagingDiscrepancyCheck } from '@/lib/gis/post-staging-discrepancy-check';
 
 async function requireOperator() {
   const session = await getOperatorSession();
@@ -547,6 +548,10 @@ export async function fetchAndStageFromArcGISAction(
   revalidatePath('/spatial/staging');
   revalidatePath('/spatial/datasets');
   revalidatePath('/spatial/pipelines');
+  // Best-effort post-staging discrepancy check — does not block or roll back import
+  runPostStagingDiscrepancyCheck(datasetId, run.id).catch((e) =>
+    console.error('[discrepancy] ArcGIS post-staging check failed:', e),
+  );
   return { success: true, staged: inserted, invalid };
 }
 
@@ -880,6 +885,10 @@ export async function fetchAndStageFromGratisGisAction(datasetId: string) {
   revalidatePath('/spatial/staging');
   revalidatePath('/spatial/datasets');
   revalidatePath('/spatial/pipelines');
+  // Best-effort post-staging discrepancy check — does not block or roll back import
+  runPostStagingDiscrepancyCheck(datasetId, run.id).catch((e) =>
+    console.error('[discrepancy] GratisGIS post-staging check failed:', e),
+  );
   return { success: true, staged: inserted, invalid };
 }
 
@@ -1202,6 +1211,10 @@ export async function ingestGeoJSONAction(datasetId: string, geojsonText: string
   revalidatePath('/spatial/staging');
   revalidatePath('/spatial/datasets');
   revalidatePath('/spatial/pipelines');
+  // Best-effort post-staging discrepancy check — does not block or roll back import
+  runPostStagingDiscrepancyCheck(datasetId, run.id).catch((e) =>
+    console.error('[discrepancy] GeoJSON post-staging check failed:', e),
+  );
   return { success: true, staged: inserted, invalid };
 }
 
