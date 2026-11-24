@@ -32,15 +32,6 @@ const ROLE_COLOUR: Record<string, string> = {
   site: '#06b6d4',
 };
 
-function featureLabel(properties: Record<string, unknown>): string {
-  const candidates = ['NAMECODE', 'MUNICNAME', 'Ward_Label', 'name', 'NAME', 'WardNo'];
-  for (const key of candidates) {
-    const val = properties[key];
-    if (val != null && String(val).trim()) return String(val);
-  }
-  return 'Feature';
-}
-
 function FeatureInspector({ popup, onClose }: { popup: FeaturePopup; onClose: () => void }) {
   const entries = Object.entries(popup.properties).filter(
     ([, v]) => v != null && String(v).trim() !== '',
@@ -79,7 +70,7 @@ function LayerLegend({ layers, visibility, onToggle }: {
       {renderable.length > 0 && (
         <div className="px-3 py-2 space-y-1.5">
           {renderable.map((layer) => {
-            const colour = ROLE_COLOUR[layer.role] ?? layer.colour;
+            const colour = ROLE_COLOUR[layer.role] ?? '#6b7280';
             const on = visibility[layer.id] ?? true;
             return (
               <button
@@ -137,7 +128,7 @@ export function StatutoryMapInner({ subject, layers, height }: Props) {
       >
         {renderableLayers.map((layer) => {
           if (!(visibility[layer.id] ?? true)) return null;
-          const colour = ROLE_COLOUR[layer.role] ?? layer.colour;
+          const colour = ROLE_COLOUR[layer.role] ?? '#6b7280';
           return (
             <MapGeoJSON
               key={layer.id}

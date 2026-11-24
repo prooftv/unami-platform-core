@@ -131,7 +131,6 @@ export default async function NoticeDetailPage({
 					statutoryMapLayers.push({
 						id: layer.id,
 						name: layer.label,
-						colour: '#6b7280',
 						role: layer.role,
 						availability: layer.availability,
 						permissionNote: layer.permissionNote,

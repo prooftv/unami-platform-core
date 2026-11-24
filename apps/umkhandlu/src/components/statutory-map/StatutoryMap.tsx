@@ -15,7 +15,6 @@ export interface StatutoryMapSubject {
 export interface StatutoryMapLayer {
   id: string;
   name: string;
-  colour: string;
   role: string;
   availability: 'available' | 'pending-permission' | 'not-available';
   permissionNote: string | null;
