@@ -24,6 +24,7 @@ import {
 	ShieldCheck,
 	Users,
 	Zap,
+	FlaskConical,
 } from "lucide-react";
 
 export type {
@@ -105,6 +106,12 @@ export const sidebarItems: NavGroup[] = [
 		id: 3,
 		label: "Map",
 		items: [
+			{
+				id: "spatial-workbench",
+				title: "Spatial Workbench",
+				url: "/spatial/workbench",
+				icon: FlaskConical,
+			},
 			{
 				id: "spatial-map",
 				title: "Geographic View",
