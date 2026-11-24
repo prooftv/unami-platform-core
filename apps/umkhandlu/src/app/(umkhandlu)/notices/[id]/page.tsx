@@ -190,6 +190,9 @@ export default async function NoticeDetailPage({
 							<Link href="/notices">Back</Link>
 						</Button>
 						<Button asChild variant="outline">
+							<Link href={`/notices/${id}/workflow`}>Workflow</Link>
+						</Button>
+						<Button asChild variant="outline">
 							<Link
 								href={`/spatial/workbench?noticeId=${id}&noticeType=${notice.type}${notice.latitude ? `&lat=${notice.latitude}&lng=${notice.longitude}` : ''}${notice.ward_ref ? `&ward=${encodeURIComponent(notice.ward_ref)}` : ''}&returnTo=/notices/${id}`}
 							>

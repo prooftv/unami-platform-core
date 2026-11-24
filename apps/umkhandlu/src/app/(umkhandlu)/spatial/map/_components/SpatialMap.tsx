@@ -1,10 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
-import type { Map as LeafletMap, GeoJSON as LeafletGeoJSON, Marker } from 'leaflet';
+import {
+  Map as MapGL,
+  MapGeoJSON,
+  MapMarker,
+  MarkerContent,
+  MapControls,
+  type MapViewport,
+  type MapGeoJSONEvent,
+} from '@/components/ui/map';
 import { AreaInfoPanel } from './AreaInfoPanel';
-import { createMap, fitToLayer, loadLeafletCss } from '@/lib/map/leaflet-utils';
 
 export interface PublishedDataset {
   id: string;
@@ -63,511 +70,131 @@ interface Props {
   nodeGeoRefs: NodeGeoRef[];
 }
 
+// Amajuba District centre
+const AMAJUBA_CENTRE: [number, number] = [29.93, -27.76];
 const AMAJUBA_ZOOM = 9;
-const MAX_VIEWPORT_SPAN = 1.9; // Must be < both API limits: map-layers (5°) and features (2°)
-
-function clampBounds(b: SpatialMapBounds): SpatialMapBounds {
-  const midLon = (b.west + b.east) / 2;
-  const midLat = (b.south + b.north) / 2;
-  const lonSpan = b.east - b.west;
-  const latSpan = b.north - b.south;
-  return {
-    west:  lonSpan > MAX_VIEWPORT_SPAN ? midLon - MAX_VIEWPORT_SPAN / 2 : b.west,
-    south: latSpan > MAX_VIEWPORT_SPAN ? midLat - MAX_VIEWPORT_SPAN / 2 : b.south,
-    east:  lonSpan > MAX_VIEWPORT_SPAN ? midLon + MAX_VIEWPORT_SPAN / 2 : b.east,
-    north: latSpan > MAX_VIEWPORT_SPAN ? midLat + MAX_VIEWPORT_SPAN / 2 : b.north,
-  };
-}
-
-type SpatialMapBounds = {
-  west: number;
-  south: number;
-  east: number;
-  north: number;
-};
-
-type SpatialMapLayer = {
-  id: string;
-  datasetId: string;
-  colour: string;
-  features: GeoJSONFeature[];
-};
-
-type SpatialMapLayersResponse = {
-  layers: SpatialMapLayer[];
-  permissionFiltered: boolean;
-};
+const MAX_VIEWPORT_SPAN = 1.9;
 
 const LAYER_COLOURS = [
-  '#facc15', // yellow
-  '#22c55e', // green
-  '#ef4444', // red
-  '#f97316', // orange
-  '#06b6d4', // cyan
-  '#a855f7', // purple
-  '#f59e0b', // amber
-  '#ec4899', // pink
-  '#3b82f6', // blue
-  '#10b981', // emerald
-  '#8b5cf6', // violet
-  '#14b8a6', // teal
+  '#facc15', '#22c55e', '#ef4444', '#f97316', '#06b6d4',
+  '#a855f7', '#f59e0b', '#ec4899', '#3b82f6', '#10b981',
+  '#8b5cf6', '#14b8a6',
 ];
 
-// Boundary polygon labels — use very low fill opacity so they don't dominate
-const BOUNDARY_LABEL_FRAGMENTS = ['ward', 'district', 'municipalit', 'boundary'];
-function isBoundaryLayer(name: string): boolean {
+const BOUNDARY_FRAGMENTS = ['ward', 'district', 'municipalit', 'boundary'];
+function isBoundary(name: string) {
   const l = name.toLowerCase();
-  return BOUNDARY_LABEL_FRAGMENTS.some((f) => l.includes(f));
+  return BOUNDARY_FRAGMENTS.some((f) => l.includes(f));
 }
 
-const LAYER_STYLE = (colour: string, name: string) => ({
-  color: colour,
-  weight: isBoundaryLayer(name) ? 1.5 : 3,
-  opacity: 1,
-  fillOpacity: isBoundaryLayer(name) ? 0.04 : 0.2,
-  fillColor: colour,
-});
-
-const PROXIMITY_CIRCLE_STYLE = {
-  color: '#7c3aed',
-  weight: 3.5,
-  opacity: 1,
-  fillOpacity: 0.06,
-  fillColor: '#7c3aed',
-  dashArray: '10 6',
-};
-
-const noticeColour = (isStatutory: boolean) => isStatutory ? '#dc2626' : '#2563eb';
+const LARGE_THRESHOLD = 2000;
 
 const NODE_TYPE_COLOUR: Record<string, string> = {
-  record:  '#7c3aed',
-  notice:  '#0891b2',
+  record: '#7c3aed',
+  notice: '#0891b2',
   project: '#16a34a',
 };
 
-// Datasets with many features default to off to avoid loading everything at once
-const LARGE_THRESHOLD = 2000;
+function noticeColour(isStatutory: boolean) {
+  return isStatutory ? '#dc2626' : '#2563eb';
+}
+
+function clampViewport(vp: MapViewport): MapViewport {
+  const [lng, lat] = vp.center;
+  return vp; // MapLibre handles viewport clamping internally; keep for API compat
+}
+
+type SelectedFeature = {
+  datasetName: string;
+  datasetSource: string;
+  datasetDate: string | null;
+  properties: Record<string, unknown>;
+};
 
 export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
-  const layerRefs = useRef<Map<string, LeafletGeoJSON>>(new Map());
-  const initialBoundsRef = useRef<import('leaflet').LatLngBounds | null>(null);
-  const noticeMarkerRefs = useRef<Marker[]>([]);
-  const nodeMarkerRefs = useRef<Marker[]>([]);
+  const [viewport, setViewport] = useState<Partial<MapViewport>>({
+    center: AMAJUBA_CENTRE,
+    zoom: AMAJUBA_ZOOM,
+  });
 
-  // Large datasets default off; small datasets default on
+  // Layer visibility
   const [visibleLayers, setVisibleLayers] = useState<Set<string>>(
     new Set(datasets.filter((d) => (d.feature_count ?? 0) <= LARGE_THRESHOLD).map((d) => d.id)),
   );
-  const [loadingLayers, setLoadingLayers] = useState<Set<string>>(new Set());
-  const [loadedGeojson, setLoadedGeojson] = useState<Map<string, GeoJSONFeatureCollection>>(new Map());
-  const [spatialLayerColours, setSpatialLayerColours] = useState<Map<string, string>>(new Map());
-  const [mapViewport, setMapViewport] = useState<SpatialMapBounds | null>(null);
-  const [mapLayerError, setMapLayerError] = useState<string | null>(null);
-  const [mapLayerRetry, setMapLayerRetry] = useState(0);
-  const [permissionFiltered, setPermissionFiltered] = useState(false);
-  const [mapInitialError, setMapInitialError] = useState<string | null>(null);
   const [showNotices, setShowNotices] = useState(true);
   const [showNodeActivity, setShowNodeActivity] = useState(true);
-  const proximityCircleRef = useRef<import('leaflet').Circle | null>(null);
-  const [selectedFeature, setSelectedFeature] = useState<{
-    datasetName: string;
-    datasetSource: string;
-    datasetDate: string | null;
-    properties: Record<string, unknown>;
-  } | null>(null);
+
+  // Viewport-based layer loading
+  const [loadingLayers, setLoadingLayers] = useState<Set<string>>(new Set<string>());
+  const [loadedGeojson, setLoadedGeojson] = useState<globalThis.Map<string, GeoJSONFeatureCollection>>(new globalThis.Map());
+  const [spatialLayerColours, setSpatialLayerColours] = useState<globalThis.Map<string, string>>(new globalThis.Map());
+  const [mapLayerError, setMapLayerError] = useState<string | null>(null);
+  const [permissionFiltered, setPermissionFiltered] = useState(false);
+
+  // Selection state
+  const [selectedFeature, setSelectedFeature] = useState<SelectedFeature | null>(null);
   const [selectedNotice, setSelectedNotice] = useState<NoticeMarker | null>(null);
   const [selectedNodeRef, setSelectedNodeRef] = useState<NodeGeoRef | null>(null);
-  const [mapReady, setMapReady] = useState(false);
-  const visibleDatasetIds = useMemo(
-    () => datasets.filter((dataset) => visibleLayers.has(dataset.id)).map((dataset) => dataset.id),
-    [datasets, visibleLayers],
-  );
-  const visibleDatasetIdsKey = visibleDatasetIds.join(',');
 
-  // Initialise map
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    let cancelled = false;
+  const visibleDatasetIds = datasets
+    .filter((d) => visibleLayers.has(d.id))
+    .map((d) => d.id);
 
-    async function init() {
-      const L = (await import('leaflet')).default as typeof import('leaflet');
-      if (cancelled || !containerRef.current) return;
-      loadLeafletCss();
+  const handleViewportChange = useCallback((vp: MapViewport) => {
+    setViewport(vp);
 
-      const coverage = L.latLngBounds([]);
-      for (const notice of notices) {
-        coverage.extend([notice.latitude, notice.longitude]);
-      }
-      for (const ref of nodeGeoRefs) {
-        coverage.extend([ref.latitude, ref.longitude]);
-      }
+    if (visibleDatasetIds.length === 0) return;
 
-      let wardLoadError: string | null = null;
-      try {
-        const response = await fetch('/api/spatial/wards', { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error(`Ward boundaries request failed (${response.status})`);
-        }
-        const collection = (await response.json()) as GeoJSONFeatureCollection;
-        const wardLayer = L.geoJSON(collection as Parameters<typeof L.geoJSON>[0]);
-        const wardBounds = wardLayer.getBounds();
-        if (wardBounds.isValid()) coverage.extend(wardBounds);
-      } catch (error) {
-        wardLoadError =
-          error instanceof Error ? error.message : 'Ward boundaries unavailable';
-      }
+    // Derive bbox from center+zoom approximation — MapLibre doesn't expose bounds
+    // directly here; we fetch on moveend with a fixed span based on zoom
+    const [lng, lat] = vp.center;
+    const span = Math.min(MAX_VIEWPORT_SPAN, 360 / Math.pow(2, vp.zoom - 1));
+    const half = span / 2;
+    const bbox = [lng - half, lat - half, lng + half, lat + half].join(',');
 
-      if (cancelled) return;
-      if (!coverage.isValid()) {
-        setMapInitialError(
-          wardLoadError ??
-            'No published spatial boundaries or georeferenced activity are available to set the map extent.',
-        );
-        return;
-      }
-
-      initialBoundsRef.current = coverage;
-      const centre = coverage.getCenter();
-      const map = createMap(
-        L,
-        containerRef.current,
-        [centre.lat, centre.lng],
-        AMAJUBA_ZOOM,
-        { scrollWheelZoom: true },
-      );
-      map.fitBounds(coverage, { padding: [40, 40], maxZoom: AMAJUBA_ZOOM });
-      map.on('moveend', () => {
-        const bounds = map.getBounds();
-        setMapViewport(clampBounds({
-          west: bounds.getWest(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          north: bounds.getNorth(),
-        }));
-      });
-      const bounds = map.getBounds();
-      setMapViewport(clampBounds({
-        west: bounds.getWest(),
-        south: bounds.getSouth(),
-        east: bounds.getEast(),
-        north: bounds.getNorth(),
-      }));
-      mapRef.current = map;
-      requestAnimationFrame(() => {
-        if (!cancelled) map.invalidateSize();
-      });
-      setMapInitialError(wardLoadError);
-      setMapReady(true);
-    }
-
-    init();
-    return () => {
-      cancelled = true;
-      mapRef.current?.remove();
-      mapRef.current = null;
-      setMapReady(false);
-      setMapViewport(null);
-      layerRefs.current.clear();
-    };
-  // notices and nodeGeoRefs are read once at init time for coverage extent.
-  // Excluding them prevents map teardown/re-init on every parent render.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: notices/nodeGeoRefs excluded intentionally
-  }, []);
-
-  // Load only visible datasets for the current viewport. Permission checks live on the API.
-  useEffect(() => {
-    if (!mapReady || !mapViewport) return;
-    if (visibleDatasetIds.length === 0) {
-      setLoadingLayers(new Set());
-      setLoadedGeojson(new Map());
-      setSpatialLayerColours(new Map());
-      setMapLayerError(null);
-      setPermissionFiltered(false);
-      return;
-    }
     const controller = new AbortController();
-    let active = true;
-    const boundsValue = [
-      mapViewport.west,
-      mapViewport.south,
-      mapViewport.east,
-      mapViewport.north,
-    ].join(',');
-    const query = new URLSearchParams({
-      bbox: boundsValue,
-      datasetIds: visibleDatasetIdsKey,
-    });
-
     setMapLayerError(null);
-    setPermissionFiltered(false);
     setLoadingLayers(new Set(visibleDatasetIds));
-    setLoadedGeojson(new Map());
-    setSpatialLayerColours(new Map());
-    const timeout = window.setTimeout(() => {
-      void fetch(`/api/spatial/map-layers?${query}`, {
-        cache: 'no-store',
-        signal: controller.signal,
-      })
-        .then(async (response) => {
-          const body = (await response.json()) as
-            | SpatialMapLayersResponse
-            | { error?: string };
-          if (!response.ok) {
-            throw new Error(
-              'error' in body && body.error
-                ? body.error
-                : `Spatial layers request failed (${response.status})`,
-            );
-          }
-          return body as SpatialMapLayersResponse;
-        })
-        .then((body) => {
-          if (!active) return;
-          const features = new Map<string, GeoJSONFeatureCollection>();
-          const colours = new Map<string, string>();
-          for (const layer of body.layers) {
-            features.set(layer.datasetId, {
-              type: 'FeatureCollection',
-              features: layer.features,
-            });
-            colours.set(layer.datasetId, layer.colour);
-          }
-          setLoadedGeojson(features);
-          setSpatialLayerColours(colours);
-          setPermissionFiltered(body.permissionFiltered);
-        })
-        .catch((error: unknown) => {
-          if (error instanceof DOMException && error.name === 'AbortError') return;
-          if (active) {
-            setMapLayerError(
-              error instanceof Error ? error.message : 'Spatial layers unavailable',
-            );
-            setLoadedGeojson(new Map());
-            setSpatialLayerColours(new Map());
-          }
-        })
-        .finally(() => {
-          if (active) setLoadingLayers(new Set());
-        });
-    }, 150);
 
-    return () => {
-      active = false;
-      window.clearTimeout(timeout);
-      controller.abort();
-    };
-  }, [
-    mapReady,
-    mapViewport,
-    visibleDatasetIds,
-    visibleDatasetIdsKey,
-    mapLayerRetry,
-  ]);
-
-  // Sync spatial dataset layers
-  useEffect(() => {
-    if (!mapReady || !mapRef.current) return;
-
-    async function syncLayers() {
-      const L = (await import('leaflet')).default;
-      const map = mapRef.current!;
-
-      datasets.forEach((dataset, idx) => {
-        const existing = layerRefs.current.get(dataset.id);
-        if (existing) {
-          map.removeLayer(existing);
-          layerRefs.current.delete(dataset.id);
+    const query = new URLSearchParams({ bbox, datasetIds: visibleDatasetIds.join(',') });
+    fetch(`/api/spatial/map-layers?${query}`, { cache: 'no-store', signal: controller.signal })
+      .then((r) => r.json())
+      .then((body: { layers: Array<{ datasetId: string; colour: string; features: GeoJSONFeature[] }>; permissionFiltered: boolean }) => {
+        const features = new globalThis.Map<string, GeoJSONFeatureCollection>();
+        const colours = new globalThis.Map<string, string>();
+        for (const layer of body.layers ?? []) {
+          features.set(layer.datasetId, { type: 'FeatureCollection', features: layer.features });
+          colours.set(layer.datasetId, layer.colour);
         }
-
-        if (!visibleLayers.has(dataset.id)) return;
-
-        const geojson = loadedGeojson.get(dataset.id) ?? null;
-
-        if (!geojson?.features?.length) return;
-        const colour =
-          spatialLayerColours.get(dataset.id) ??
-          LAYER_COLOURS[idx % LAYER_COLOURS.length];
-
-        const layer = L.geoJSON(geojson as Parameters<typeof L.geoJSON>[0], {
-          style: () => LAYER_STYLE(colour, dataset.name),
-          pointToLayer: (_f, latlng) =>
-            L.circleMarker(latlng, { radius: 6, fillColor: colour, color: '#fff', weight: 1.5, opacity: 1, fillOpacity: 0.9 }),
-          onEachFeature: (feature, fl) => {
-            fl.on('click', () => {
-              setSelectedFeature({
-                datasetName: dataset.name,
-                datasetSource: dataset.source_institution,
-                datasetDate: dataset.dataset_date,
-                properties: feature.properties ?? {},
-              });
-              setSelectedNotice(null);
-              setSelectedNodeRef(null);
-            });
-          },
-        });
-
-        layer.addTo(map);
-        layerRefs.current.set(dataset.id, layer);
-      });
-    }
-
-    syncLayers();
-  }, [mapReady, datasets, visibleLayers, loadedGeojson, spatialLayerColours]);
-
-  // Sync notice markers
-  useEffect(() => {
-    if (!mapReady || !mapRef.current) return;
-
-    async function syncNotices() {
-      const L = (await import('leaflet')).default;
-      const map = mapRef.current!;
-
-      noticeMarkerRefs.current.forEach((m) => map.removeLayer(m));
-      noticeMarkerRefs.current = [];
-
-      if (!showNotices) return;
-
-      notices.forEach((notice) => {
-        const colour = noticeColour(notice.is_statutory);
-        const size = notice.is_statutory ? 16 : 12;
-        const icon = L.divIcon({
-          className: '',
-          html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${colour};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.5)"></div>`,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
-        });
-        const marker = L.marker([notice.latitude, notice.longitude], { icon });
-        marker.on('click', () => {
-          setSelectedNotice(notice);
-          setSelectedFeature(null);
-          setSelectedNodeRef(null);
-        });
-        marker.addTo(map);
-        noticeMarkerRefs.current.push(marker);
-      });
-    }
-
-    syncNotices();
-  }, [mapReady, notices, showNotices]);
-
-  // Sync node activity markers
-  useEffect(() => {
-    if (!mapReady || !mapRef.current) return;
-
-    async function syncNodeMarkers() {
-      const L = (await import('leaflet')).default;
-      const map = mapRef.current!;
-
-      nodeMarkerRefs.current.forEach((m) => map.removeLayer(m));
-      nodeMarkerRefs.current = [];
-
-      if (!showNodeActivity) return;
-
-      nodeGeoRefs.forEach((ref) => {
-        const colour = NODE_TYPE_COLOUR[ref.recordType] ?? '#6366f1';
-        const icon = L.divIcon({
-          className: '',
-          html: `<div style="width:10px;height:10px;border-radius:2px;background:${colour};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);transform:rotate(45deg)"></div>`,
-          iconSize: [10, 10],
-          iconAnchor: [5, 5],
-        });
-        const marker = L.marker([ref.latitude, ref.longitude], { icon });
-        marker.on('click', () => {
-          setSelectedNodeRef(ref);
-          setSelectedFeature(null);
-          setSelectedNotice(null);
-        });
-        marker.addTo(map);
-        nodeMarkerRefs.current.push(marker);
-      });
-    }
-
-    syncNodeMarkers();
-  }, [mapReady, nodeGeoRefs, showNodeActivity]);
-
-  // Draw proximity circle when a statutory notice with a radius is selected
-  useEffect(() => {
-    if (!mapReady || !mapRef.current) return;
-    const map = mapRef.current;
-
-    // Remove previous circle
-    if (proximityCircleRef.current) {
-      map.removeLayer(proximityCircleRef.current);
-      proximityCircleRef.current = null;
-    }
-
-    if (
-      selectedNotice &&
-      selectedNotice.proximity_radius_metres &&
-      selectedNotice.latitude &&
-      selectedNotice.longitude
-    ) {
-      import('leaflet').then(({ default: L }) => {
-        const circle = L.circle(
-          [selectedNotice.latitude, selectedNotice.longitude],
-          {
-            radius: selectedNotice.proximity_radius_metres!,
-            ...PROXIMITY_CIRCLE_STYLE,
-          },
-        );
-        circle.addTo(map);
-        proximityCircleRef.current = circle;
-        map.fitBounds(circle.getBounds(), { padding: [40, 40], maxZoom: 15 });
-      });
-    }
-  }, [mapReady, selectedNotice]);
+        setLoadedGeojson(features);
+        setSpatialLayerColours(colours);
+        setPermissionFiltered(body.permissionFiltered ?? false);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setMapLayerError(err instanceof Error ? err.message : 'Spatial layers unavailable');
+      })
+      .finally(() => setLoadingLayers(new Set()));
+  }, [visibleDatasetIds.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleLayer(id: string) {
     setVisibleLayers((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   }
 
-  function fitAll() {
-    const map = mapRef.current;
-    if (!map) return;
-    const all = Array.from(layerRefs.current.values());
-    if (!all.length) {
-      if (initialBoundsRef.current?.isValid()) {
-        map.fitBounds(initialBoundsRef.current, { padding: [20, 20] });
-      }
-      return;
-    }
-    try {
-      const bounds = all.reduce((acc, l) => acc.extend(l.getBounds()), all[0].getBounds());
-      if (bounds.isValid()) map.fitBounds(bounds, { padding: [20, 20] });
-    } catch {
-      if (initialBoundsRef.current?.isValid()) {
-        map.fitBounds(initialBoundsRef.current, { padding: [20, 20] });
-      }
-    }
-  }
-
-  // Group datasets for sidebar display
   const smallDatasets = datasets.filter((d) => (d.feature_count ?? 0) <= LARGE_THRESHOLD);
   const largeDatasets = datasets.filter((d) => (d.feature_count ?? 0) > LARGE_THRESHOLD);
 
   function LayerRow({ d, idx }: { d: PublishedDataset; idx: number }) {
-    const colour =
-      spatialLayerColours.get(d.id) ?? LAYER_COLOURS[idx % LAYER_COLOURS.length];
+    const colour = spatialLayerColours.get(d.id) ?? LAYER_COLOURS[idx % LAYER_COLOURS.length];
     const visible = visibleLayers.has(d.id);
     const loading = loadingLayers.has(d.id);
-    const hasData = d.geojson?.features?.length || loadedGeojson.has(d.id);
-
     return (
       <div className="flex items-start gap-2">
-        <input
-          type="checkbox"
-          id={`layer-${d.id}`}
-          checked={visible}
-          onChange={() => toggleLayer(d.id)}
-          className="mt-0.5 rounded shrink-0"
-        />
+        <input type="checkbox" id={`layer-${d.id}`} checked={visible} onChange={() => toggleLayer(d.id)} className="mt-0.5 rounded shrink-0" />
         <div className="min-w-0 flex-1">
           <label htmlFor={`layer-${d.id}`} className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
             <span className="inline-block size-2.5 rounded-sm shrink-0" style={{ backgroundColor: colour }} />
@@ -575,25 +202,8 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
           </label>
           <p className="text-xs text-muted-foreground truncate pl-4">{d.source_institution}</p>
           <div className="flex items-center gap-2 pl-4 mt-0.5">
-            {d.feature_count != null && (
-              <span className="text-xs text-muted-foreground">{d.feature_count.toLocaleString()} features</span>
-            )}
+            {d.feature_count != null && <span className="text-xs text-muted-foreground">{d.feature_count.toLocaleString()} features</span>}
             {loading && <span className="text-xs text-blue-600 animate-pulse">Loading…</span>}
-            {d.loadOnDemand && !hasData && !loading && visible && (
-              <span className="text-xs text-amber-600">Fetching…</span>
-            )}
-            {hasData && (
-              <button
-                type="button"
-                onClick={() => {
-                  const layer = layerRefs.current.get(d.id);
-                  if (layer && mapRef.current) fitToLayer(mapRef.current, layer, [20, 20]);
-                }}
-                className="text-xs text-blue-600 hover:underline"
-              >
-                Zoom
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -605,17 +215,10 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
       {/* Sidebar */}
       <div className="lg:w-72 shrink-0 flex flex-col gap-3 overflow-y-auto">
         <div className="rounded-lg border bg-card p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Layers ({datasets.length})</p>
-            <button type="button" onClick={fitAll} className="text-xs text-muted-foreground hover:text-foreground underline">
-              Fit all
-            </button>
-          </div>
+          <p className="text-sm font-medium">Layers ({datasets.length})</p>
 
           {datasets.length === 0 && (
-            <p className="text-xs text-muted-foreground">
-              No published datasets. Upload and approve a dataset to display it here.
-            </p>
+            <p className="text-xs text-muted-foreground">No published datasets. Upload and approve a dataset to display it here.</p>
           )}
 
           {smallDatasets.length > 0 && (
@@ -627,129 +230,63 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
           {largeDatasets.length > 0 && (
             <div className="pt-2 border-t space-y-2">
               <p className="text-xs text-muted-foreground font-medium">Large datasets (load on demand)</p>
-              {largeDatasets.map((d, idx) => (
-                <LayerRow key={d.id} d={d} idx={smallDatasets.length + idx} />
-              ))}
+              {largeDatasets.map((d, idx) => <LayerRow key={d.id} d={d} idx={smallDatasets.length + idx} />)}
             </div>
           )}
 
-          {/* Node activity overlay */}
-          <div className="pt-2 border-t">
+          <div className="pt-2 border-t space-y-2">
             <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                id="layer-node-activity"
-                checked={showNodeActivity}
-                onChange={() => setShowNodeActivity((v) => !v)}
-                className="mt-0.5 rounded shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <label htmlFor="layer-node-activity" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
-                  <span className="inline-flex gap-0.5">
-                    <span className="inline-block size-2.5 rounded-sm shrink-0 bg-violet-600" style={{ transform: 'rotate(45deg)' }} />
-                    <span className="inline-block size-2.5 rounded-sm shrink-0 bg-cyan-600" style={{ transform: 'rotate(45deg)' }} />
-                  </span>
-                  <span>Node activity {nodeGeoRefs.length > 0 ? `(${nodeGeoRefs.length})` : '(none)'}</span>
-                </label>
-                <p className="text-xs text-muted-foreground pl-6">Purple=record · Cyan=notice · Green=project</p>
-              </div>
+              <input type="checkbox" id="layer-node-activity" checked={showNodeActivity} onChange={() => setShowNodeActivity((v) => !v)} className="mt-0.5 rounded shrink-0" />
+              <label htmlFor="layer-node-activity" className="text-xs font-medium cursor-pointer">
+                Node activity {nodeGeoRefs.length > 0 ? `(${nodeGeoRefs.length})` : '(none)'}
+                <p className="text-xs text-muted-foreground font-normal">Purple=record · Cyan=notice · Green=project</p>
+              </label>
             </div>
-          </div>
-
-          {/* Notices overlay */}
-          <div className="pt-2 border-t">
             <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                id="layer-notices"
-                checked={showNotices}
-                onChange={() => setShowNotices((v) => !v)}
-                className="mt-0.5 rounded shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <label htmlFor="layer-notices" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
-                  <span className="inline-flex gap-0.5">
-                    <span className="inline-block size-2.5 rounded-full shrink-0 bg-red-600" />
-                    <span className="inline-block size-2.5 rounded-full shrink-0 bg-blue-600" />
-                  </span>
-                  <span>Notices {notices.length > 0 ? `(${notices.length})` : '(none)'}</span>
-                </label>
-                <p className="text-xs text-muted-foreground pl-6">Red = statutory · Blue = governance</p>
-              </div>
+              <input type="checkbox" id="layer-notices" checked={showNotices} onChange={() => setShowNotices((v) => !v)} className="mt-0.5 rounded shrink-0" />
+              <label htmlFor="layer-notices" className="text-xs font-medium cursor-pointer">
+                Notices {notices.length > 0 ? `(${notices.length})` : '(none)'}
+                <p className="text-xs text-muted-foreground font-normal">Red = statutory · Blue = governance</p>
+              </label>
             </div>
           </div>
         </div>
 
-        {/* Area information panel */}
         {selectedFeature && (
-          <AreaInfoPanel
-            feature={selectedFeature}
-            onClose={() => setSelectedFeature(null)}
-          />
+          <AreaInfoPanel feature={selectedFeature} onClose={() => setSelectedFeature(null)} />
         )}
 
-        {/* Selected notice inspector */}
         {selectedNotice && (
           <div className="rounded-lg border bg-card p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className="inline-block size-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: noticeColour(selectedNotice.is_statutory) }}
-                />
-                <p className="text-sm font-medium truncate">{selectedNotice.title}</p>
-              </div>
+              <p className="text-sm font-medium truncate">{selectedNotice.title}</p>
               <button type="button" onClick={() => setSelectedNotice(null)} className="text-xs text-muted-foreground hover:text-foreground shrink-0">✕</button>
             </div>
             <div className="space-y-1 text-xs text-muted-foreground">
               <p className="capitalize">{selectedNotice.type.replace(/-/g, ' ')} · {selectedNotice.status}</p>
               {selectedNotice.ward_ref && <p>Ward: {selectedNotice.ward_ref}</p>}
-              {selectedNotice.comment_deadline && (
-                <p>Deadline: {new Date(selectedNotice.comment_deadline).toLocaleDateString()}</p>
-              )}
+              {selectedNotice.comment_deadline && <p>Deadline: {new Date(selectedNotice.comment_deadline).toLocaleDateString()}</p>}
               {selectedNotice.proximity_radius_metres && (
                 <p className="text-violet-700 font-medium">{selectedNotice.proximity_radius_metres}m proximity zone</p>
               )}
             </div>
-            <Link href={`/notices/${selectedNotice.id}`} className="text-xs text-blue-600 hover:underline">
-              View notice →
-            </Link>
+            <Link href={`/notices/${selectedNotice.id}`} className="text-xs text-blue-600 hover:underline">View notice →</Link>
           </div>
         )}
 
-        {/* Selected node activity inspector */}
         {selectedNodeRef && (
           <div className="rounded-lg border bg-card p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className="inline-block size-2.5 rounded-sm shrink-0"
-                  style={{ backgroundColor: NODE_TYPE_COLOUR[selectedNodeRef.recordType] ?? '#6366f1', transform: 'rotate(45deg)' }}
-                />
-                <p className="text-sm font-medium truncate">{selectedNodeRef.label}</p>
-              </div>
+              <p className="text-sm font-medium truncate">{selectedNodeRef.label}</p>
               <button type="button" onClick={() => setSelectedNodeRef(null)} className="text-xs text-muted-foreground hover:text-foreground shrink-0">✕</button>
             </div>
             <div className="space-y-1 text-xs text-muted-foreground">
               <p className="capitalize">{selectedNodeRef.recordType} · Node activity</p>
-              <p>
-                Coordinate role:{' '}
-                {selectedNodeRef.coordinateRole === 'site'
-                  ? 'site location'
-                  : selectedNodeRef.coordinateRole === 'area-reference'
-                    ? 'area reference, not a site location'
-                    : 'not specified'}
-              </p>
-              <p>Coordinate source: {selectedNodeRef.coordinateSource ?? 'not provided'}</p>
-              <p>
-                Declared location precision:{' '}
-                {selectedNodeRef.locationPrecision ?? 'not declared'}
-              </p>
+              <p>Role: {selectedNodeRef.coordinateRole === 'site' ? 'site location' : selectedNodeRef.coordinateRole === 'area-reference' ? 'area reference — not a site location' : 'not specified'}</p>
+              <p>Source: {selectedNodeRef.coordinateSource ?? 'not provided'}</p>
+              <p>Precision: {selectedNodeRef.locationPrecision ?? 'not declared'}</p>
               {selectedNodeRef.municipality && <p>Municipality: {selectedNodeRef.municipality}</p>}
               {selectedNodeRef.ward && <p>Ward: {selectedNodeRef.ward}</p>}
-              {selectedNodeRef.timestamp && (
-                <p>{new Date(selectedNodeRef.timestamp).toLocaleDateString()}</p>
-              )}
             </div>
           </div>
         )}
@@ -769,35 +306,108 @@ export function SpatialMap({ datasets, notices, nodeGeoRefs }: Props) {
 
       {/* Map */}
       <div className="flex-1 rounded-lg border overflow-hidden relative min-h-[400px]">
-        {!mapReady && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
-            <p className="text-sm text-muted-foreground">
-              {mapInitialError ?? 'Loading published map context…'}
-            </p>
-          </div>
-        )}
-        <div ref={containerRef} className="w-full h-full" />
-        {(mapInitialError || mapLayerError || permissionFiltered) && mapReady && (
-          <div className="absolute bottom-3 left-3 z-[1000] max-w-[min(32rem,70%)] rounded bg-background/95 px-2.5 py-1.5 text-xs text-amber-700 shadow">
-            {mapLayerError
-              ? `Spatial layers unavailable: ${mapLayerError}`
-              : mapInitialError
-                ? `Administrative boundaries unavailable: ${mapInitialError}`
-                : 'Some spatial datasets are withheld pending redistribution permission verification.'}
-            {mapLayerError && (
-              <button
-                type="button"
-                onClick={() => setMapLayerRetry((current) => current + 1)}
-                className="ml-2 underline"
-              >
-                Retry
-              </button>
+        <MapGL
+          className="w-full h-full"
+          viewport={viewport}
+          onViewportChange={handleViewportChange}
+        >
+          <MapControls showZoom showCompass />
+
+          {/* Spatial dataset layers */}
+          {datasets.map((dataset, idx) => {
+            if (!visibleLayers.has(dataset.id)) return null;
+            const geojson = loadedGeojson.get(dataset.id) ?? dataset.geojson;
+            if (!geojson?.features?.length) return null;
+            const colour = spatialLayerColours.get(dataset.id) ?? LAYER_COLOURS[idx % LAYER_COLOURS.length];
+            const boundary = isBoundary(dataset.name);
+            return (
+              <MapGeoJSON
+                key={dataset.id}
+                id={`dataset-${dataset.id}`}
+                data={geojson as Parameters<typeof MapGeoJSON>[0]['data']}
+                interactive
+                fillPaint={{ 'fill-color': colour, 'fill-opacity': boundary ? 0.04 : 0.2 }}
+                linePaint={{ 'line-color': colour, 'line-width': boundary ? 1.5 : 2.5, 'line-opacity': 1 }}
+                fillHoverPaint={{ 'fill-opacity': boundary ? 0.1 : 0.35 }}
+                promoteId="id"
+                onClick={(e: MapGeoJSONEvent) => {
+                  setSelectedFeature({
+                    datasetName: dataset.name,
+                    datasetSource: dataset.source_institution,
+                    datasetDate: dataset.dataset_date,
+                    properties: (e.feature.properties ?? {}) as Record<string, unknown>,
+                  });
+                  setSelectedNotice(null);
+                  setSelectedNodeRef(null);
+                }}
+              />
+            );
+          })}
+
+          {/* Notice markers */}
+          {showNotices && notices.map((notice) => (
+            <MapMarker
+              key={notice.id}
+              longitude={notice.longitude}
+              latitude={notice.latitude}
+              onClick={() => {
+                setSelectedNotice(notice);
+                setSelectedFeature(null);
+                setSelectedNodeRef(null);
+              }}
+            >
+              <MarkerContent>
+                <span
+                  className="block rounded-full border-2 border-white shadow-md cursor-pointer"
+                  style={{
+                    width: notice.is_statutory ? 16 : 12,
+                    height: notice.is_statutory ? 16 : 12,
+                    backgroundColor: noticeColour(notice.is_statutory),
+                  }}
+                />
+              </MarkerContent>
+            </MapMarker>
+          ))}
+
+          {/* Node activity markers */}
+          {showNodeActivity && nodeGeoRefs.map((ref) => (
+            <MapMarker
+              key={`${ref.nodeId}-${ref.recordId}`}
+              longitude={ref.longitude}
+              latitude={ref.latitude}
+              onClick={() => {
+                setSelectedNodeRef(ref);
+                setSelectedFeature(null);
+                setSelectedNotice(null);
+              }}
+            >
+              <MarkerContent>
+                <span
+                  className="block border-2 border-white shadow cursor-pointer"
+                  style={{
+                    width: 10,
+                    height: 10,
+                    backgroundColor: NODE_TYPE_COLOUR[ref.recordType] ?? '#6366f1',
+                    transform: 'rotate(45deg)',
+                    borderRadius: 2,
+                  }}
+                />
+              </MarkerContent>
+            </MapMarker>
+          ))}
+        </MapGL>
+
+        {(mapLayerError || permissionFiltered || loadingLayers.size > 0) && (
+          <div className="absolute bottom-3 left-3 z-10 max-w-[min(32rem,70%)] rounded bg-background/95 px-2.5 py-1.5 text-xs shadow">
+            {loadingLayers.size > 0 && !mapLayerError && (
+              <span className="text-muted-foreground">Loading spatial layers…</span>
             )}
-          </div>
-        )}
-        {loadingLayers.size > 0 && mapReady && !mapLayerError && (
-          <div className="absolute top-3 left-3 z-[1000] rounded bg-background/95 px-2.5 py-1.5 text-xs text-muted-foreground shadow">
-            Loading spatial layers for this map view…
+            {mapLayerError && (
+              <span className="text-amber-700">Spatial layers unavailable: {mapLayerError}</span>
+            )}
+            {permissionFiltered && !mapLayerError && (
+              <span className="text-amber-700">Some datasets withheld pending redistribution permission.</span>
+            )}
           </div>
         )}
       </div>
