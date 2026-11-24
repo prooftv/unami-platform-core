@@ -8,6 +8,7 @@ import { NoticeStatusActions } from "./_components/NoticeStatusActions";
 import { NoticeSpatialContext, getNoticeSpatialGapSummary } from "./_components/NoticeSpatialContext";
 import { NoticeSiteFeatureAssociation } from "./_components/NoticeSiteFeatureAssociation";
 import { PROXIMITY_RADIUS } from "./_components/notice-layer-config";
+import { StatutoryMap } from "@/components/statutory-map/StatutoryMap";
 
 export const dynamic = "force-dynamic";
 
@@ -219,6 +220,25 @@ export default async function NoticeDetailPage({
 						</CardContent>
 					</Card>
 				</div>
+
+				{/* Statutory map — shown for statutory notices with coordinates */}
+				{notice.is_statutory && (
+					<StatutoryMap
+						subject={
+							notice.latitude && notice.longitude
+								? {
+										lat: notice.latitude,
+										lng: notice.longitude,
+										label: notice.title,
+										coordinateRole: 'site',
+										proximityRadiusMetres: proximityRadius?.metres ?? null,
+									}
+								: null
+						}
+						height="360px"
+						missingGeometryMessage="No coordinates set for this notice. Edit the notice to add a site location."
+					/>
+				)}
 
 				{/* Intelligence summary — always shown for statutory notices, otherwise only when records exist */}
 				{(riskRows.length > 0 ||
