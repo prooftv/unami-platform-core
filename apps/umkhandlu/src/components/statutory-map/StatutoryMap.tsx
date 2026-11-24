@@ -9,16 +9,22 @@ export interface StatutoryMapSubject {
   label: string;
   coordinateRole?: 'site' | 'area-reference';
   proximityRadiusMetres?: number | null;
+  proximityRadiusNote?: string | null;
 }
 
 export interface StatutoryMapLayer {
   id: string;
   name: string;
   colour: string;
+  role: string;
+  availability: 'available' | 'pending-permission' | 'not-available';
+  permissionNote: string | null;
+  attribution: string | null;
+  statutoryRelevance: string;
   geojson: {
     type: 'FeatureCollection';
     features: unknown[];
-  };
+  } | null;
 }
 
 export interface StatutoryMapProps {

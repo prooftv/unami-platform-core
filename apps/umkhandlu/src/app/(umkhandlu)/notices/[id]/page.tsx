@@ -8,7 +8,7 @@ import { NoticeStatusActions } from "./_components/NoticeStatusActions";
 import { NoticeSpatialContext, getNoticeSpatialGapSummary } from "./_components/NoticeSpatialContext";
 import { NoticeSiteFeatureAssociation } from "./_components/NoticeSiteFeatureAssociation";
 import { PROXIMITY_RADIUS } from "./_components/notice-layer-config";
-import { StatutoryMap } from "@/components/statutory-map/StatutoryMap";
+import { StatutoryMap, type StatutoryMapLayer } from "@/components/statutory-map/StatutoryMap";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +100,51 @@ export default async function NoticeDetailPage({
 		? await getNoticeSpatialGapSummary(notice.type)
 		: null;
 	const proximityRadius = PROXIMITY_RADIUS[notice.type] ?? null;
+
+	// Fetch contextual layers for the statutory map
+	const statutoryMapLayers: StatutoryMapLayer[] = [];
+	if (notice.is_statutory) {
+		try {
+			const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001';
+			const params = new URLSearchParams({ noticeType: notice.type, features: 'true' });
+			if (notice.ward_ref) {
+				const wardMatch = String(notice.ward_ref).match(/(\d+)/);
+				if (wardMatch) params.set('wardNumber', wardMatch[1]);
+			}
+			const res = await fetch(`${baseUrl}/api/spatial/notice-layers?${params}`, {
+				next: { revalidate: 300 },
+			});
+			if (res.ok) {
+				const body = await res.json() as {
+					layers: Array<{
+						id: string;
+						label: string;
+						role: string;
+						availability: 'available' | 'pending-permission' | 'not-available';
+						permissionNote: string | null;
+						attribution: string | null;
+						statutoryRelevance: string;
+						features: { type: 'FeatureCollection'; features: unknown[] } | null;
+					}>;
+				};
+				for (const layer of body.layers ?? []) {
+					statutoryMapLayers.push({
+						id: layer.id,
+						name: layer.label,
+						colour: '#6b7280',
+						role: layer.role,
+						availability: layer.availability,
+						permissionNote: layer.permissionNote,
+						attribution: layer.attribution,
+						statutoryRelevance: layer.statutoryRelevance,
+						geojson: layer.features ?? null,
+					});
+				}
+			}
+		} catch {
+			// Non-fatal — map renders without contextual layers
+		}
+	}
 
 	const canPublish = notice.status === "draft";
 	const canClose = notice.status === "open" || notice.status === "published";
@@ -232,9 +277,13 @@ export default async function NoticeDetailPage({
 										label: notice.title,
 										coordinateRole: 'site',
 										proximityRadiusMetres: proximityRadius?.metres ?? null,
+										proximityRadiusNote: proximityRadius
+											? `${proximityRadius.statutoryBasis}${proximityRadius.caveat ? ` — ${proximityRadius.caveat}` : ''}`
+											: null,
 									}
 								: null
 						}
+						layers={statutoryMapLayers}
 						height="360px"
 						missingGeometryMessage="No coordinates set for this notice. Edit the notice to add a site location."
 					/>

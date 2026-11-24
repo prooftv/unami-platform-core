@@ -17,8 +17,15 @@ class Query {
     return this;
   }
   ilike(column, pattern) {
-    const prefix = pattern.replace(/%$/, '').toLowerCase();
-    this.filters.push((row) => String(row[column]).toLowerCase().startsWith(prefix));
+    // Handle both prefix patterns (term%) and contains patterns (%term%)
+    const isContains = pattern.startsWith('%') && pattern.endsWith('%');
+    if (isContains) {
+      const term = pattern.slice(1, -1).toLowerCase();
+      this.filters.push((row) => String(row[column]).toLowerCase().includes(term));
+    } else {
+      const prefix = pattern.replace(/%$/, '').toLowerCase();
+      this.filters.push((row) => String(row[column]).toLowerCase().startsWith(prefix));
+    }
     return this;
   }
   order() {
