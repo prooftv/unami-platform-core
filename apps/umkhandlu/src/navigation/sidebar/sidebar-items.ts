@@ -244,6 +244,11 @@ export const sidebarItems: NavGroup[] = [
 						url: "/spatial/monitoring",
 					},
 					{
+						id: "spatial-presets",
+						title: "Notice Presets",
+						url: "/spatial/presets",
+					},
+					{
 						id: "spatial-gratisgis",
 						title: "GratisGIS",
 						url: "/spatial/gratisgis",
