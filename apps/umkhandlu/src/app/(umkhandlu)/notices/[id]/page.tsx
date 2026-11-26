@@ -276,10 +276,19 @@ export default async function NoticeDetailPage({
 					</Card>
 				</div>
 
-				{/* Statutory map — shown for statutory notices with coordinates */}
+				{/* Proximity findings — shown for statutory notices with coordinates and a proximity radius */}
 				{notice.is_statutory && notice.latitude && notice.longitude && proximityRadius && statutoryMapLayers.length > 0 && (
 					<ProximityFindings
-						layers={statutoryMapLayers as ProximityLayer[]}
+						layers={statutoryMapLayers.map((l) => ({
+							id: l.id,
+							label: l.name,
+							role: l.role,
+							availability: l.availability,
+							permissionNote: l.permissionNote,
+							attribution: l.attribution,
+							statutoryRelevance: l.statutoryRelevance,
+							geojson: l.geojson as ProximityLayer['geojson'],
+						}))}
 						origin={{ lat: notice.latitude, lng: notice.longitude }}
 						radiusConfig={proximityRadius}
 						noticeId={id}
