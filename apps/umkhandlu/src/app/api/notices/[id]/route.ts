@@ -1,120 +1,166 @@
-import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { createServiceClient } from '@/lib/supabase/server';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-const CORS = {
-	"Access-Control-Allow-Origin": "*",
-	"Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
-};
+// POST /api/notices/[id]/transfer
+// Server-side only. Transfers an approved CC notice to the Governance Node.
+// Idempotent: if gn_notice_ref is already set, returns the existing ref.
+// Never called from the browser — called from the workflow API on advance to 'transferred'.
 
-/**
- * Public endpoint — no auth required.
- * Returns the risk/compliance intelligence summary for a CC notice.
- * Consumed by Governance Nodes to render the risk and planning panel.
- *
- * Public response shape deliberately excludes:
- * - treatment_plan (internal operational detail)
- * - methodology (internal)
- * - assessed_at / assessed_by (internal)
- * - responsible_party (may contain personal information)
- * - recurrence (internal scheduling detail)
- * - node_notice_ref (internal cross-reference)
- *
- * Only published/open/closed/approved/rejected notices are accessible.
- * Draft notices are never exposed.
- */
-export async function GET(
-	_req: Request,
-	{ params }: { params: Promise<{ id: string }> },
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
-	const { id } = await params;
+  const { id } = await params;
+  const supabase = createServiceClient();
 
-	if (!id || !/^[0-9a-f-]{36}$/i.test(id)) {
-		return NextResponse.json(
-			{ error: "Invalid notice id" },
-			{ status: 400, headers: CORS },
-		);
-	}
+  // 1. Load notice and its workflow run
+  const [{ data: notice }, { data: run }] = await Promise.all([
+    supabase
+      .from('notices')
+      .select('id, title, type, status, is_statutory, latitude, longitude, ward_ref, node_notice_ref, comment_deadline, content')
+      .eq('id', id)
+      .single(),
+    supabase
+      .from('notice_workflow_runs')
+      .select('id, stage, approved_at, gn_notice_ref, analysis_outputs, provenance_manifest, preset_id')
+      .eq('notice_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
-	const supabase = createServiceClient();
+  if (!notice) {
+    return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
+  }
 
-	const { data: notice } = await supabase
-		.from("notices")
-		.select("id, type, status, is_statutory")
-		.eq("id", id)
-		.in("status", ["published", "open", "closed", "approved", "rejected"])
-		.maybeSingle();
+  // 2. Eligibility: must be approved stage
+  if (!run || run.stage !== 'approved') {
+    return NextResponse.json(
+      { error: `Transfer requires stage=approved. Current stage: ${run?.stage ?? 'none'}` },
+      { status: 422 },
+    );
+  }
 
-	if (!notice) {
-		return NextResponse.json(
-			{ error: "Notice not found or not published" },
-			{ status: 404, headers: CORS },
-		);
-	}
+  // 3. Idempotency: already transferred
+  if (run.gn_notice_ref) {
+    return NextResponse.json({
+      transferred: true,
+      gnNoticeRef: run.gn_notice_ref,
+      idempotent: true,
+    });
+  }
 
-	const [{ data: risks }, { data: obligations }, { data: findings }] =
-		await Promise.all([
-			supabase
-				.from("risks")
-				.select(
-					"id, identifier, title, category, likelihood, impact, exposure, status, treatment",
-				)
-				.eq("notice_id", id)
-				.neq("status", "closed")
-				.order("exposure", { ascending: false }),
-			supabase
-				.from("compliance_obligations")
-				.select("id, identifier, title, source, due_date, status")
-				.eq("notice_id", id)
-				.order("due_date", { ascending: true, nullsFirst: false }),
-			supabase
-				.from("findings")
-				.select("id, title, finding_type, severity, status, identified_at")
-				.eq("notice_id", id)
-				.neq("status", "resolved")
-				.order("identified_at", { ascending: false }),
-		]);
+  // 4. Validate required fields
+  if (!notice.title || !notice.type) {
+    return NextResponse.json(
+      { error: 'Notice missing required fields: title, type' },
+      { status: 422 },
+    );
+  }
 
-	const riskRows = risks ?? [];
-	const obligationRows = obligations ?? [];
-	const findingRows = findings ?? [];
+  // 5. Resolve GN endpoint
+  const gnUrl = process.env.GOVERNANCE_NODE_URL ?? process.env.CONTROL_CENTRE_URL?.replace('controlcenter', 'umkhandlu');
+  const nodeApiKey = process.env.UMKHANDLU_NODE_API_KEY;
 
-	return NextResponse.json(
-		{
-			noticeId: notice.id,
-			noticeType: notice.type,
-			risks: riskRows,
-			obligations: obligationRows,
-			findings: findingRows,
-			summary: {
-				riskCount: riskRows.length,
-				criticalRisks: riskRows.filter((r) => r.exposure >= 15).length,
-				highRisks: riskRows.filter((r) => r.exposure >= 8 && r.exposure < 15)
-					.length,
-				obligationCount: obligationRows.length,
-				nonCompliant: obligationRows.filter((o) => o.status === "non-compliant")
-					.length,
-				underReview: obligationRows.filter((o) => o.status === "under-review")
-					.length,
-				findingCount: findingRows.length,
-				openFindings: findingRows.filter(
-					(f) => f.status === "open" || f.status === "in-progress",
-				).length,
-				dataConfidence:
-					riskRows.length === 0 && obligationRows.length === 0
-						? "no-assessment"
-						: "operator-assessed",
-			},
-			meta: {
-				source: "unami-platform-core",
-				generatedAt: new Date().toISOString(),
-			},
-		},
-		{ headers: CORS },
-	);
+  if (!gnUrl || !nodeApiKey) {
+    return NextResponse.json(
+      { error: 'GOVERNANCE_NODE_URL and UMKHANDLU_NODE_API_KEY must be configured' },
+      { status: 503 },
+    );
+  }
+
+  // 6. Build transfer payload — only publicly redistributable data
+  const payload = {
+    ccNoticeId: notice.id,
+    noticeType: notice.type,
+    title: notice.title,
+    description: notice.content ?? '',
+    isStatutory: notice.is_statutory ?? true,
+    commentDeadline: notice.comment_deadline ?? null,
+    wardRef: notice.ward_ref ?? null,
+    lat: notice.latitude ?? null,
+    lng: notice.longitude ?? null,
+    approvedAt: run.approved_at ?? new Date().toISOString(),
+    // Analysis outputs are internal — only transfer summary, not raw spatial data
+    analysisSummary: run.analysis_outputs
+      ? extractPublicSummary(run.analysis_outputs as Record<string, unknown>)
+      : null,
+  };
+
+  // 7. Call GN receive-transfer endpoint
+  let gnResponse: { gnNoticeRef?: string; error?: string };
+  try {
+    const res = await fetch(`${gnUrl}/api/notices/receive-transfer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${nodeApiKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    gnResponse = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    if (!res.ok) {
+      await logTransferAttempt(supabase, run.id, notice.id, 'failed', gnResponse.error ?? `HTTP ${res.status}`);
+      return NextResponse.json(
+        { error: gnResponse.error ?? `GN returned HTTP ${res.status}` },
+        { status: 502 },
+      );
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await logTransferAttempt(supabase, run.id, notice.id, 'failed', msg);
+    return NextResponse.json({ error: `GN request failed: ${msg}` }, { status: 502 });
+  }
+
+  if (!gnResponse.gnNoticeRef) {
+    await logTransferAttempt(supabase, run.id, notice.id, 'failed', 'GN did not return gnNoticeRef');
+    return NextResponse.json({ error: 'GN did not return gnNoticeRef' }, { status: 502 });
+  }
+
+  // 8. Record the GN ref on the workflow run
+  await supabase
+    .from('notice_workflow_runs')
+    .update({ gn_notice_ref: gnResponse.gnNoticeRef, updated_at: new Date().toISOString() })
+    .eq('id', run.id);
+
+  // 9. Audit log
+  await logTransferAttempt(supabase, run.id, notice.id, 'success', null, gnResponse.gnNoticeRef);
+
+  return NextResponse.json({
+    transferred: true,
+    gnNoticeRef: gnResponse.gnNoticeRef,
+    idempotent: false,
+  });
 }
 
-export async function OPTIONS() {
-	return new Response(null, { status: 204, headers: CORS });
+function extractPublicSummary(outputs: Record<string, unknown>): Record<string, unknown> {
+  // Only pass through fields that are safe for public governance records.
+  // Internal analytical details, restricted dataset references and raw geometry stay in CC.
+  const safe: Record<string, unknown> = {};
+  if (typeof outputs.summary === 'string') safe.summary = outputs.summary;
+  if (typeof outputs.screeningStatus === 'string') safe.screeningStatus = outputs.screeningStatus;
+  if (typeof outputs.analystName === 'string') safe.analystName = outputs.analystName;
+  if (typeof outputs.analysisDate === 'string') safe.analysisDate = outputs.analysisDate;
+  if (typeof outputs.geolibreProjectUrl === 'string') safe.geolibreProjectUrl = outputs.geolibreProjectUrl;
+  return safe;
+}
+
+async function logTransferAttempt(
+  supabase: ReturnType<typeof createServiceClient>,
+  runId: string,
+  noticeId: string,
+  status: 'success' | 'failed',
+  errorMessage: string | null,
+  gnNoticeRef?: string,
+) {
+  await supabase.from('gis_audit_log').insert({
+    table_name: 'notice_workflow_runs',
+    record_id: runId,
+    actor: 'cc-transfer',
+    action: 'transfer',
+    previous_state: null,
+    new_state: { noticeId, status, gnNoticeRef: gnNoticeRef ?? null, errorMessage },
+  });
 }

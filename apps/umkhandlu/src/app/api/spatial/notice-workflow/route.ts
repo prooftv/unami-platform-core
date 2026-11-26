@@ -113,6 +113,29 @@ export async function POST(req: NextRequest) {
     }
     if (toStage === 'transferred') {
       updates.transferred_at = new Date().toISOString();
+      // Trigger the actual CC→GN transfer server-side
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001';
+      try {
+        const transferRes = await fetch(`${baseUrl}/api/notices/${noticeId}/transfer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const transferBody = await transferRes.json() as { gnNoticeRef?: string; error?: string; idempotent?: boolean };
+        if (!transferRes.ok) {
+          return NextResponse.json(
+            { error: `Transfer to Governance Node failed: ${transferBody.error ?? `HTTP ${transferRes.status}`}` },
+            { status: 502 },
+          );
+        }
+        if (transferBody.gnNoticeRef) {
+          updates.gn_notice_ref = transferBody.gnNoticeRef;
+        }
+      } catch (err) {
+        return NextResponse.json(
+          { error: `Transfer request failed: ${err instanceof Error ? err.message : String(err)}` },
+          { status: 502 },
+        );
+      }
     }
     if (toStage === 'published') {
       updates.published_at = new Date().toISOString();

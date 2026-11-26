@@ -9,6 +9,7 @@ import { NoticeSpatialContext, getNoticeSpatialGapSummary } from "./_components/
 import { NoticeSiteFeatureAssociation } from "./_components/NoticeSiteFeatureAssociation";
 import { PROXIMITY_RADIUS } from "./_components/notice-layer-config";
 import { StatutoryMap, type StatutoryMapLayer } from "@/components/statutory-map/StatutoryMap";
+import { ProximityFindings, type ProximityLayer } from "./_components/ProximityFindings";
 
 export const dynamic = "force-dynamic";
 
@@ -276,6 +277,15 @@ export default async function NoticeDetailPage({
 				</div>
 
 				{/* Statutory map — shown for statutory notices with coordinates */}
+				{notice.is_statutory && notice.latitude && notice.longitude && proximityRadius && statutoryMapLayers.length > 0 && (
+					<ProximityFindings
+						layers={statutoryMapLayers as ProximityLayer[]}
+						origin={{ lat: notice.latitude, lng: notice.longitude }}
+						radiusConfig={proximityRadius}
+						noticeId={id}
+					/>
+				)}
+
 				{notice.is_statutory && (
 					<StatutoryMap
 						subject={
